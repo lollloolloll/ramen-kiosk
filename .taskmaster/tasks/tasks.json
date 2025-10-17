@@ -66,7 +66,7 @@
         "testStrategy": "간단한 shadcn/ui 컴포넌트(예: Button)를 페이지에 추가하여 스타일이 올바르게 적용되는지 시각적으로 확인합니다.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -96,7 +96,7 @@
               2
             ],
             "details": "`npx shadcn-ui@latest add button input` 명령을 사용하여 `Button`과 `Input` 컴포넌트를 프로젝트에 추가합니다. `app/page.tsx` 또는 임시 테스트 페이지에 이 컴포넌트들을 임포트하여 렌더링하고, 클릭 및 입력 등의 상호작용이 올바르게 작동하며 Tailwind CSS 스타일이 적용되는지 확인합니다.\n<info added on 2025-10-17T12:36:09.224Z>\n`npx shadcn-ui@latest add button input` 명령을 실행했습니다. 사용자에게 'y'를 입력하여 설치를 진행하도록 요청했습니다. 설치가 완료되면 이 서브태스크를 완료로 표시하겠습니다.\n</info added on 2025-10-17T12:36:09.224Z>",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "테스트 페이지에 추가된 `Button`과 `Input` 컴포넌트의 시각적 스타일(색상, 크기, 폰트 등)이 예상대로인지 확인합니다. `Button` 클릭, `Input`에 텍스트 입력 등의 기본 상호작용이 정상 작동하는지 수동으로 테스트합니다."
           }
         ]
@@ -111,7 +111,7 @@
         "dependencies": [
           2
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -119,7 +119,7 @@
             "description": "로그인 및 등록 폼에 사용할 사용자 이름과 비밀번호에 대한 Zod 유효성 검사 스키마를 `lib/validators/auth.ts` 파일에 정의합니다. 각 스키마는 필수 필드, 최소 길이 등의 규칙을 포함해야 합니다.",
             "dependencies": [],
             "details": "`lib/validators/auth.ts` 파일을 생성하고 `loginSchema`와 `registerSchema`를 정의합니다. `username`은 최소 3자, `password`는 최소 6자 이상으로 설정하며, 필수 필드로 지정합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "정의된 Zod 스키마가 유효한 데이터와 유효하지 않은 데이터에 대해 예상대로 동작하는지 유닛 테스트를 작성하거나 콘솔에서 직접 검증합니다."
           },
           {
@@ -130,7 +130,7 @@
               2
             ],
             "details": "shadcn/ui의 `Input`, `Button` 컴포넌트를 활용하여 `app/(auth)/login/page.tsx`에 로그인 폼 레이아웃을 만듭니다. `useForm` 훅을 초기화하고 `register` 함수를 각 입력 필드에 적용합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "`/login` 페이지에 접속하여 폼 UI가 올바르게 렌더링되는지 시각적으로 확인하고, 입력 필드에 값을 입력했을 때 React Hook Form이 상태를 제대로 관리하는지 확인합니다."
           },
           {
@@ -141,7 +141,7 @@
               2
             ],
             "details": "shadcn/ui의 `Input`, `Button` 컴포넌트를 활용하여 `app/(auth)/register/page.tsx`에 등록 폼 레이아웃을 만듭니다. `useForm` 훅을 초기화하고 `register` 함수를 각 입력 필드에 적용합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "`/register` 페이지에 접속하여 폼 UI가 올바르게 렌더링되는지 시각적으로 확인하고, 입력 필드에 값을 입력했을 때 React Hook Form이 상태를 제대로 관리하는지 확인합니다."
           },
           {
@@ -153,7 +153,7 @@
               2
             ],
             "details": "`loginSchema`를 `zodResolver`와 함께 `useForm` 훅에 전달합니다. `formState.errors`를 사용하여 유효성 검사 오류를 각 입력 필드 아래에 표시하고, `formState.isSubmitting`을 사용하여 버튼의 로딩 상태를 토글합니다. 폼 제출 실패 시 `toast` 컴포넌트를 사용해 오류 메시지를 표시합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "`/login` 페이지에서 유효하지 않은 데이터를 입력하여 유효성 검사 오류 메시지가 올바르게 표시되는지 확인합니다. 폼 제출 시 버튼의 로딩 상태가 활성화되는지 확인합니다. 폼 제출 후 예상된 오류 메시지가 표시되는지 확인합니다."
           },
           {
@@ -165,7 +165,7 @@
               3
             ],
             "details": "`registerSchema`를 `zodResolver`와 함께 `useForm` 훅에 전달합니다. `formState.errors`를 사용하여 유효성 검사 오류를 각 입력 필드 아래에 표시하고, `formState.isSubmitting`을 사용하여 버튼의 로딩 상태를 토글합니다. 폼 제출 실패 시 `toast` 컴포넌트를 사용해 오류 메시지를 표시합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "`/register` 페이지에서 유효하지 않은 데이터를 입력하여 유효성 검사 오류 메시지가 올바르게 표시되는지 확인합니다. 폼 제출 시 버튼의 로딩 상태가 활성화되는지 확인합니다. 폼 제출 후 예상된 오류 메시지가 표시되는지 확인합니다."
           }
         ]
@@ -189,7 +189,7 @@
             "description": "새 사용자 등록을 위한 'register' 서버 액션을 'lib/auth/actions.ts'에 구현합니다. 이 액션은 사용자로부터 받은 비밀번호를 안전하게 해싱하여 'users' 테이블에 저장하고, 사용자 생성에 성공하면 응답을 반환합니다.",
             "dependencies": [],
             "details": "'lib/auth/actions.ts' 파일에 'register' 함수를 작성합니다. 'bcrypt' 또는 유사 라이브러리를 사용하여 비밀번호를 해싱하고, 해싱된 비밀번호와 함께 사용자 정보를 'users' 테이블에 삽입합니다. 입력 유효성 검사 및 초기 에러 처리를 포함합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "새 사용자 계정을 생성하여 데이터베이스에 올바르게 저장되고 비밀번호가 해싱되었는지 확인합니다. 중복 사용자명/이메일 시도 시 적절한 오류 메시지가 반환되는지 테스트합니다."
           },
           {
@@ -690,7 +690,7 @@
     ],
     "metadata": {
       "created": "2025-10-17T11:49:36.913Z",
-      "updated": "2025-10-17T12:34:12.461Z",
+      "updated": "2025-10-17T12:53:59.013Z",
       "description": "Tasks for master context"
     }
   }

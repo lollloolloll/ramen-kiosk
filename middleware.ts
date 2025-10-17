@@ -1,30 +1,38 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { updateSession, getSession } from '@/lib/auth/session';
+import { getSession } from '@/lib/auth/session';
 
 const protectedRoutes = ['/admin', '/kiosk'];
 const authRoutes = ['/login', '/register'];
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-  await updateSession(request);
-
   const session = await getSession();
   const { pathname } = request.nextUrl;
 
-  if (protectedRoutes.some(route => pathname.startsWith(route)) && !session) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
+  // Redirect authenticated users from login/register to home
   if (authRoutes.includes(pathname) && session) {
     const url = request.nextUrl.clone();
-    url.pathname = '/'; // Redirect authenticated users from login/register to home
+    url.pathname = '/';
     return NextResponse.redirect(url);
   }
 
-  return response;
+  // Protect routes that require authentication
+  if (protectedRoutes.some(route => pathname.startsWith(route))) {
+    if (!session) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+
+    // RBAC for admin routes
+    if (pathname.startsWith('/admin') && session.role !== 'ADMIN') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/'; // Redirect non-admin users from admin routes
+      return NextResponse.redirect(url);
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

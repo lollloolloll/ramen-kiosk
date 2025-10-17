@@ -1,59 +1,46 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { loginSchema, registerSchema } from "@/lib/validators/auth";
-import { z } from "zod";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from 'uuid';
+import { db } from "../db";
+import { users } from "../db/schema";
+import { loginSchema, registerSchema } from "../validators/auth";
+import { ZodError } from "zod";
 import { createSession, deleteSession } from "./session";
 
-type RegisterFormData = z.infer<typeof registerSchema>;
-type LoginFormData = z.infer<typeof loginSchema>;
-
-export async function register(formData: RegisterFormData) {
+export async function register(formData: FormData) {
   try {
-    const { username, password } = registerSchema.parse(formData);
+    const { username, password } = registerSchema.parse(Object.fromEntries(formData));
 
-    const existingUser = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.username, username),
-    });
+    const existingUser = await db.select().from(users).where(eq(users.username, username));
 
-    if (existingUser) {
-      return { error: "Username already taken." };
+    if (existingUser.length > 0) {
+      return { error: "Username already exists." };
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await db.insert(users).values({
-      id: uuidv4(),
+    await db.insert(users).values({
+      id: crypto.randomUUID(),
       username,
       hashedPassword,
       role: "USER",
-    }).returning({ id: users.id });
+    });
 
-    if (newUser[0]?.id) {
-      await createSession(newUser[0].id);
-      return { success: true };
-    } else {
-      return { error: "Failed to create user." };
-    }
+    return { success: true };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { error: error.issues[0].message };
+    if (error instanceof ZodError) {
+      return { error: error.issues.map((issue) => issue.message).join(", ") };
     }
-    console.error("Registration error:", error);
-    return { error: "An unexpected error occurred." };
+    return { error: "Failed to register user." };
   }
 }
 
-export async function login(formData: LoginFormData) {
+export async function login(formData: FormData) {
   try {
-    const { username, password } = loginSchema.parse(formData);
+    const { username, password } = loginSchema.parse(Object.fromEntries(formData));
 
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.username, username),
-    });
+    const [user] = await db.select().from(users).where(eq(users.username, username));
 
     if (!user) {
       return { error: "Invalid credentials." };
@@ -65,18 +52,17 @@ export async function login(formData: LoginFormData) {
       return { error: "Invalid credentials." };
     }
 
-    await createSession(user.id);
+    await createSession(user.id, user.role);
     return { success: true };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { error: error.issues[0].message };
+    if (error instanceof ZodError) {
+      return { error: error.issues.map((issue) => issue.message).join(", ") };
     }
-    console.error("Login error:", error);
-    return { error: "An unexpected error occurred." };
+    return { error: "Failed to login." };
   }
 }
 
 export async function logout() {
-  deleteSession();
+  await deleteSession();
   return { success: true };
 }

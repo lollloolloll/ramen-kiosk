@@ -1,0 +1,14 @@
+services:
+  next-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - DATABASE_URL=file:./sqlite.db
+      # Add other necessary environment variables here

@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { ramens } from "@/lib/db/schema";
+import { EditRamenForm } from "./EditRamenForm";
+import { DeleteRamenDialog } from "./DeleteRamenDialog";
 
 export type Ramen = typeof ramens.$inferSelect;
 
@@ -48,13 +50,24 @@ export const columns: ColumnDef<Ramen>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(ramen.id)}
+              onClick={() => navigator.clipboard.writeText(String(ramen.id))}
             >
               Copy Ramen ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
+            <EditRamenForm ramen={ramen}>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                Edit
+              </DropdownMenuItem>
+            </EditRamenForm>
+            <DeleteRamenDialog ramenId={ramen.id}>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                className="text-red-500"
+              >
+                Delete
+              </DropdownMenuItem>
+            </DeleteRamenDialog>
           </DropdownMenuContent>
         </DropdownMenu>
       );

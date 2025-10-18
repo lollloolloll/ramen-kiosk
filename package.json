@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "drizzle:generate": "drizzle-kit generate"
+    "drizzle:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",         
+    "db:studio": "drizzle-kit studio" 
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

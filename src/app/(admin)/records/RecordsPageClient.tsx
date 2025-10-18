@@ -4,7 +4,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { columns, RentalRecord } from "./columns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker"; // Assuming this component exists
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -42,7 +42,7 @@ export function RecordsPageClient({ records }: RecordsPageClientProps) {
         />
         {/* I will assume a DatePickerWithRange component exists as it's a common shadcn recipe */}
         {/* If not, I would need to create it. For now, I'll add a placeholder comment */}
-        {/* <DatePickerWithRange date={dateRange} onDateChange={setDateRange} /> */}
+        <DateRangePicker date={dateRange} setDate={setDateRange} />
         <Button onClick={handleFilter}>Filter</Button>
       </div>
       <DataTable columns={columns} data={records} />

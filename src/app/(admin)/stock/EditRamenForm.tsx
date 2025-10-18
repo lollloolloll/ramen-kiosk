@@ -22,7 +22,11 @@ const updateRamenClientSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요."),
   manufacturer: z.string().min(1, "제조사를 입력해주세요."),
   stock: z.coerce.number().int().min(0, "재고는 0 이상이어야 합니다."),
-  imageUrl: z.string().url("유효한 URL을 입력해주세요.").optional().or(z.literal("")),
+  imageUrl: z
+    .string()
+    .url("유효한 URL을 입력해주세요.")
+    .optional()
+    .or(z.literal("")),
 });
 
 type UpdateRamenSchema = z.infer<typeof updateRamenClientSchema>;
@@ -38,7 +42,8 @@ export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<UpdateRamenSchema>({
+  } = useForm({
+    // ✅ FIX: 제네릭 타입을 제거하여 resolver에서 타입을 추론하도록 합니다.
     resolver: zodResolver(updateRamenClientSchema),
     defaultValues: {
       name: ramen.name,
@@ -57,7 +62,11 @@ export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
       toast.success("라면 정보가 수정되었습니다.");
       setOpen(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "라면 정보 수정에 실패했습니다.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "라면 정보 수정에 실패했습니다."
+      );
     }
   };
 

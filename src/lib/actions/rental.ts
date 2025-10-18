@@ -56,11 +56,13 @@ export async function executeRental(data: unknown) {
   }
 }
 
-export async function getRentalRecords(filters: {
-  userId?: string;
-  startDate?: Date;
-  endDate?: Date;
-} = {}) {
+export async function getRentalRecords(
+  filters: {
+    userId?: string;
+    startDate?: Date;
+    endDate?: Date;
+  } = {}
+) {
   try {
     const whereConditions = [];
     if (filters.userId) {

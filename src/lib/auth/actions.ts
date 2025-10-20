@@ -1,68 +1,64 @@
 "use server";
 
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { registerSchema } from "@/lib/validators/auth";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { db } from "../db";
-import { users } from "../db/schema";
-import { loginSchema, registerSchema } from "../validators/auth";
-import { ZodError } from "zod";
-import { createSession, deleteSession } from "./session";
 
-export async function register(formData: FormData) {
+export async function login(username: string, password: string):Promise<any> {
   try {
-    const { username, password } = registerSchema.parse(Object.fromEntries(formData));
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, username),
+    });
 
-    const existingUser = await db.select().from(users).where(eq(users.username, username));
+    if (!user) {
+      throw new Error("Incorrect username or password");
+    }
 
-    if (existingUser.length > 0) {
-      return { error: "Username already exists." };
+    const isPasswordCorrect = await bcrypt.compare(password, user.hashedPassword);
+
+    if (!isPasswordCorrect) {
+      throw new Error("Incorrect username or password");
+    }
+
+    return {
+        id: user.id,
+        name: user.username,
+        username: user.username,
+        role: user.role,
+    };
+  } catch (error) {
+    console.error("Login error:", error);
+    return null;
+  }
+}
+
+export async function register(values: unknown) {
+    const validatedFields = registerSchema.safeParse(values);
+
+    if (!validatedFields.success) {
+        return { error: "Invalid fields!" };
+    }
+
+    const { username, password } = validatedFields.data;
+
+    const existingUser = await db.query.users.findFirst({
+        where: eq(users.username, username),
+    });
+
+    if (existingUser) {
+        return { error: "Username already in use!" };
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userId = crypto.randomUUID();
 
     await db.insert(users).values({
-      id: crypto.randomUUID(),
-      username,
-      hashedPassword,
-      role: "USER",
+        id: userId,
+        username,
+        hashedPassword,
     });
 
-    return { success: true };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return { error: error.issues.map((issue) => issue.message).join(", ") };
-    }
-    return { error: "Failed to register user." };
-  }
-}
-
-export async function login(formData: FormData) {
-  try {
-    const { username, password } = loginSchema.parse(Object.fromEntries(formData));
-
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-
-    if (!user) {
-      return { error: "Invalid credentials." };
-    }
-
-    const passwordMatch = await bcrypt.compare(password, user.hashedPassword);
-
-    if (!passwordMatch) {
-      return { error: "Invalid credentials." };
-    }
-
-    await createSession(user.id, user.role);
-    return { success: true };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return { error: error.issues.map((issue) => issue.message).join(", ") };
-    }
-    return { error: "Failed to login." };
-  }
-}
-
-export async function logout() {
-  await deleteSession();
-  return { success: true };
+    return { success: "User created successfully!" };
 }

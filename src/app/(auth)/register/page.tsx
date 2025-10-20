@@ -3,13 +3,18 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { register as registerAction } from "@/lib/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 import { registerSchema } from "@/lib/validators/auth";
 
 type FormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -19,22 +24,17 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    try {
-      // TODO: Implement actual registration logic
-      console.log(data);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // toast({
-      //   title: "Registration successful",
-      //   description: "You have been registered.",
-      // });
-    } catch (error) {
-      console.error(error);
-      // toast({
-      //   title: "Registration failed",
-      //   description: "An error occurred during registration.",
-      //   variant: "destructive",
-      // });
+    const result = await registerAction(data);
+
+    if (result.error) {
+      toast.error("Registration Failed", {
+        description: result.error,
+      });
+    } else {
+      toast.success("Registration Successful", {
+        description: "Please log in.",
+      });
+      router.push("/login");
     }
   };
 

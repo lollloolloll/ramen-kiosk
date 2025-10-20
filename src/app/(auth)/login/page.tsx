@@ -3,13 +3,18 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 import { loginSchema } from "@/lib/validators/auth";
 
 type FormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -19,22 +24,19 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    try {
-      // TODO: Implement actual login logic
-      console.log(data);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // toast({
-      //   title: "Login successful",
-      //   description: "You have been logged in.",
-      // });
-    } catch (error) {
-      console.error(error);
-      // toast({
-      //   title: "Login failed",
-      //   description: "An error occurred during login.",
-      //   variant: "destructive",
-      // });
+    const result = await signIn("credentials", {
+      redirect: false,
+      username: data.username,
+      password: data.password,
+    });
+
+    if (result?.error) {
+      toast.error("Login Failed", {
+        description: "Incorrect username or password.",
+      });
+    } else {
+      toast.success("Login Successful");
+      router.push("/");
     }
   };
 

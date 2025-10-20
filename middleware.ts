@@ -1,42 +1,41 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+import { auth } from "@/auth";
+import { NextRequest, NextResponse } from "next/server";
 
-const protectedRoutes = ['/admin'];
-const authRoutes = ['/login', '/register'];
+const protectedRoutes = ["/admin"];
+const authRoutes = ["/login", "/register"];
 
-export async function middleware(request: NextRequest) {
-  const session = await getSession();
-  const { pathname } = request.nextUrl;
+export default auth((req: any) => {
+  const { nextUrl } = req;
+  const session = req.auth;
 
-  // Redirect authenticated users from login/register to home
-  if (authRoutes.includes(pathname) && session) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
-    return NextResponse.redirect(url);
+  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    nextUrl.pathname.startsWith(route)
+  );
+
+  if (isAuthRoute) {
+    if (session) {
+      return NextResponse.redirect(new URL("/", nextUrl));
+    }
+    return;
   }
 
-  // Protect routes that require authentication
-  if (protectedRoutes.some(route => pathname.startsWith(route))) {
+  if (isProtectedRoute) {
     if (!session) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/login';
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL("/login", nextUrl));
     }
-
-    // RBAC for admin routes
-    if (pathname.startsWith('/admin') && session.role !== 'ADMIN') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/'; // Redirect non-admin users from admin routes
-      return NextResponse.redirect(url);
+    if (session.user?.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/", nextUrl));
     }
   }
+});
 
-  return NextResponse.next();
-}
-
+// Optionally, don't invoke Middleware on some paths
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/admin/:path*",
+    "/login",
+    "/register",
   ],
 };

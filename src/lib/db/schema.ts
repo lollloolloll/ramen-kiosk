@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import { randomUUID } from "crypto";
 
 export const users = sqliteTable("users", {
   id: text("id").notNull().primaryKey(),
@@ -21,7 +20,7 @@ export const rentalRecords = sqliteTable("rental_records", {
   id: text("id")
     .notNull()
     .primaryKey()
-    .$defaultFn(() => randomUUID()),
+    .$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id")
     .notNull()
     .references(() => users.id),

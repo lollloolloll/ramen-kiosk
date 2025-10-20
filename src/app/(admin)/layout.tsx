@@ -1,20 +1,16 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
+import { auth } from "@/auth";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
+  const session = await auth();
 
-  if (!session || session.role !== "ADMIN") {
-    redirect("/login");
+  if (!session || session.user?.role !== "ADMIN") {
+    redirect("/");
   }
 
-  return (
-    <div className="container mx-auto py-10">
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 }

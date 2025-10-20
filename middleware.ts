@@ -13,15 +13,13 @@ export async function middleware(req: NextRequest) {
   const { nextUrl } = req;
 
   // 보호할 경로와 인증 관련 경로 정의
-  const protectedRoutes = ["/admin"];
+  const protectedRoutes = ["/stock", "/records"];
   const authRoutes = ["/login", "/register"];
 
   // 현재 경로가 인증 관련 경로인지 확인
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
   // 현재 경로가 보호된 경로인지 확인
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    nextUrl.pathname.startsWith(route)
-  );
+  const isProtectedRoute = protectedRoutes.includes(nextUrl.pathname);
 
   // 2. 로그인 여부 확인 (토큰 존재 유무)
   const isLoggedIn = !!token;
@@ -59,7 +57,6 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-    "/admin/:path*",
     "/login",
     "/register",
   ],

@@ -334,7 +334,7 @@
           1,
           5
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -344,7 +344,7 @@
               1
             ],
             "details": "`lib/actions/ramen.ts` 또는 `app/api/ramens/route.ts`에 새로운 라면을 생성하는 `createRamen` 함수 또는 POST 핸들러를 구현합니다. `lib/db/queries.ts`의 데이터베이스 함수를 활용하여 `ramens` 테이블에 라면 정보를 삽입합니다. 이름, 제조업체, 재고, 이미지 URL 등 필수 필드를 처리해야 합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "API 클라이언트(예: Postman, cURL)를 사용하여 유효한 라면 데이터를 POST 요청으로 전송하고, 데이터베이스에서 해당 라면이 성공적으로 생성되었는지 확인합니다. 관리자 UI 통합 후 UI를 통해서도 생성 기능을 테스트합니다."
           },
           {
@@ -355,7 +355,7 @@
               1
             ],
             "details": "`lib/actions/ramen.ts` 또는 `app/api/ramens/route.ts`에 모든 라면을 가져오는 `getAllRamens` 함수와 특정 ID의 라면을 가져오는 `getRamenById` 함수, 또는 해당 GET 핸들러를 구현합니다. `lib/db/queries.ts`의 데이터베이스 함수를 사용하여 `ramens` 테이블에서 데이터를 조회합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "API 클라이언트를 사용하여 GET 요청을 보내 모든 라면 목록이 올바르게 반환되는지, 특정 ID로 조회 시 해당 라면 정보가 반환되는지 확인합니다. 데이터베이스의 실제 데이터와 반환된 데이터를 비교하여 정확성을 검증합니다."
           },
           {
@@ -366,7 +366,7 @@
               1
             ],
             "details": "`lib/actions/ramen.ts` 또는 `app/api/ramens/route.ts`에 기존 라면 정보를 업데이트하는 `updateRamen` 함수 또는 PUT/PATCH 핸들러를 구현합니다. 특정 라면 ID를 기반으로 `ramens` 테이블의 필드를 수정하며, 이름, 제조업체, 재고, 이미지 URL 등 변경될 수 있는 모든 필드를 처리할 수 있어야 합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "API 클라이언트를 사용하여 기존 라면의 ID와 업데이트된 데이터를 포함한 PUT/PATCH 요청을 전송하고, 데이터베이스에서 해당 라면 정보가 올바르게 수정되었는지 확인합니다. 여러 필드 변경 시나리오를 테스트합니다."
           },
           {
@@ -377,7 +377,7 @@
               1
             ],
             "details": "`lib/actions/ramen.ts` 또는 `app/api/ramens/route.ts`에 특정 라면을 삭제하는 `deleteRamen` 함수 또는 DELETE 핸들러를 구현합니다. 특정 라면 ID를 기반으로 `ramens` 테이블에서 해당 라면 항목을 삭제하며, 삭제 전 존재 여부 확인 로직을 포함할 수 있습니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "API 클라이언트를 사용하여 삭제할 라면의 ID로 DELETE 요청을 전송하고, 데이터베이스에서 해당 라면이 성공적으로 삭제되었는지 확인합니다. 존재하지 않는 ID로 삭제 요청 시 적절한 오류 응답이 반환되는지도 테스트합니다."
           },
           {
@@ -391,7 +391,7 @@
               4
             ],
             "details": "Zod와 같은 스키마 유효성 검사 라이브러리를 사용하여 `createRamen`, `updateRamen`, `deleteRamen` 함수 또는 해당 API 핸들러에 전달되는 데이터(예: 라면 이름이 비어있지 않음, 재고가 0 미만이 아님, ID가 유효한 UUID 형식임)에 대한 유효성 검사 스키마를 정의하고 적용합니다. 유효성 검사에 실패할 경우 사용자에게 명확하고 적절한 오류 응답을 반환하도록 처리합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "각 CRUD 작업에 대해 유효하지 않거나 누락된 필드를 포함하는 요청을 보내 유효성 검사 오류 메시지가 올바르게 반환되는지 확인합니다. 예를 들어, 필수 필드를 비워두거나, 숫자여야 할 필드에 문자열을 전달하는 등의 다양한 유효성 검사 실패 시나리오를 테스트합니다."
           }
         ]
@@ -407,7 +407,7 @@
           1,
           4
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -417,7 +417,7 @@
               2
             ],
             "details": "`components/ramen/RamenCard.tsx` 파일에 Next.js Image 컴포넌트와 TailwindCSS를 사용하여 라면 정보를 시각적으로 매력적으로 표시하는 UI 컴포넌트를 작성합니다. Prop으로는 라면 데이터를 포함하는 객체를 받습니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "더미 라면 데이터를 사용하여 `RamenCard` 컴포넌트가 다양한 정보(이름, 제조업체, 이미지 URL, 재고)를 올바르게 렌더링하는지 시각적으로 확인합니다. 이미지 로딩 오류 발생 시 대체 텍스트 또는 플레이스홀더가 표시되는지 확인합니다."
           },
           {
@@ -429,7 +429,7 @@
               4
             ],
             "details": "`app/(kiosk)/page.tsx` 파일을 생성하고 기본적인 페이지 구조를 정의합니다. 서버 컴포넌트에서 `lib/db/queries.ts`에 정의된 `getAvailableRamen` 함수(가정)를 호출하여 라면 데이터를 페칭합니다. 페칭된 데이터는 이후 UI 컴포넌트에 전달될 수 있도록 준비합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "키오스크 페이지에 접근하여 개발자 도구의 네트워크 탭 또는 서버 로그를 통해 라면 데이터가 성공적으로 페칭되는지 확인합니다. 데이터베이스에서 재고가 0보다 큰 라면만 페칭되는지 검증합니다."
           },
           {
@@ -441,7 +441,7 @@
               2
             ],
             "details": "Subtask 2에서 페칭된 라면 데이터를 그리드 또는 플렉스 레이아웃을 사용하여 `RamenCard` 컴포넌트들을 렌더링합니다. 라면 목록이 비어있을 경우 '현재 재고가 있는 라면이 없습니다.'와 같은 메시지를 페이지 중앙에 표시하는 폴백(fallback) UI를 구현합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "로그인한 사용자로 키오스크 페이지에 접근하여 재고가 있는 라면이 `RamenCard` 형태로 올바르게 표시되는지 확인합니다. 모든 라면의 재고를 0으로 설정한 후, 페이지에 '현재 재고가 있는 라면이 없습니다.'와 같은 빈 목록 메시지가 올바르게 표시되는지 확인합니다."
           }
         ]
@@ -458,7 +458,7 @@
           4,
           7
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -469,7 +469,7 @@
               7
             ],
             "details": "`shadcn/ui`의 `Dialog` 컴포넌트를 사용하여 `app/components/rental/RentalDialog.tsx`를 생성합니다. 선택된 라면의 이름, 이미지, 대여 수량 등을 표시하고, '대여' 및 '취소' 버튼을 포함합니다. 대여 버튼 클릭 시 `executeRental` 서버 액션을 호출하도록 준비합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "컴포넌트가 올바르게 렌더링되고, 라면 정보가 표시되며, 버튼 클릭 시 콜백 함수가 호출되는지 Storybook 또는 Jest를 사용하여 테스트합니다."
           },
           {
@@ -481,7 +481,7 @@
               4
             ],
             "details": "`lib/actions/rental.ts` 파일에 `executeRental(userId: string, ramenId: string)` 함수를 생성합니다. `zod`와 같은 라이브러리를 사용하여 `userId`와 `ramenId`가 유효한 형식인지 검사하고, 유효하지 않을 경우 적절한 오류를 반환합니다. 이 함수는 Next.js 서버 액션으로 선언되어야 합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "유효한 ID와 유효하지 않은 ID를 사용하여 `executeRental`을 호출했을 때, 기대하는 성공/실패 응답과 오류 메시지가 반환되는지 단위 테스트를 작성합니다."
           },
           {
@@ -493,7 +493,7 @@
               2
             ],
             "details": "`db.transaction`을 사용하여 다음 작업을 원자적으로 수행합니다: 1. `ramens` 테이블에서 `ramenId`에 해당하는 라면의 현재 재고를 조회합니다 (FOR UPDATE). 2. 재고가 1 이상인지 확인하고, 재고가 없으면 트랜잭션을 롤백하고 오류를 반환합니다. 3. `ramens` 테이블의 `stock` 필드를 1 감소시킵니다. 4. `rentalRecords` 테이블에 `userId`, `ramenId`, `rentalDate`를 포함하는 새 기록을 삽입합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "재고가 충분한 라면을 대여했을 때, 기록이 생성되고 재고가 1 감소하는지 확인합니다. 동시에 여러 요청이 들어왔을 때, 재고 감소 및 기록 생성이 원자적으로 처리되어 데이터 불일치가 발생하지 않는지 경쟁 조건 테스트를 수행합니다."
           },
           {
@@ -504,7 +504,7 @@
               3
             ],
             "details": "재고가 0인 라면 대여 시도 시 '재고 부족' 메시지 반환, 존재하지 않는 `ramenId` 또는 `userId` 사용 시 적절한 오류 메시지 반환, 데이터베이스 트랜잭션 중 발생할 수 있는 일반적인 오류를 `try-catch` 블록으로 처리하여 사용자에게 친숙한 오류 메시지를 제공합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "재고가 0인 라면을 대여 시도하여 '재고 부족' 오류가 반환되는지 확인합니다. 존재하지 않는 `ramenId` 또는 `userId`로 대여를 시도하여 적절한 오류가 반환되는지 확인합니다. 데이터베이스 오류 상황을 시뮬레이션하여 오류 처리가 작동하는지 확인합니다."
           },
           {
@@ -516,7 +516,7 @@
               3
             ],
             "details": "`RentalDialog.tsx` 컴포넌트 또는 호출하는 상위 컴포넌트에서 `useFormStatus` 훅 또는 `useState`를 사용하여 로딩 상태를 관리합니다. `executeRental` 호출이 성공하면 성공 메시지를 표시하고 다이얼로그를 닫으며, 실패하면 오류 메시지를 표시합니다. Next.js의 `revalidatePath` 또는 `revalidateTag`를 사용하여 라면 목록 또는 재고 정보를 새로고침하도록 합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "성공적인 대여 후 '대여 완료' 메시지가 표시되고 다이얼로그가 닫히며, 라면 재고 표시가 업데이트되는지 확인합니다. 실패(예: 재고 부족) 시 '대여 실패: 재고 부족'과 같은 오류 메시지가 표시되는지 확인합니다."
           }
         ]
@@ -534,7 +534,7 @@
           6,
           8
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -544,7 +544,7 @@
               2
             ],
             "details": "`app/(admin)/records/page.tsx`에서 `DataTable` 컴포넌트 또는 유사한 UI 요소를 사용하여 대여 기록을 표시할 기본 레이아웃을 잡고, 더미 데이터를 사용하여 UI가 올바르게 렌더링되는지 확인합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "개발 서버에서 `/admin/records` 경로에 접근하여 기본적인 테이블 UI가 올바르게 렌더링되고 있는지 시각적으로 확인합니다."
           },
           {
@@ -555,7 +555,7 @@
               1
             ],
             "details": "`lib/data/rentalRecords.ts`와 같은 파일에 `getAllRentalRecords` 함수를 생성하고, Drizzle ORM의 `leftJoin` 또는 `innerJoin`을 사용하여 `rentalRecords`와 `users`, `ramens` 테이블을 연결합니다. 각 기록에 대해 사용자명과 라면명을 포함한 데이터를 반환하도록 구현합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Postman 또는 통합 테스트를 통해 구현된 함수를 호출하여 올바른 데이터가 조인되어 반환되는지 확인하고, 오류가 발생하는 경우를 테스트합니다."
           },
           {
@@ -567,7 +567,7 @@
               2
             ],
             "details": "shadcn/ui의 `Input` 컴포넌트를 사용자 ID 필터로, `DatePicker` 컴포넌트를 날짜 범위 필터로 활용합니다. `useState` 또는 `useReducer` 훅을 사용하여 필터 값을 관리하고, 값이 변경될 때마다 페이지 URL에 쿼리 파라미터로 반영되도록 `useRouter` 훅과 연동합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "페이지에 필터 UI가 올바르게 표시되는지 확인하고, 필터 값을 변경할 때 URL 쿼리 파라미터가 정확하게 업데이트되는지 브라우저 개발자 도구를 통해 확인합니다."
           },
           {
@@ -579,7 +579,7 @@
               3
             ],
             "details": "`getAllRentalRecords` 함수 또는 관련 데이터 페칭 로직을 수정하여 `userId` 파라미터를 받을 수 있도록 합니다. 이 파라미터가 제공되면 Drizzle ORM의 `where` 절을 사용하여 `rentalRecords.userId`와 일치하는 기록만 가져오도록 쿼리를 동적으로 구성합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "특정 사용자 ID로 필터링했을 때, 해당 사용자의 대여 기록만 정확히 표시되는지, 그리고 잘못된 사용자 ID를 입력했을 때 결과가 올바르게 처리되는지 확인합니다."
           },
           {
@@ -591,7 +591,7 @@
               3
             ],
             "details": "`getAllRentalRecords` 함수 또는 관련 데이터 페칭 로직을 수정하여 `startDate`와 `endDate` 파라미터를 받을 수 있도록 합니다. 이 파라미터가 제공되면 Drizzle ORM의 `where` 절과 `between` 연산자를 사용하여 `rentalRecords.rentalDate`가 지정된 날짜 범위 내에 있는 기록만 가져오도록 쿼리를 동적으로 구성합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "특정 날짜 범위로 필터링했을 때, 해당 범위 내의 대여 기록만 정확히 표시되는지, 날짜가 누락되거나 잘못된 범위일 때 오류 없이 처리되는지 확인합니다."
           }
         ]
@@ -633,7 +633,7 @@
               4
             ],
             "details": "애플리케이션 서비스와 SQLite 데이터베이스 서비스 (볼륨을 사용하여 데이터를 영속화)를 정의하고, 두 서비스 간의 네트워크 및 환경 변수 설정을 구성합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "`docker-compose up --build` 명령어를 실행하여 애플리케이션과 데이터베이스 서비스가 동시에 정상적으로 시작되는지 확인합니다. 애플리케이션이 데이터베이스에 연결하고 데이터를 읽고 쓸 수 있는지 수동으로 간단하게 확인합니다."
           },
           {
@@ -690,7 +690,7 @@
     ],
     "metadata": {
       "created": "2025-10-17T11:49:36.913Z",
-      "updated": "2025-10-20T12:04:56.044Z",
+      "updated": "2025-10-21T05:34:09.328Z",
       "description": "Tasks for master context"
     }
   }

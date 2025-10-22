@@ -2,14 +2,14 @@ import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
-  id: text("id").notNull().primaryKey(),
+  id: integer("id").notNull().primaryKey({ autoIncrement: true }),
   username: text("username").notNull().unique(),
   hashedPassword: text("hashed_password").notNull(),
   role: text("role").notNull().default("USER"), // 'USER' or 'ADMIN'
 });
 
 export const ramens = sqliteTable("ramens", {
-  id: text("id").notNull().primaryKey(),
+  id: integer("id").notNull().primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   manufacturer: text("manufacturer").notNull(),
   stock: integer("stock").notNull().default(0),
@@ -17,14 +17,11 @@ export const ramens = sqliteTable("ramens", {
 });
 
 export const rentalRecords = sqliteTable("rental_records", {
-  id: text("id")
-    .notNull()
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id")
+  id: integer("id").notNull().primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
     .notNull()
     .references(() => users.id),
-  ramenId: text("ramen_id")
+  ramenId: integer("ramen_id")
     .notNull()
     .references(() => ramens.id),
   rentalDate: integer("rental_date", { mode: "timestamp" })

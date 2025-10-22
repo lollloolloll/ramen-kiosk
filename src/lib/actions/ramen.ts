@@ -1,6 +1,5 @@
 "use server";
 
-import crypto from "crypto";
 import { eq, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
@@ -19,7 +18,6 @@ export async function addRamen(data: unknown) {
   }
   try {
     await db.insert(ramens).values({
-      id: crypto.randomUUID(),
       ...validatedData.data,
     });
     revalidatePath("/admin/stock");
@@ -44,7 +42,7 @@ export async function updateRamen(data: unknown) {
   }
 }
 
-export async function deleteRamen(id: string) {
+export async function deleteRamen(id: number) {
   try {
     await db.delete(ramens).where(eq(ramens.id, id));
     revalidatePath("/admin/stock");

@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { rentalRecords, ramens, users } from "@/lib/db/schema";
 import { rentalSchema } from "@/lib/validators/rental";
-import { eq, gt, and, gte, lte } from "drizzle-orm";
+import { eq, gt, and, gte, lte, InferInsertModel } from "drizzle-orm"; // Added InferInsertModel
 import { revalidatePath } from "next/cache";
 
 export async function executeRental(data: unknown) {
@@ -37,8 +37,8 @@ export async function executeRental(data: unknown) {
         .where(eq(ramens.id, ramenId));
 
       await tx.insert(rentalRecords).values({
-        userId,
-        ramenId,
+        userId: userId as InferInsertModel<typeof rentalRecords>["userId"],
+        ramenId: ramenId as InferInsertModel<typeof rentalRecords>["ramenId"],
         rentalDate: new Date(),
       });
 
@@ -58,15 +58,25 @@ export async function executeRental(data: unknown) {
 
 export async function getRentalRecords(
   filters: {
-    userId?: string;
+    username?: string; // Changed back to username (string)
     startDate?: Date;
     endDate?: Date;
   } = {}
 ) {
   try {
     const whereConditions = [];
-    if (filters.userId) {
-      whereConditions.push(eq(users.username, filters.userId)); // Assuming filtering by username
+    let actualUserId: number | undefined;
+
+    if (filters.username) {
+      const [user] = await db.select({ id: users.id }).from(users).where(eq(users.username, filters.username));
+      if (user) {
+        actualUserId = user.id;
+        whereConditions.push(eq(rentalRecords.userId, actualUserId));
+      } else {
+        // If username is provided but not found, no records will match.
+        // Return empty data or an error. For now, let's return empty.
+        return { success: true, data: [] };
+      }
     }
     if (filters.startDate) {
       whereConditions.push(gte(rentalRecords.rentalDate, filters.startDate));

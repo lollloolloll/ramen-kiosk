@@ -144,8 +144,8 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
         throw new Error(result.error);
       }
       toast.success(`'${ramen.name}' 대여가 완료되었습니다.`);
-      closeDialog();
       router.push("/"); // Redirect to home page on successful rental
+      closeDialog();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "대여에 실패했습니다."

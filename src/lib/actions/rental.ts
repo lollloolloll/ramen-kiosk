@@ -2,53 +2,61 @@
 
 import { db } from "@/lib/db";
 import { rentalRecords, ramens, users } from "@/lib/db/schema";
-import { rentalSchema } from "@/lib/validators/rental";
 import { eq, and, gte, lte, InferInsertModel } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function rentRamen(userId: number, ramenId: number) {
   try {
-    const result = await db.transaction(async (tx) => {
-      const [ramenToRent] = await tx
+    // db.transaction()의 콜백에서 'async'와 'await'를 제거합니다.
+    // better-sqlite3는 동기적으로 작동하므로 이게 올바른 방법입니다.
+    db.transaction((tx) => {
+      const [ramenToRent] = tx
         .select()
         .from(ramens)
-        .where(eq(ramens.id, ramenId));
+        .where(eq(ramens.id, ramenId))
+        .all(); // .all() 또는 .get()을 사용하여 즉시 실행
 
       if (!ramenToRent) {
-        tx.rollback();
-        return { error: "해당 라면을 찾을 수 없습니다." };
+        throw new Error("해당 라면을 찾을 수 없습니다.");
       }
 
       if (ramenToRent.stock <= 0) {
-        tx.rollback();
-        return { error: "재고가 부족합니다." };
+        throw new Error("재고가 부족합니다.");
       }
 
-      await tx
-        .update(ramens)
+      // 재고 감소
+      tx.update(ramens)
         .set({ stock: ramenToRent.stock - 1 })
-        .where(eq(ramens.id, ramenId));
+        .where(eq(ramens.id, ramenId))
+        .run(); // .run()으로 즉시 실행
 
-      await tx.insert(rentalRecords).values({
-        userId: userId as InferInsertModel<typeof rentalRecords>["userId"],
-        ramenId: ramenId as InferInsertModel<typeof rentalRecords>["ramenId"],
-        rentalDate: new Date(),
-      });
-
-      return { success: true };
+      // 대여 기록 추가
+      tx.insert(rentalRecords)
+        .values({
+          userId: userId as InferInsertModel<typeof rentalRecords>["userId"],
+          ramenId: ramenId as InferInsertModel<typeof rentalRecords>["ramenId"],
+          rentalDate: new Date(),
+        })
+        .run(); // .run()으로 즉시 실행
     });
 
-    if (result.success) {
-      revalidatePath("/"); // Revalidate the kiosk page
-      revalidatePath("/admin/stock");
+    // 트랜잭션이 성공적으로 완료되었을 때만 이 코드가 실행됩니다.
+    revalidatePath("/");
+    revalidatePath("/admin/stock");
+
+    return { success: true };
+  } catch (error) {
+    // 트랜잭션 내부에서 throw된 에러는 여기서 잡힙니다.
+    // Drizzle은 에러가 발생하면 자동으로 트랜잭션을 '롤백'합니다.
+    console.error("Rental Transaction Failed:", error);
+
+    if (error instanceof Error) {
+      return { error: error.message };
     }
 
-    return result;
-  } catch (error) {
-    return { error: "대여 처리 중 오류가 발생했습니다." };
+    return { error: "대여 처리 중 예상치 못한 오류가 발생했습니다." };
   }
 }
-
 export async function getRentalRecords(
   filters: {
     username?: string;

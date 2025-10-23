@@ -301,19 +301,36 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={registerForm.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>성별</FormLabel>
-                    <FormControl>
-                      <Input placeholder="남 / 여" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormItem>
+                <FormLabel>성별</FormLabel>
+                <FormControl>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={
+                        registerForm.watch("gender") === "남"
+                          ? "secondary"
+                          : "outline"
+                      }
+                      onClick={() => registerForm.setValue("gender", "남")}
+                    >
+                      남
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={
+                        registerForm.watch("gender") === "여"
+                          ? "secondary"
+                          : "outline"
+                      }
+                      onClick={() => registerForm.setValue("gender", "여")}
+                    >
+                      여
+                    </Button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
               <FormField
                 control={registerForm.control}
                 name="age"

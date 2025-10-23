@@ -3,10 +3,11 @@
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { addRamen } from "@/lib/actions/ramen";
-import React, { useRef, useState } from "react";
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { Resolver } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Pointer } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -28,7 +28,7 @@ const formSchema = z.object({
   manufacturer: z.string().min(2, {
     message: "Manufacturer must be at least 2 characters.",
   }),
-  stock: z.number().min(0, {
+  stock: z.coerce.number().min(0, {
     message: "Stock cannot be negative.",
   }),
   imageUrl: z.any().optional(),
@@ -37,11 +37,11 @@ const formSchema = z.object({
 export function AddRamenForm() {
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as Resolver<z.infer<typeof formSchema>>,
     defaultValues: {
       name: "",
       manufacturer: "",
-      stock: 0,
+      stock: 5,
       imageUrl: undefined, // Changed to undefined for file input
     },
   });
@@ -102,11 +102,7 @@ export function AddRamenForm() {
             <FormItem>
               <FormLabel>Stock</FormLabel>
               <FormControl>
-                <Input
-                  type="number"
-                  {...field}
-                  onChange={(event) => field.onChange(+event.target.value)}
-                />
+                <Input type="number" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

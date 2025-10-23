@@ -26,8 +26,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { generalUserSchema } from "@/lib/validators/generalUser";
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect } from "react";
 import { Resolver } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 interface RentalDialogProps {
   ramen: Ramen | null;
@@ -62,6 +63,7 @@ const formatPhoneNumber = (value: string) => {
 };
 
 export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
+  const router = useRouter();
   const [step, setStep] = useState<Step>("pin");
   const [matchingUsers, setMatchingUsers] = useState<
     { id: number; name: string }[]
@@ -143,6 +145,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
       }
       toast.success(`'${ramen.name}' 대여가 완료되었습니다.`);
       closeDialog();
+      router.push("/"); // Redirect to home page on successful rental
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "대여에 실패했습니다."

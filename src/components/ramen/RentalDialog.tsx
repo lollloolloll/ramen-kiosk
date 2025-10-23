@@ -169,7 +169,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
     switch (step) {
       case "pin":
         return (
-          <Form {...pinForm}>
+          <Form {...pinForm} key="pin">
             <form
               onSubmit={pinForm.handleSubmit(handlePinSubmit)}
               className="space-y-4"
@@ -229,7 +229,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
         );
       case "select-user":
         return (
-          <div>
+          <div key="select-user">
             <DialogHeader>
               <DialogTitle>사용자 선택</DialogTitle>
               <DialogDescription>
@@ -262,7 +262,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
         );
       case "register":
         return (
-          <Form {...registerForm}>
+          <Form {...registerForm} key="register">
             <form
               onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
               className="space-y-4"
@@ -351,15 +351,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   <FormItem>
                     <FormLabel>나이</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="30"
-                        {...field}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? 5 : +value);
-                        }}
-                      />
+                      <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

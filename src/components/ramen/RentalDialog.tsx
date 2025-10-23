@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Ramen } from "@/app/(admin)/stock/columns";
+import { Ramen } from "@/app/(admin)/admin/stock/columns";
 import { executeRental } from "@/lib/actions/rental";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
@@ -33,14 +33,19 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
 
     setIsSubmitting(true);
     try {
-      const result = await executeRental({ userId: session.user.id, ramenId: ramen.id });
+      const result = await executeRental({
+        userId: session.user.id,
+        ramenId: ramen.id,
+      });
       if (result.error) {
         throw new Error(result.error);
       }
       toast.success(`'${ramen.name}' 대여가 완료되었습니다.`);
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "대여에 실패했습니다.");
+      toast.error(
+        error instanceof Error ? error.message : "대여에 실패했습니다."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -58,14 +63,25 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <p><span className="font-semibold">제조사:</span> {ramen.manufacturer}</p>
-          <p><span className="font-semibold">남은 재고:</span> {ramen.stock}개</p>
+          <p>
+            <span className="font-semibold">제조사:</span> {ramen.manufacturer}
+          </p>
+          <p>
+            <span className="font-semibold">남은 재고:</span> {ramen.stock}개
+          </p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
             취소
           </Button>
-          <Button onClick={handleRental} disabled={isSubmitting || ramen.stock === 0}>
+          <Button
+            onClick={handleRental}
+            disabled={isSubmitting || ramen.stock === 0}
+          >
             {isSubmitting ? "처리 중..." : "대여"}
           </Button>
         </DialogFooter>

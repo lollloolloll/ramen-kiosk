@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RamenCard } from "@/components/ramen/RamenCard";
-import { Ramen } from "@/app/(admin)/stock/columns";
+import { Ramen } from "@/app/(admin)/admin/stock/columns";
 import { RentalDialog } from "@/components/ramen/RentalDialog";
 
 interface KioskPageClientProps {

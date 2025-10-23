@@ -41,7 +41,7 @@ export function AddRamenForm() {
     defaultValues: {
       name: "",
       manufacturer: "",
-      stock: 5,
+      stock: 1,
       imageUrl: undefined, // Changed to undefined for file input
     },
   });

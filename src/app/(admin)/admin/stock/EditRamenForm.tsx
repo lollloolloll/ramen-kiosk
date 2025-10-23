@@ -7,26 +7,31 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { updateRamen } from "@/lib/actions/ramen";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import React, { useState } from "react";
+import { useForm, Resolver } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
+import * as z from "zod";
 import { Ramen } from "./columns";
+import { useRouter } from "next/navigation";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const updateRamenClientSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요."),
   manufacturer: z.string().min(1, "제조사를 입력해주세요."),
   stock: z.coerce.number().int().min(0, "재고는 0 이상이어야 합니다."),
-  imageUrl: z
-    .string()
-    .url("유효한 URL을 입력해주세요.")
-    .optional()
-    .or(z.literal("")),
+  imageUrl: z.any().optional(),
 });
 
 type UpdateRamenSchema = z.infer<typeof updateRamenClientSchema>;
@@ -38,29 +43,38 @@ interface EditRamenFormProps {
 
 export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
   const [open, setOpen] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    // ✅ FIX: 제네릭 타입을 제거하여 resolver에서 타입을 추론하도록 합니다.
-    resolver: zodResolver(updateRamenClientSchema),
+  const router = useRouter();
+  const form = useForm<UpdateRamenSchema>({
+    resolver: zodResolver(
+      updateRamenClientSchema
+    ) as Resolver<UpdateRamenSchema>,
     defaultValues: {
       name: ramen.name,
       manufacturer: ramen.manufacturer,
       stock: ramen.stock,
-      imageUrl: ramen.imageUrl || "",
+      imageUrl: ramen.imageUrl || undefined,
     },
   });
 
-  const onSubmit = async (data: UpdateRamenSchema) => {
+  const onSubmit = async (values: UpdateRamenSchema) => {
+    const formData = new FormData();
+    formData.append("name", values.name);
+    formData.append("manufacturer", values.manufacturer);
+    formData.append("stock", values.stock.toString());
+    if (values.imageUrl && values.imageUrl instanceof File) {
+      formData.append("image", values.imageUrl);
+    } else if (typeof values.imageUrl === "string") {
+      formData.append("imageUrl", values.imageUrl);
+    }
+
     try {
-      const result = await updateRamen({ id: ramen.id, ...data });
+      const result = await updateRamen(formData);
       if (result.error) {
         throw new Error(result.error);
       }
       toast.success("라면 정보가 수정되었습니다.");
       setOpen(false);
+      router.refresh();
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -77,41 +91,94 @@ export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
         <DialogHeader>
           <DialogTitle>라면 정보 수정</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">이름</Label>
-            <Input id="name" {...register("name")} />
-            {errors.name && (
-              <p className="text-xs text-red-500">{errors.name.message}</p>
-            )}
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="manufacturer">제조사</Label>
-            <Input id="manufacturer" {...register("manufacturer")} />
-            {errors.manufacturer && (
-              <p className="text-xs text-red-500">
-                {errors.manufacturer.message}
-              </p>
-            )}
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="stock">재고</Label>
-            <Input id="stock" type="number" {...register("stock")} />
-            {errors.stock && (
-              <p className="text-xs text-red-500">{errors.stock.message}</p>
-            )}
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="imageUrl">이미지 URL</Label>
-            <Input id="imageUrl" {...register("imageUrl")} />
-            {errors.imageUrl && (
-              <p className="text-xs text-red-500">{errors.imageUrl.message}</p>
-            )}
-          </div>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "수정 중..." : "수정"}
-          </Button>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>이름</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ramen Name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="manufacturer"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>제조사</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Manufacturer" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="stock"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>재고</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>라면 이미지</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      className="cursor-pointer"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) {
+                          field.onChange(file);
+                        } else {
+                          field.onChange(undefined);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  {field.value && field.value instanceof File ? (
+                    <img
+                      src={URL.createObjectURL(field.value)}
+                      alt="Image Preview"
+                      className="mt-2 h-20 w-20 object-cover rounded-md"
+                    />
+                  ) : (
+                    ramen.imageUrl && (
+                      <img
+                        src={ramen.imageUrl}
+                        alt="Current Image"
+                        className="mt-2 h-20 w-20 object-cover rounded-md"
+                      />
+                    )
+                  )}
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "수정 중..." : "수정"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

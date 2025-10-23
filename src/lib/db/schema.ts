@@ -8,6 +8,15 @@ export const users = sqliteTable("users", {
   role: text("role").notNull().default("USER"), // 'USER' or 'ADMIN'
 });
 
+export const generalUsers = sqliteTable("general_users", {
+  id: integer("id").notNull().primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  phoneNumber: text("phone_number").notNull().unique(),
+  gender: text("gender"), // e.g., 'MALE', 'FEMALE', 'OTHER'
+  age: integer("age"),
+  hashedPin: text("hashed_pin").notNull(), // Store hashed 4-digit PIN
+});
+
 export const ramens = sqliteTable("ramens", {
   id: integer("id").notNull().primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
@@ -20,7 +29,7 @@ export const rentalRecords = sqliteTable("rental_records", {
   id: integer("id").notNull().primaryKey({ autoIncrement: true }),
   userId: integer("user_id")
     .notNull()
-    .references(() => users.id),
+    .references(() => generalUsers.id),
   ramenId: integer("ramen_id")
     .notNull()
     .references(() => ramens.id),

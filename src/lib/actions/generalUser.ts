@@ -1,10 +1,11 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { generalUsers } from "@/lib/db/schema";
+import { generalUsers, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { generalUserSchema } from "@/lib/validators/generalUser";
+import { revalidatePath } from "next/cache";
 
 // This is not an efficient way to query by PIN, as it requires fetching all users.
 // For a small number of users, this is acceptable.
@@ -52,4 +53,42 @@ export async function createGeneralUser(data: unknown) {
     .returning();
 
   return { success: true, user: { id: newUser.id, name: newUser.name } };
+}
+
+export async function getAllGeneralUsers() {
+  try {
+    const allUsers = await db.select().from(generalUsers);
+    return { data: allUsers };
+  } catch (error) {
+    return { error: "사용자 정보를 가져오는 데 실패했습니다." };
+  }
+}
+
+export async function getAllAdminUsers() {
+  try {
+    const allUsers = await db.select().from(users);
+    return { data: allUsers };
+  } catch (error) {
+    return { error: "관리자 정보를 가져오는 데 실패했습니다." };
+  }
+}
+
+export async function deleteGeneralUser(id: number) {
+  try {
+    await db.delete(generalUsers).where(eq(generalUsers.id, id));
+    revalidatePath("/admin/users");
+    return { success: true };
+  } catch (error) {
+    return { error: "사용자 삭제에 실패했습니다." };
+  }
+}
+
+export async function deleteAdminUser(id: number) {
+  try {
+    await db.delete(users).where(eq(users.id, id));
+    revalidatePath("/admin/users");
+    return { success: true };
+  } catch (error) {
+    return { error: "관리자 삭제에 실패했습니다." };
+  }
 }

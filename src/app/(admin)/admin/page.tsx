@@ -7,7 +7,7 @@ import Link from "next/link";
 export default async function AdminDashboardPage() {
   const allRamens = await db.query.ramens.findMany();
   const allRentalsResult = await getRentalRecords();
-  const allUsers = await db.query.users.findMany();
+  const allUsers = await db.query.generalUsers.findMany();
 
   const totalStock = allRamens.reduce((sum, ramen) => sum + ramen.stock, 0);
   const ramenTypesCount = allRamens.length;
@@ -69,6 +69,9 @@ export default async function AdminDashboardPage() {
         </Link>
         <Link href="/admin/stock">
           <Button>재고 관리</Button>
+        </Link>
+        <Link href="/admin/users">
+          <Button>사용자 관리</Button>
         </Link>
       </div>
     </div>

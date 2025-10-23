@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { getRentalRecords } from "@/lib/actions/rental";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default async function AdminDashboardPage() {
   const allRamens = await db.query.ramens.findMany();
@@ -60,6 +62,14 @@ export default async function AdminDashboardPage() {
             </p>
           </CardContent>
         </Card>
+      </div>
+      <div className="mt-6 flex gap-4">
+        <Link href="/admin/records">
+          <Button>기록 관리</Button>
+        </Link>
+        <Link href="/admin/stock">
+          <Button>재고 관리</Button>
+        </Link>
       </div>
     </div>
   );

@@ -31,8 +31,24 @@ export const columns: ColumnDef<Ramen>[] = [
     header: "Stock",
   },
   {
-    accessorKey: "image_url",
-    header: "Image URL",
+    accessorKey: "imageUrl",
+    header: "Image", // 헤더 텍스트를 더 간결하게 변경
+    cell: ({ row }) => {
+      // 현재 행(row)의 원본 데이터(original)에서 값을 가져옵니다.
+      const imageUrl = row.original.imageUrl;
+      const ramenName = row.original.name;
+
+      // 이미지 URL이 존재하면 img 태그를, 없으면 대체 텍스트를 보여줍니다.
+      return imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={`${ramenName} 이미지`}
+          className="h-16 w-16 rounded-md object-cover" // 이미지 크기와 스타일 지정
+        />
+      ) : (
+        <span className="text-muted-foreground">이미지 없음</span>
+      );
+    },
   },
   {
     id: "actions",

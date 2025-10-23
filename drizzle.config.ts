@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: ".env" }); // .env 파일 경로를 명시해주는 것이 더 안전합니다.
 
 export default {
-  schema: "./src/lib/db/schema.ts",
+  schema: "./drizzle/schema.ts",
   out: "./drizzle",
   dialect: "sqlite",
   dbCredentials: {

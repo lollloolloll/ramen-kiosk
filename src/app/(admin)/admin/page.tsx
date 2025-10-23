@@ -40,7 +40,6 @@ const processAnalytics = (records: RentalRecord[]) => {
     "20대": 0,
     "30대": 0,
     "40대 이상": 0,
-    미상: 0,
   };
   records.forEach((r) => {
     if (r.userAge) {
@@ -48,8 +47,6 @@ const processAnalytics = (records: RentalRecord[]) => {
       else if (r.userAge < 30) ageGroups["20대"]++;
       else if (r.userAge < 40) ageGroups["30대"]++;
       else ageGroups["40대 이상"]++;
-    } else {
-      ageGroups["미상"]++;
     }
   });
   const ageGroupData = Object.entries(ageGroups).map(([name, count]) => ({
@@ -58,11 +55,10 @@ const processAnalytics = (records: RentalRecord[]) => {
   }));
 
   // Gender
-  const genders = { 남성: 0, 여성: 0, 미상: 0 };
+  const genders = { 남: 0, 여: 0 };
   records.forEach((r) => {
-    if (r.userGender === "male") genders["남성"]++;
-    else if (r.userGender === "female") genders["여성"]++;
-    else genders["미상"]++;
+    if (r.userGender === "남") genders["남"]++;
+    else if (r.userGender === "여") genders["여"]++;
   });
   const genderData = Object.entries(genders).map(([name, value]) => ({
     name,

@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Ramen } from "@/app/(admin)/admin/stock/columns";
-import { rentRamenWithPin } from "@/lib/actions/rental";
+import { rentRamen } from "@/lib/actions/rental";
+import { getUsersByPin, createGeneralUser } from "@/lib/actions/generalUser";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +25,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { pinRentalSchema } from "@/lib/validators/rental";
+import { generalUserSchema } from "@/lib/validators/generalUser";
+import { useState, ChangeEvent } from "react";
+import { Resolver } from "react-hook-form";
 
 interface RentalDialogProps {
   ramen: Ramen | null;
@@ -32,125 +35,346 @@ interface RentalDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type PinRentalFormValues = z.infer<typeof pinRentalSchema>;
+type Step = "pin" | "select-user" | "register";
+
+const pinSchema = z.object({
+  pin: z
+    .string()
+    .min(4, "PIN은 4자리여야 합니다.")
+    .max(4, "PIN은 4자리여야 합니다."),
+});
+type PinFormValues = z.infer<typeof pinSchema>;
+
+type GeneralUserFormValues = z.infer<typeof generalUserSchema>;
+
+const formatPhoneNumber = (value: string) => {
+  if (!value) return value;
+  const phoneNumber = value.replace(/[^\d]/g, "");
+  const phoneNumberLength = phoneNumber.length;
+  if (phoneNumberLength < 4) return phoneNumber;
+  if (phoneNumberLength < 8) {
+    return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3)}`;
+  }
+  return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(
+    3,
+    7
+  )}-${phoneNumber.slice(7, 11)}`;
+};
 
 export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
-  const form = useForm<PinRentalFormValues>({
-    resolver: zodResolver(pinRentalSchema),
+  const [step, setStep] = useState<Step>("pin");
+  const [matchingUsers, setMatchingUsers] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const pinForm = useForm<PinFormValues>({
+    resolver: zodResolver(pinSchema),
+    defaultValues: { pin: "" },
+  });
+
+  const registerForm = useForm<GeneralUserFormValues>({
+    resolver: zodResolver(generalUserSchema) as Resolver<
+      z.infer<typeof generalUserSchema>
+    >,
     defaultValues: {
+      name: "",
       phoneNumber: "",
+      gender: "",
+      age: undefined,
       pin: "",
-      ramenId: ramen?.id,
     },
   });
 
-  const {
-    handleSubmit,
-    formState: { isSubmitting },
-    reset,
-  } = form;
+  const handlePinSubmit = async ({ pin }: PinFormValues) => {
+    setIsSubmitting(true);
+    try {
+      const users = await getUsersByPin(pin);
+      if (users.length === 0) {
+        toast.info("입력하신 PIN이 존재하지 않습니다. 새로 등록해주세요.");
+        setStep("register");
+        registerForm.setValue("pin", pin);
+      } else if (users.length === 1) {
+        await handleRental(users[0].id);
+      } else {
+        setMatchingUsers(users);
+        setStep("select-user");
+      }
+    } catch (error) {
+      toast.error("PIN 확인 중 오류가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  const handleRental = async (values: PinRentalFormValues) => {
+  const handleUserSelect = async (userId: number) => {
+    await handleRental(userId);
+  };
+
+  const handleRegisterSubmit = async (values: GeneralUserFormValues) => {
+    setIsSubmitting(true);
+    try {
+      const result = await createGeneralUser(values);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      if (result.user) {
+        toast.success("사용자 등록이 완료되었습니다.");
+        await handleRental(result.user.id);
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "사용자 등록에 실패했습니다."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRental = async (userId: number) => {
     if (!ramen) {
       toast.error("라면 정보가 없습니다.");
       return;
     }
-
+    setIsSubmitting(true);
     try {
-      const result = await rentRamenWithPin({ ...values, ramenId: ramen.id });
+      const result = await rentRamen(userId, ramen.id);
       if (result.error) {
         throw new Error(result.error);
       }
       toast.success(`'${ramen.name}' 대여가 완료되었습니다.`);
-      onOpenChange(false);
-      reset();
+      closeDialog();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "대여에 실패했습니다."
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const closeDialog = () => {
+    onOpenChange(false);
+  };
+
+  const resetDialog = () => {
+    setStep("pin");
+    setMatchingUsers([]);
+    pinForm.reset();
+    registerForm.reset();
+  };
+
   if (!ramen) return null;
+
+  const renderStep = () => {
+    switch (step) {
+      case "pin":
+        return (
+          <Form {...pinForm}>
+            <form
+              onSubmit={pinForm.handleSubmit(handlePinSubmit)}
+              className="space-y-4"
+            >
+              <DialogHeader>
+                <DialogTitle>라면 대여</DialogTitle>
+                <DialogDescription>
+                  '{ramen.name}'을(를) 대여하려면 PIN 4자리를 입력하세요.
+                </DialogDescription>
+              </DialogHeader>
+              <FormField
+                control={pinForm.control}
+                name="pin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PIN</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="PIN 4자리"
+                        maxLength={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeDialog}
+                  disabled={isSubmitting}
+                >
+                  취소
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setStep("register")}
+                  disabled={isSubmitting}
+                >
+                  신규 등록
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "확인 중..." : "확인"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        );
+      case "select-user":
+        return (
+          <div>
+            <DialogHeader>
+              <DialogTitle>사용자 선택</DialogTitle>
+              <DialogDescription>
+                동일한 PIN을 사용하는 여러 사용자가 있습니다. 본인 명의의
+                아이디를 선택해주세요.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2 py-4">
+              {matchingUsers.map((user) => (
+                <Button
+                  key={user.id}
+                  variant="outline"
+                  onClick={() => handleUserSelect(user.id)}
+                >
+                  {user.name}
+                </Button>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep("pin")}
+              >
+                뒤로
+              </Button>
+            </DialogFooter>
+          </div>
+        );
+      case "register":
+        return (
+          <Form {...registerForm}>
+            <form
+              onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
+              className="space-y-4"
+            >
+              <DialogHeader>
+                <DialogTitle>사용자 등록</DialogTitle>
+                <DialogDescription>
+                  새로운 사용자를 등록합니다. 정보를 입력해주세요.
+                </DialogDescription>
+              </DialogHeader>
+              <FormField
+                control={registerForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>이름</FormLabel>
+                    <FormControl>
+                      <Input placeholder="홍길동" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={registerForm.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>휴대폰 번호</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="010-1234-5678"
+                        {...field}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                          const formatted = formatPhoneNumber(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={registerForm.control}
+                name="gender"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>성별</FormLabel>
+                    <FormControl>
+                      <Input placeholder="남 / 여" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={registerForm.control}
+                name="age"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>나이</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="30" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={registerForm.control}
+                name="pin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PIN</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="PIN 4자리"
+                        maxLength={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep("pin")}
+                  disabled={isSubmitting}
+                >
+                  뒤로
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "등록 중..." : "등록 및 대여"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        );
+    }
+  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={(isOpen) => {
-        onOpenChange(isOpen);
         if (!isOpen) {
-          reset();
+          resetDialog();
         }
+        onOpenChange(isOpen);
       }}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>라면 대여</DialogTitle>
-          <DialogDescription>
-            '{ramen.name}'을(를) 대여하려면 휴대폰 번호와 PIN 4자리를
-            입력하세요.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-4">
-          <p>
-            <span className="font-semibold">제조사:</span> {ramen.manufacturer}
-          </p>
-          <p>
-            <span className="font-semibold">남은 재고:</span> {ramen.stock}개
-          </p>
-        </div>
-        <Form {...form}>
-          <form onSubmit={handleSubmit(handleRental)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>휴대폰 번호</FormLabel>
-                  <FormControl>
-                    <Input placeholder="010-1234-5678" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="pin"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>PIN</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="PIN 4자리"
-                      maxLength={4}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                취소
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || ramen.stock === 0}
-              >
-                {isSubmitting ? "처리 중..." : "대여"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+      <DialogContent>{renderStep()}</DialogContent>
     </Dialog>
   );
 }

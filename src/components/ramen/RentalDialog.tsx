@@ -74,9 +74,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
   });
 
   const registerForm = useForm<GeneralUserFormValues>({
-    resolver: zodResolver(generalUserSchema) as Resolver<
-      z.infer<typeof generalUserSchema>
-    >,
+    resolver: zodResolver(generalUserSchema) as Resolver<GeneralUserFormValues>,
     defaultValues: {
       name: "",
       phoneNumber: "",
@@ -84,6 +82,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
       age: undefined,
       pin: "",
     },
+    mode: "onChange",
   });
 
   const handlePinSubmit = async ({ pin }: PinFormValues) => {
@@ -199,10 +198,10 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   </FormItem>
                 )}
               />
-              <DialogFooter>
+              <DialogFooter className="gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   onClick={closeDialog}
                   disabled={isSubmitting}
                 >
@@ -210,13 +209,18 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                 </Button>
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   onClick={() => setStep("register")}
                   disabled={isSubmitting}
+                  className="border-blue-500 text-blue-600 hover:bg-blue-50"
                 >
                   신규 등록
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-green-600 hover:bg-green-700"
+                >
                   {isSubmitting ? "확인 중..." : "확인"}
                 </Button>
               </DialogFooter>
@@ -239,6 +243,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   key={user.id}
                   variant="outline"
                   onClick={() => handleUserSelect(user.id)}
+                  className="h-12 text-base hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-colors"
                 >
                   {user.name}
                 </Button>
@@ -247,7 +252,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
             <DialogFooter>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => setStep("pin")}
               >
                 뒤로
@@ -275,7 +280,13 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   <FormItem>
                     <FormLabel>이름</FormLabel>
                     <FormControl>
-                      <Input placeholder="홍길동" {...field} />
+                      <Input
+                        placeholder="홍길동"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -307,10 +318,11 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   <div className="flex gap-2">
                     <Button
                       type="button"
-                      variant={
+                      variant="outline"
+                      className={
                         registerForm.watch("gender") === "남"
-                          ? "secondary"
-                          : "outline"
+                          ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-500"
+                          : "hover:bg-gray-50"
                       }
                       onClick={() => registerForm.setValue("gender", "남")}
                     >
@@ -318,10 +330,11 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                     </Button>
                     <Button
                       type="button"
-                      variant={
+                      variant="outline"
+                      className={
                         registerForm.watch("gender") === "여"
-                          ? "secondary"
-                          : "outline"
+                          ? "bg-pink-500 text-white hover:bg-pink-600 border-pink-500"
+                          : "hover:bg-gray-50"
                       }
                       onClick={() => registerForm.setValue("gender", "여")}
                     >
@@ -338,7 +351,15 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   <FormItem>
                     <FormLabel>나이</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="30" {...field} />
+                      <Input
+                        type="number"
+                        placeholder="30"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : +value);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -362,16 +383,20 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   </FormItem>
                 )}
               />
-              <DialogFooter>
+              <DialogFooter className="gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => setStep("pin")}
                   disabled={isSubmitting}
                 >
                   뒤로
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-green-600 hover:bg-green-700"
+                >
                   {isSubmitting ? "등록 중..." : "등록 및 대여"}
                 </Button>
               </DialogFooter>

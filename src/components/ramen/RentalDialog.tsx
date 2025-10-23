@@ -365,7 +365,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                     <FormLabel>PIN</FormLabel>
                     <FormControl>
                       <Input
-                        type="password"
+                        type="text"
                         placeholder="PIN 4자리"
                         maxLength={4}
                         {...field}

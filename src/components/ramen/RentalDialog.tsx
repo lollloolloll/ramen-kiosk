@@ -79,7 +79,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
       name: "",
       phoneNumber: "",
       gender: "",
-      age: undefined,
+      age: 5,
       pin: "",
     },
     mode: "onChange",
@@ -357,7 +357,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                         {...field}
                         onChange={(e) => {
                           const value = e.target.value;
-                          field.onChange(value === "" ? undefined : +value);
+                          field.onChange(value === "" ? 5 : +value);
                         }}
                       />
                     </FormControl>

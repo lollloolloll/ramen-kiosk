@@ -236,8 +236,8 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
             <DialogHeader>
               <DialogTitle>사용자 선택</DialogTitle>
               <DialogDescription>
-                동일한 PIN을 사용하는 여러 사용자가 있습니다. 본인 명의의
-                아이디를 선택해주세요.
+                동일한 PIN을 사용하는 여러 사용자가 있습니다. 이름을
+                선택해주세요
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-2 py-4">

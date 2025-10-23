@@ -1,32 +1,110 @@
 import { db } from "@/lib/db";
-import { getRentalRecords } from "@/lib/actions/rental";
+import { getRentalRecordsWithUserDetails } from "@/lib/actions/rental";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { RentalAnalyticsClient } from "./RentalAnalyticsClient";
+
+// Helper function to process analytics
+const processAnalytics = (records: any[]) => {
+  if (!records || records.length === 0) {
+    return {
+      ageGroupData: [], genderData: [], dayOfWeekData: [], hourData: [],
+      topRamens: [], topUsers: [], repeatRentalRate: 0
+    };
+  }
+
+  // Age Group
+  const ageGroups = { '10대': 0, '20대': 0, '30대': 0, '40대 이상': 0, '미상': 0 };
+  records.forEach(r => {
+    if (r.userAge) {
+      if (r.userAge < 20) ageGroups['10대']++;
+      else if (r.userAge < 30) ageGroups['20대']++;
+      else if (r.userAge < 40) ageGroups['30대']++;
+      else ageGroups['40대 이상']++;
+    } else {
+      ageGroups['미상']++;
+    }
+  });
+  const ageGroupData = Object.entries(ageGroups).map(([name, count]) => ({ name, count }));
+
+  // Gender
+  const genders = { '남성': 0, '여성': 0, '미상': 0 };
+  records.forEach(r => {
+    if (r.userGender === 'male') genders['남성']++;
+    else if (r.userGender === 'female') genders['여성']++;
+    else genders['미상']++;
+  });
+  const genderData = Object.entries(genders).map(([name, value]) => ({ name, value }));
+
+  // Day of Week
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  const dayOfWeekCounts = Array(7).fill(0);
+  records.forEach(r => {
+    const day = new Date(r.rentalDate).getDay();
+    dayOfWeekCounts[day]++;
+  });
+  const dayOfWeekData = dayOfWeekCounts.map((count, i) => ({ name: days[i], count }));
+
+  // Hour of Day
+  const hourCounts = Array(24).fill(0);
+  records.forEach(r => {
+    const hour = new Date(r.rentalDate).getHours();
+    hourCounts[hour]++;
+  });
+  const hourData = hourCounts.map((count, i) => ({ name: `${i}시`, count }));
+
+  // Top Ramens
+  const ramenCounts = records.reduce((acc, r) => {
+    if(r.ramenName) acc[r.ramenName] = (acc[r.ramenName] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const topRamens = Object.entries(ramenCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
+
+  // Top Users
+  const userCounts = records.reduce((acc, r) => {
+     if(r.userName) acc[r.userName] = (acc[r.userName] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const topUsers = Object.entries(userCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
+
+  // Repeat Rental Rate
+  const uniqueUsers = new Set(records.map(r => r.userId));
+  const usersWithMultipleRentals = Object.values(userCounts).filter((count: number) => count > 1).length;
+  const repeatRentalRate = uniqueUsers.size > 0 ? (usersWithMultipleRentals / uniqueUsers.size) * 100 : 0;
+
+  return { ageGroupData, genderData, dayOfWeekData, hourData, topRamens, topUsers, repeatRentalRate };
+}
 
 export default async function AdminDashboardPage() {
   const allRamens = await db.query.ramens.findMany();
-  const allRentalsResult = await getRentalRecords();
   const allUsers = await db.query.generalUsers.findMany();
-
+  const rentalDetailsResult = await getRentalRecordsWithUserDetails();
+  
   const totalStock = allRamens.reduce((sum, ramen) => sum + ramen.stock, 0);
   const ramenTypesCount = allRamens.length;
-  const totalRentals = allRentalsResult.data?.length ?? 0;
+  const totalRentals = rentalDetailsResult.data?.length ?? 0;
   const userCount = allUsers.length;
+
+  const analyticsData = processAnalytics(rentalDetailsResult.data || []);
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">대시보드</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Summary Cards */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">총 라면 재고</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalStock}개</div>
-            <p className="text-xs text-muted-foreground">
-              모든 종류의 라면 재고 합계
-            </p>
           </CardContent>
         </Card>
         <Card>
@@ -35,9 +113,6 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{ramenTypesCount}종</div>
-            <p className="text-xs text-muted-foreground">
-              등록된 라면의 총 종류
-            </p>
           </CardContent>
         </Card>
         <Card>
@@ -46,9 +121,6 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{totalRentals}회</div>
-            <p className="text-xs text-muted-foreground">
-              지금까지의 총 대여 기록
-            </p>
           </CardContent>
         </Card>
         <Card>
@@ -57,9 +129,6 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userCount}명</div>
-            <p className="text-xs text-muted-foreground">
-              시스템에 등록된 총 사용자 수
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -73,6 +142,12 @@ export default async function AdminDashboardPage() {
         <Link href="/admin/users">
           <Button>사용자 관리</Button>
         </Link>
+      </div>
+
+      {/* Analytics Section */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">대여 데이터 분석</h2>
+        <RentalAnalyticsClient analyticsData={analyticsData} />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { rentalRecords, ramens, users } from "@/lib/db/schema";
+import { rentalRecords, ramens, users, generalUsers } from "@/lib/db/schema";
 import { eq, and, gte, lte, InferInsertModel } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -66,19 +66,9 @@ export async function getRentalRecords(
 ) {
   try {
     const whereConditions = [];
-    let actualUserId: number | undefined;
 
     if (filters.username) {
-      const [user] = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.username, filters.username));
-      if (user) {
-        actualUserId = user.id;
-        whereConditions.push(eq(rentalRecords.userId, actualUserId));
-      } else {
-        return { success: true, data: [] };
-      }
+        whereConditions.push(eq(generalUsers.name, filters.username));
     }
     if (filters.startDate) {
       whereConditions.push(gte(rentalRecords.rentalDate, filters.startDate));
@@ -91,11 +81,11 @@ export async function getRentalRecords(
       .select({
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
-        userName: users.username,
+        userName: generalUsers.name, // join with generalUsers
         ramenName: ramens.name,
       })
       .from(rentalRecords)
-      .leftJoin(users, eq(rentalRecords.userId, users.id))
+      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id)) // join with generalUsers
       .leftJoin(ramens, eq(rentalRecords.ramenId, ramens.id));
 
     if (whereConditions.length > 0) {
@@ -108,5 +98,27 @@ export async function getRentalRecords(
     return { success: true, data };
   } catch (error) {
     return { error: "대여 기록을 불러오는 데 실패했습니다." };
+  }
+}
+
+export async function getRentalRecordsWithUserDetails() {
+  try {
+    const data = await db
+      .select({
+        id: rentalRecords.id,
+        rentalDate: rentalRecords.rentalDate,
+        userId: generalUsers.id,
+        userName: generalUsers.name,
+        userGender: generalUsers.gender,
+        userAge: generalUsers.age,
+        ramenName: ramens.name,
+      })
+      .from(rentalRecords)
+      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
+      .leftJoin(ramens, eq(rentalRecords.ramenId, ramens.id));
+
+    return { success: true, data };
+  } catch (error) {
+    return { error: "상세 대여 기록을 불러오는 데 실패했습니다." };
   }
 }

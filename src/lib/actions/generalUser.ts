@@ -1,5 +1,4 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
-("use server");
+"use server";
 
 import { db } from "@/lib/db";
 import { generalUsers, users } from "@drizzle/schema";

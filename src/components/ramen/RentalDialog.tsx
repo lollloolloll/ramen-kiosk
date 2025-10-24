@@ -111,20 +111,27 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
     if (birthYear && birthMonth && birthDay) {
       registerForm.setValue(
         "birthDate",
-        `${birthYear}-${birthMonth}-${birthDay}`
+        `${birthYear}-${birthMonth}-${birthDay}`,
+        { shouldValidate: true }
       );
     } else {
-      registerForm.setValue("birthDate", "");
+      registerForm.setValue("birthDate", "", { shouldValidate: true });
     }
   }, [birthYear, birthMonth, birthDay]); // registerForm 제거
 
   useEffect(() => {
     if (schoolLevel === "해당없음") {
-      registerForm.setValue("school", "해당없음");
+      registerForm.setValue("school", "해당없음", { shouldValidate: true });
     } else if (schoolLevel && schoolName) {
-      registerForm.setValue("school", `${schoolLevel} ${schoolName}`);
+      registerForm.setValue("school", `${schoolLevel} ${schoolName}`, {
+        shouldValidate: true,
+      });
+    } else if (schoolLevel) {
+      registerForm.setValue("school", `${schoolLevel}`, {
+        shouldValidate: true,
+      });
     } else {
-      registerForm.setValue("school", "");
+      registerForm.setValue("school", "", { shouldValidate: true });
     }
   }, [schoolLevel, schoolName]); // registerForm 제거
 
@@ -345,7 +352,9 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>이름</FormLabel>
+                    <FormLabel>
+                      이름<span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <Input placeholder="홍길동" {...field} />
                     </FormControl>
@@ -358,7 +367,9 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                 name="phoneNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>휴대폰 번호</FormLabel>
+                    <FormLabel>
+                      휴대폰 번호<span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="010-1234-5678"
@@ -378,7 +389,9 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>성별</FormLabel>
+                    <FormLabel>
+                      성별<span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
                         <Button
@@ -406,7 +419,9 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                 name="birthDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>생년월일</FormLabel>
+                    <FormLabel>
+                      생년월일<span className="text-red-500">*</span>
+                    </FormLabel>
                     <div className="flex gap-2">
                       <Select
                         onValueChange={setBirthYear}
@@ -470,7 +485,9 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                 name="school"
                 render={() => (
                   <FormItem>
-                    <FormLabel>학교</FormLabel>
+                    <FormLabel>
+                      학교<span className="text-red-500">*</span>
+                    </FormLabel>
                     <div className="flex items-center gap-2">
                       {/* 학교 분류 선택 Select Box */}
                       <Select
@@ -524,9 +541,11 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>개인정보 수집 및 이용에 동의합니다.</FormLabel>
+                      {/* 👇 수정: 문구 변경 */}
+                      <FormLabel>개인정보 수집 및 이용 동의 (선택)</FormLabel>
                       <FormDescription>
-                        (필수) 이름, 연락처, 성별, 생년월일
+                        동의 시 맞춤형 서비스 제공에 활용될 수 있습니다.
+                        동의하지 않아도 서비스 이용이 가능합니다.
                       </FormDescription>
                     </div>
                   </FormItem>

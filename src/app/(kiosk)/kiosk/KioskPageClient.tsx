@@ -16,6 +16,7 @@ export function KioskPageClient({ ramens }: KioskPageClientProps) {
   const handleOrder = (ramen: Ramen) => {
     setSelectedRamen(ramen);
     setIsDialogOpen(true);
+    console.log("isDialogOpen set to true in KioskPageClient");
   };
 
   return (

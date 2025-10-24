@@ -8,7 +8,5 @@ export const generalUserSchema = z.object({
   school: z.string().refine((val) => val === "해당없음" || val.includes(" "), {
     message: "학교 이름을 입력하거나 '해당없음'을 선택해주세요.",
   }),
-  personalInfoConsent: z.boolean().refine((val) => val === true, {
-    message: "개인정보 수집 및 이용에 동의해야 합니다.",
-  }),
+  personalInfoConsent: z.boolean().optional(),
 });

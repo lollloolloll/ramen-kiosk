@@ -32,13 +32,13 @@ Handles user identity, session management, and access control for both regular u
 
 Feature: User Registration
 
-Description: Allows a new user to create an account with a unique username and password.
+Description: Allows a new user to create an account with their name, phone number, birth date, school, and consent to personal information collection. The PIN is no longer used.
 
-Inputs: username (string), password (string).
+Inputs: name (string), phoneNumber (string), birthDate (date), school (string), personalInfoConsent (boolean).
 
-Outputs: Newly created user object or an error if the username is taken.
+Outputs: Newly created user object or an error if the phone number is already in use.
 
-Behavior: Hashes the password before storing it. Assigns a default role of 'USER'.
+Behavior: Assigns a default role of 'USER'.
 
 Feature: User Login
 
@@ -90,7 +90,7 @@ Behavior: Fetches all ramens from the database where the stock count is greater 
 
 Feature: Execute Rental
 
-Description: Allows a logged-in user to rent a selected ramen, which updates inventory and records the transaction.
+Description: Allows a logged-in user to rent a selected ramen, which updates inventory and records the transaction. After the rental is complete, a confirmation message is displayed.
 
 Inputs: userId, ramenId.
 
@@ -104,13 +104,23 @@ Enables administrators to view historical data and gain insights from system usa
 
 Feature: View Rental History
 
-Description: Displays a searchable and filterable log of all rental transactions.
+Description: Displays a searchable and filterable log of all rental transactions. The dashboard will have daily, weekly, and monthly tabs. It will also show statistics on which school and gender consumed how many ramens within a specific period.
 
 Inputs: Optional filters like userId or date range.
 
 Outputs: A list of rental record objects.
 
 Behavior: Queries the rentalRecords table, joining with user and ramen data for display.
+
+Feature: Export Rental History
+
+Description: Allows administrators to export the rental history to an Excel file.
+
+Inputs: None.
+
+Outputs: An Excel file containing the rental history.
+
+Behavior: Generates an Excel file from the rental records data.
 
 # Structural Decomposition
 
@@ -278,6 +288,25 @@ Configure PWA manifest for "Add to Home Screen" functionality.
 Conduct end-to-end testing of all user flows.
 Exit Criteria: The application is running successfully inside a Docker container.
 Delivers: A complete, deployable, and polished product.
+
+Phase 5: Additional Features
+
+Goal: Implement additional features requested by the client.
+Entry Criteria: Phase 4 complete.
+
+Tasks:
+
+Update the database schema to include the new user fields. (Depends on: [Foundation])
+
+Update the rental process to include the new fields and remove the PIN number. (Depends on: [Authentication, Database])
+
+Add a confirmation message after a rental is completed. (Depends on: [Kiosk App])
+
+Implement the Excel export functionality. (Depends on: [Admin Panel])
+
+Enhance the dashboard with daily, weekly, and monthly tabs and new data visualizations. (Depends on: [Admin Panel])
+Exit Criteria: All additional features are implemented and tested.
+Delivers: A more feature-rich and user-friendly application.
 
 # Test Strategy
 <instruction>

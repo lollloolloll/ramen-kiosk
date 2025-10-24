@@ -12,7 +12,7 @@ import { RentalAnalyticsClient } from "./RentalAnalyticsClient";
 // 실제 필드명에 맞게 수정해주세요.
 interface RentalRecord {
   id: number;
-  rentalDate: string | Date; // Date 객체 또는 문자열일 수 있습니다.
+  rentalDate: number;
   ramenName: string | null;
   userName: string | null;
   userId: number | null;

@@ -463,35 +463,54 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   </FormItem>
                 )}
               />
-              <FormItem>
-                <FormLabel>학교</FormLabel>
-                <div className="flex gap-2">
-                  <Select onValueChange={setSchoolLevel} value={schoolLevel}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="분류" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[
-                        "초등학교",
-                        "중학교",
-                        "고등학교",
-                        "대학교",
-                        "해당없음",
-                      ].map((level) => (
-                        <SelectItem key={level} value={level}>
-                          {level}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="학교 이름"
-                    value={schoolName}
-                    onChange={(e) => setSchoolName(e.target.value)}
-                    disabled={schoolLevel === "해당없음" || !schoolLevel}
-                  />
-                </div>
-              </FormItem>
+              <FormField
+                // react-hook-form이 'school' 필드를 인지하게 합니다.
+                // 실제 값은 useEffect를 통해 관리됩니다.
+                control={registerForm.control}
+                name="school"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>학교</FormLabel>
+                    <div className="flex items-center gap-2">
+                      {/* 학교 분류 선택 Select Box */}
+                      <Select
+                        onValueChange={setSchoolLevel}
+                        value={schoolLevel}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[
+                            "초등학교",
+                            "중학교",
+                            "고등학교",
+                            "대학교",
+                            "해당없음",
+                          ].map((level) => (
+                            <SelectItem key={level} value={level}>
+                              {level}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* 학교 이름 입력 Input */}
+                      <FormControl>
+                        <Input
+                          placeholder="학교 이름 (예: 선덕, 자운)"
+                          value={schoolName}
+                          onChange={(e) => setSchoolName(e.target.value)}
+                          // '분류'를 선택하지 않았거나 '해당없음'을 선택하면 비활성화
+                          disabled={!schoolLevel || schoolLevel === "해당없음"}
+                        />
+                      </FormControl>
+                    </div>
+                    {/* 유효성 검사 에러 메시지가 여기에 표시됩니다. */}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={registerForm.control}

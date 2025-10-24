@@ -24,7 +24,9 @@
             "id": 2,
             "title": "`users`, `ramens`, `rentalRecords` 테이블 스키마 정의",
             "description": "`lib/db/schema.ts` 파일에 `users`, `ramens`, `rentalRecords` 테이블에 대한 Drizzle ORM 스키마를 정의합니다. 각 테이블의 필드와 데이터 타입을 정확히 명시하고 관계를 설정합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "`lib/db/schema.ts` 파일에 다음 테이블 스키마를 정의합니다: `users` (id, username, hashedPassword, role='USER'), `ramens` (id, name, manufacturer, stock, imageUrl), `rentalRecords` (id, userId, ramenId, rentalDate). 외래 키 제약 조건 및 인덱스를 포함합니다.",
             "status": "done",
             "testStrategy": "스키마 파일이 문법적으로 올바른지 확인하고, DrizzleKit의 `drizzle-kit check` 명령을 사용하여 스키마 정의에 오류가 없는지 검증합니다."
@@ -33,7 +35,10 @@
             "id": 3,
             "title": "SQLite 데이터베이스 연결 및 Drizzle ORM 인스턴스 생성",
             "description": "지정된 SQLite 데이터베이스 파일(`sqlite.db`)에 대한 연결을 설정하고, 정의된 스키마를 사용하여 Drizzle ORM 데이터베이스 인스턴스를 초기화하고 내보냅니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "`lib/db/index.ts` 파일에 `better-sqlite3`를 사용하여 `sqlite.db` 파일에 대한 데이터베이스 연결을 생성하고, `drizzle-orm/better-sqlite3`의 `drizzle` 함수를 사용하여 Drizzle DB 인스턴스를 생성 및 내보냅니다.",
             "status": "done",
             "testStrategy": "데이터베이스 연결 코드가 포함된 파일이 오류 없이 컴파일되는지 확인합니다. 간단한 `console.log(db)`를 추가하여 Drizzle DB 인스턴스가 성공적으로 생성되었는지 확인합니다."
@@ -42,7 +47,11 @@
             "id": 4,
             "title": "DrizzleKit 마이그레이션 구성 및 첫 마이그레이션 생성",
             "description": "DrizzleKit 마이그레이션 시스템을 구성하고, 정의된 스키마를 기반으로 데이터베이스 테이블을 생성하기 위한 첫 번째 마이그레이션 파일을 생성합니다.",
-            "dependencies": [1, 2, 3],
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
             "details": "`drizzle.config.ts`에 `migrationsFolder` 경로를 지정하고, `package.json` 스크립트에 `drizzle-kit generate:sqlite --schema=./lib/db/schema.ts`와 같은 마이그레이션 생성 명령어를 추가합니다. 명령어를 실행하여 마이그레이션 파일을 생성하고 그 내용을 검토합니다.",
             "status": "done",
             "testStrategy": "명령어를 실행하여 `drizzle/migrations` 폴더에 마이그레이션 SQL 파일이 성공적으로 생성되었는지 확인합니다. 생성된 SQL 스크립트 파일 내용을 검토하여 `users`, `ramens`, `rentalRecords` 테이블 생성 쿼리가 포함되어 있는지 수동으로 검증합니다."
@@ -72,7 +81,9 @@
             "id": 2,
             "title": "shadcn/ui CLI 설치 및 프로젝트 초기화",
             "description": "shadcn/ui 라이브러리를 사용하기 위해 CLI를 설치하고 현재 프로젝트에 맞게 초기화합니다. 테마 및 기타 설정을 구성합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "`npx shadcn-ui@latest init` 명령어를 사용하여 shadcn/ui를 프로젝트에 설치합니다. 이 과정에서 Base 색상, 테마, CSS 변수 등과 같은 초기 구성 옵션을 선택하고 `components.json` 파일을 생성합니다. Tailwind CSS가 올바르게 설정되어 있는지 확인해야 합니다.",
             "status": "done",
             "testStrategy": "`components.json` 파일이 생성되었는지 확인하고, 초기화 과정에서 에러가 발생하지 않았는지 터미널 로그를 통해 검증합니다."
@@ -81,7 +92,9 @@
             "id": 3,
             "title": "기본 shadcn/ui 컴포넌트 추가 및 기능 확인",
             "description": "shadcn/ui에서 가장 기본적인 컴포넌트인 `Button`과 `Input`을 프로젝트에 추가하고, 이들이 의도한 대로 동작하고 스타일이 적용되는지 확인합니다.",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "`npx shadcn-ui@latest add button input` 명령을 사용하여 `Button`과 `Input` 컴포넌트를 프로젝트에 추가합니다. `app/page.tsx` 또는 임시 테스트 페이지에 이 컴포넌트들을 임포트하여 렌더링하고, 클릭 및 입력 등의 상호작용이 올바르게 작동하며 Tailwind CSS 스타일이 적용되는지 확인합니다.\n<info added on 2025-10-17T12:36:09.224Z>\n`npx shadcn-ui@latest add button input` 명령을 실행했습니다. 사용자에게 'y'를 입력하여 설치를 진행하도록 요청했습니다. 설치가 완료되면 이 서브태스크를 완료로 표시하겠습니다.\n</info added on 2025-10-17T12:36:09.224Z>",
             "status": "done",
             "testStrategy": "테스트 페이지에 추가된 `Button`과 `Input` 컴포넌트의 시각적 스타일(색상, 크기, 폰트 등)이 예상대로인지 확인합니다. `Button` 클릭, `Input`에 텍스트 입력 등의 기본 상호작용이 정상 작동하는지 수동으로 테스트합니다."
@@ -95,7 +108,9 @@
         "details": "`app/(auth)/login/page.tsx` 및 `app/(auth)/register/page.tsx` 파일을 생성합니다. 각 페이지에 사용자 이름과 비밀번호 입력을 위한 폼을 구현하고, React Hook Form과 Zod를 사용하여 클라이언트 측 유효성 검사를 추가합니다.",
         "testStrategy": "등록 및 로그인 폼이 올바르게 렌더링되고, 유효성 검사 규칙이 예상대로 작동하는지 수동으로 테스트합니다.",
         "priority": "high",
-        "dependencies": [2],
+        "dependencies": [
+          2
+        ],
         "status": "done",
         "subtasks": [
           {
@@ -111,7 +126,9 @@
             "id": 2,
             "title": "/login 페이지 UI 및 React Hook Form 구조 구현",
             "description": "`app/(auth)/login/page.tsx` 파일을 생성하고 로그인 폼의 기본적인 UI(사용자 이름, 비밀번호 입력 필드, 로그인 버튼)를 shadcn/ui 컴포넌트를 사용하여 구성합니다. React Hook Form을 초기화하여 폼 상태를 관리하고 필드를 연결합니다.",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "shadcn/ui의 `Input`, `Button` 컴포넌트를 활용하여 `app/(auth)/login/page.tsx`에 로그인 폼 레이아웃을 만듭니다. `useForm` 훅을 초기화하고 `register` 함수를 각 입력 필드에 적용합니다.",
             "status": "done",
             "testStrategy": "`/login` 페이지에 접속하여 폼 UI가 올바르게 렌더링되는지 시각적으로 확인하고, 입력 필드에 값을 입력했을 때 React Hook Form이 상태를 제대로 관리하는지 확인합니다."
@@ -120,7 +137,9 @@
             "id": 3,
             "title": "/register 페이지 UI 및 React Hook Form 구조 구현",
             "description": "`app/(auth)/register/page.tsx` 파일을 생성하고 등록 폼의 기본적인 UI(사용자 이름, 비밀번호 입력 필드, 등록 버튼)를 shadcn/ui 컴포넌트를 사용하여 구성합니다. React Hook Form을 초기화하여 폼 상태를 관리하고 필드를 연결합니다.",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "shadcn/ui의 `Input`, `Button` 컴포넌트를 활용하여 `app/(auth)/register/page.tsx`에 등록 폼 레이아웃을 만듭니다. `useForm` 훅을 초기화하고 `register` 함수를 각 입력 필드에 적용합니다.",
             "status": "done",
             "testStrategy": "`/register` 페이지에 접속하여 폼 UI가 올바르게 렌더링되는지 시각적으로 확인하고, 입력 필드에 값을 입력했을 때 React Hook Form이 상태를 제대로 관리하는지 확인합니다."
@@ -129,7 +148,10 @@
             "id": 4,
             "title": "로그인 폼에 Zod 유효성 검사 및 오류/로딩 상태 통합",
             "description": "`/login` 페이지의 React Hook Form에 Subtask 1에서 정의한 Zod 스키마를 `zodResolver`를 사용하여 통합합니다. 폼 제출 시 로딩 상태를 버튼에 표시하고, 유효성 검사 오류 메시지 및 일반적인 폼 제출 오류 메시지를 UI에 적절히 표시합니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "`loginSchema`를 `zodResolver`와 함께 `useForm` 훅에 전달합니다. `formState.errors`를 사용하여 유효성 검사 오류를 각 입력 필드 아래에 표시하고, `formState.isSubmitting`을 사용하여 버튼의 로딩 상태를 토글합니다. 폼 제출 실패 시 `toast` 컴포넌트를 사용해 오류 메시지를 표시합니다.",
             "status": "done",
             "testStrategy": "`/login` 페이지에서 유효하지 않은 데이터를 입력하여 유효성 검사 오류 메시지가 올바르게 표시되는지 확인합니다. 폼 제출 시 버튼의 로딩 상태가 활성화되는지 확인합니다. 폼 제출 후 예상된 오류 메시지가 표시되는지 확인합니다."
@@ -138,7 +160,10 @@
             "id": 5,
             "title": "등록 폼에 Zod 유효성 검사 및 오류/로딩 상태 통합",
             "description": "`/register` 페이지의 React Hook Form에 Subtask 1에서 정의한 Zod 스키마를 `zodResolver`를 사용하여 통합합니다. 폼 제출 시 로딩 상태를 버튼에 표시하고, 유효성 검사 오류 메시지 및 일반적인 폼 제출 오류 메시지를 UI에 적절히 표시합니다.",
-            "dependencies": [1, 3],
+            "dependencies": [
+              1,
+              3
+            ],
             "details": "`registerSchema`를 `zodResolver`와 함께 `useForm` 훅에 전달합니다. `formState.errors`를 사용하여 유효성 검사 오류를 각 입력 필드 아래에 표시하고, `formState.isSubmitting`을 사용하여 버튼의 로딩 상태를 토글합니다. 폼 제출 실패 시 `toast` 컴포넌트를 사용해 오류 메시지를 표시합니다.",
             "status": "done",
             "testStrategy": "`/register` 페이지에서 유효하지 않은 데이터를 입력하여 유효성 검사 오류 메시지가 올바르게 표시되는지 확인합니다. 폼 제출 시 버튼의 로딩 상태가 활성화되는지 확인합니다. 폼 제출 후 예상된 오류 메시지가 표시되는지 확인합니다."
@@ -152,7 +177,10 @@
         "details": "`lib/auth/actions.ts`에 `register` 및 `login` 서버 액션을 구현합니다. `register` 액션은 비밀번호를 해싱하여 `users` 테이블에 저장하고, `login` 액션은 제공된 비밀번호를 저장된 해시와 비교하여 세션을 생성합니다. Next-Auth 또는 JWT 기반 쿠키를 사용하여 세션 관리를 설정합니다. `app/api/auth/route.ts`에 API 핸들러를 구성합니다.",
         "testStrategy": "새 사용자를 등록하고 로그인하여 세션이 올바르게 생성되고 유지되는지 확인합니다. 잘못된 자격 증명으로 로그인 시도 시 오류가 발생하는지 테스트합니다.",
         "priority": "high",
-        "dependencies": [1, 3],
+        "dependencies": [
+          1,
+          3
+        ],
         "status": "done",
         "subtasks": [
           {
@@ -168,7 +196,9 @@
             "id": 2,
             "title": "login 서버 액션 구현 (비밀번호 검증 및 세션 준비)",
             "description": "사용자 로그인을 위한 'login' 서버 액션을 'lib/auth/actions.ts'에 구현합니다. 이 액션은 사용자로부터 받은 비밀번호를 저장된 해시와 비교하고, 인증에 성공하면 세션 생성을 위한 초기 단계를 처리합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "'lib/auth/actions.ts' 파일에 'login' 함수를 작성합니다. 제공된 사용자명(또는 이메일)으로 'users' 테이블에서 사용자를 조회하고, 'bcrypt.compare()'와 같은 함수를 사용하여 비밀번호를 검증합니다. 성공 시 사용자 ID와 같은 정보를 반환하여 다음 세션 관리 단계에서 활용하도록 준비합니다.",
             "status": "done",
             "testStrategy": "유효한 자격 증명으로 로그인 시도 시 성공하는지 확인합니다. 잘못된 자격 증명으로 로그인 시도 시 적절한 오류 메시지가 반환되는지 테스트합니다."
@@ -186,7 +216,10 @@
             "id": 4,
             "title": "선택된 세션 관리 시스템 구현 (Next-Auth Provider 또는 JWT 로직)",
             "description": "3단계에서 결정된 세션 관리 방식(Next-Auth 또는 JWT 기반)에 따라 실제 세션 토큰 생성, 검증, 쿠키 설정 및 해제 로직을 구현합니다.",
-            "dependencies": [2, 3],
+            "dependencies": [
+              2,
+              3
+            ],
             "details": "Next-Auth 선택 시: 'app/api/auth/[...nextauth]/route.ts'에 인증 프로바이더(CredentialsProvider)를 구성합니다. 'authorize' 콜백에서 Subtask 2의 'login' 액션을 호출하여 사용자를 인증하고 세션을 생성합니다. JWT 기반 쿠키 선택 시: Subtask 2의 'login' 액션 성공 후, 'jsonwebtoken'을 사용하여 JWT 토큰을 생성하고 'js-cookie' 또는 유사 라이브러리를 사용하여 안전한 'httpOnly' 쿠키에 토큰을 저장합니다. 토큰 만료 및 갱신 로직을 고려합니다.",
             "status": "done",
             "testStrategy": "성공적인 로그인 후 세션 쿠키(Next-Auth) 또는 JWT 쿠키가 브라우저에 설정되고, 로그아웃 시 제거되는지 확인합니다. 쿠키가 만료되면 사용자가 자동으로 로그아웃되는지 테스트합니다."
@@ -195,7 +228,9 @@
             "id": 5,
             "title": "인증 미들웨어 및 세션 헬퍼 함수 구현",
             "description": "보호된 라우트 접근을 제한하고 현재 사용자 세션 정보에 쉽게 접근할 수 있도록 인증 미들웨어 또는 헬퍼 함수를 구현합니다.",
-            "dependencies": [4],
+            "dependencies": [
+              4
+            ],
             "details": "Next.js 미들웨어('middleware.ts')를 사용하여 특정 라우트 또는 페이지에 대한 접근 권한을 확인합니다. 세션 정보를 가져오는 헬퍼 함수(예: 'getServerSession' for Next-Auth, 또는 JWT 쿠키 파싱 함수)를 생성하여 컴포넌트나 서버 액션에서 현재 인증된 사용자의 데이터를 활용할 수 있도록 합니다.",
             "status": "done",
             "testStrategy": "인증된 사용자만 접근할 수 있는 페이지에 미인증 상태로 접근 시 리다이렉트되는지 확인합니다. 인증된 사용자로 로그인 후, 헬퍼 함수를 통해 사용자 정보(예: 'id', 'username')를 올바르게 가져오는지 테스트합니다."
@@ -204,7 +239,11 @@
             "id": 6,
             "title": "인증 관련 API 엔드포인트 및 에러 처리 구현",
             "description": "인증 흐름에 필요한 추가적인 API 엔드포인트(예: Next-Auth 콜백 경로, 또는 JWT 갱신/로그아웃 경로)를 구성하고, 모든 인증 서버 액션 및 API에서 일관된 에러 처리 로직을 구현합니다.",
-            "dependencies": [1, 2, 4],
+            "dependencies": [
+              1,
+              2,
+              4
+            ],
             "details": "Next-Auth 선택 시: 'app/api/auth/[...nextauth]/route.ts' 파일이 올바르게 구성되었는지 다시 확인하고, Next-Auth가 제공하는 콜백 및 라우트가 정상적으로 작동하도록 합니다. JWT 기반 선택 시: 'app/api/auth/logout' 또는 'app/api/auth/refresh'와 같은 추가적인 API 라우트를 구성하여 JWT 쿠키를 제거하거나 갱신하는 로직을 구현합니다. 모든 'register', 'login' 서버 액션 및 관련 API에서 사용자 입력 유효성 검사 실패, 데이터베이스 오류, 인증 실패 등 다양한 시나리오에 대한 일관되고 사용자 친화적인 에러 응답을 구현합니다.",
             "status": "done",
             "testStrategy": "'register' 및 'login' 시나리오에서 의도적으로 잘못된 입력을 주어 에러 메시지가 올바르게 반환되는지 확인합니다. API 엔드포인트가 예상대로 작동하고, 예외적인 상황(예: 네트워크 오류, DB 연결 실패)에서도 안정적으로 에러를 처리하는지 테스트합니다."
@@ -218,14 +257,18 @@
         "details": "`app/(admin)/layout.tsx`에 사용자 역할이 'ADMIN'인지 확인하는 RBAC 로직을 구현하여 관리자 경로에 대한 접근을 제한합니다. `app/(admin)/stock/page.tsx`에 라면 목록을 표시하고, 새 라면을 추가하거나 기존 라면을 편집/삭제할 수 있는 UI를 구현합니다.",
         "testStrategy": "일반 사용자로 `/admin` 경로에 접근 시도 시 접근이 거부되는지 확인합니다. 관리자 계정으로 로그인하여 재고 관리 UI가 올바르게 렌더링되는지 확인합니다.",
         "priority": "high",
-        "dependencies": [4],
+        "dependencies": [
+          4
+        ],
         "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "관리자 RBAC 접근 제어 로직 구현",
             "description": "사용자 역할이 'ADMIN'인지 확인하여 `/admin` 경로에 대한 접근을 제한하는 RBAC(역할 기반 접근 제어) 로직을 `app/(admin)/layout.tsx` 파일에 구현합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "`app/(admin)/layout.tsx` 내에서 로그인한 사용자의 역할(role)을 확인하는 로직을 추가합니다. 역할이 'ADMIN'이 아니면 접근을 거부하고 로그인 페이지나 접근 거부 페이지로 리디렉션합니다. 사용자 세션에서 역할 정보를 안전하게 가져오는 방법을 고려합니다.",
             "status": "done",
             "testStrategy": "일반 사용자 계정으로 로그인한 후 `/admin` 경로로 직접 이동을 시도하여 접근이 거부되는지 확인합니다. 관리자 계정으로 로그인한 후 `/admin` 경로에 성공적으로 접근되는지 확인합니다."
@@ -234,7 +277,10 @@
             "id": 2,
             "title": "라면 재고 목록 표시 UI 구현 (DataTable)",
             "description": "`app/(admin)/stock/page.tsx`에 `shadcn/ui`의 `DataTable` 컴포넌트를 사용하여 모든 라면 제품의 목록을 표시하는 UI를 구현합니다. 각 라면의 이름, 제조사, 재고 수량, 이미지 URL 등을 포함합니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "서버 컴포넌트 또는 서버 액션을 통해 데이터베이스에서 라면 목록 데이터를 가져옵니다. 가져온 데이터를 `shadcn/ui`의 `DataTable` 컴포넌트에 연결하여 표시합니다. 각 라면 항목에 대한 편집 및 삭제 버튼을 포함하는 액션 컬럼을 추가할 준비를 합니다.",
             "status": "done",
             "testStrategy": "관리자 계정으로 로그인하여 `/admin/stock` 페이지에 접속합니다. 데이터베이스에 저장된 라면 목록이 올바르게 테이블 형식으로 표시되는지 확인하고, 빈 목록일 경우 적절한 메시지가 표시되는지 확인합니다."
@@ -243,7 +289,10 @@
             "id": 3,
             "title": "새 라면 추가 폼/모달 구현",
             "description": "`app/(admin)/stock/page.tsx`에서 새로운 라면 제품을 추가할 수 있는 폼 또는 모달 UI를 구현합니다. 폼에는 라면 이름, 제조사, 초기 재고, 이미지 URL 등을 입력할 수 있는 필드가 포함됩니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "`shadcn/ui`의 `Dialog` 또는 `Sheet` 컴포넌트를 사용하여 폼을 렌더링하고, `Input` 컴포넌트와 `Button` 컴포넌트로 사용자 입력을 받습니다. 유효성 검사 로직을 포함하고, 폼 제출 시 서버 액션을 호출하여 데이터베이스에 새 라면을 추가합니다.",
             "status": "done",
             "testStrategy": "관리자 계정으로 로그인하여 라면 재고 페이지에서 '새 라면 추가' 버튼을 클릭합니다. 유효한 정보를 입력하여 라면을 추가한 후, 목록에 새로운 라면이 표시되는지 확인합니다. 유효하지 않은 정보 입력 시 유효성 검사가 올바르게 작동하는지 확인합니다."
@@ -252,7 +301,10 @@
             "id": 4,
             "title": "라면 편집 폼/모달 구현",
             "description": "기존 라면 제품의 정보를 편집할 수 있는 폼 또는 모달 UI를 구현합니다. 이 폼은 선택된 라면의 현재 데이터를 미리 채우고, 변경 사항을 저장할 수 있도록 합니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "라면 목록의 각 항목 옆에 '편집' 버튼을 추가하고, 이 버튼을 클릭하면 `shadcn/ui`의 `Dialog` 또는 `Sheet` 컴포넌트로 편집 폼이 열립니다. 폼에는 선택된 라면의 현재 데이터가 미리 채워져야 하며, 변경 사항 제출 시 서버 액션을 통해 데이터베이스를 업데이트합니다.",
             "status": "done",
             "testStrategy": "관리자 계정으로 로그인하여 라면 재고 페이지에서 기존 라면의 '편집' 버튼을 클릭합니다. 폼에 현재 정보가 올바르게 채워지는지 확인하고, 정보를 수정한 후 저장하여 목록과 데이터베이스에 변경 사항이 반영되는지 확인합니다."
@@ -261,7 +313,10 @@
             "id": 5,
             "title": "라면 삭제 확인 로직 및 UI 구현",
             "description": "라면 목록에서 특정 라면 제품을 삭제할 수 있는 기능과 삭제 전 사용자에게 확인을 요청하는 대화 상자 UI를 구현합니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "라면 목록의 각 항목 옆에 '삭제' 버튼을 추가합니다. 이 버튼을 클릭하면 `shadcn/ui`의 `AlertDialog`와 같은 확인 대화 상자가 나타나 삭제를 최종적으로 확인하도록 합니다. 사용자가 삭제를 확정하면 서버 액션을 호출하여 해당 라면을 데이터베이스에서 제거합니다.",
             "status": "done",
             "testStrategy": "관리자 계정으로 로그인하여 라면 재고 페이지에서 특정 라면의 '삭제' 버튼을 클릭합니다. 확인 대화 상자가 나타나고, '취소'를 클릭하면 라면이 삭제되지 않고, '삭제'를 클릭하면 목록에서 해당 라면이 사라지고 데이터베이스에서도 제거되는지 확인합니다."
@@ -275,14 +330,19 @@
         "details": "`app/api/ramens/route.ts` 또는 `lib/actions/ramen.ts`와 같은 서버 액션 파일에 라면 생성, 읽기, 업데이트, 삭제 로직을 구현합니다. 이 로직은 `lib/db/queries.ts`의 데이터베이스 함수를 사용하여 `ramens` 테이블을 직접 조작합니다.",
         "testStrategy": "관리자 UI를 통해 라면을 추가, 편집, 삭제하고, 데이터베이스에 변경 사항이 올바르게 반영되는지 확인합니다. 각 CRUD 작업에 대한 API 엔드포인트 또는 서버 액션을 직접 호출하여 테스트할 수도 있습니다.",
         "priority": "high",
-        "dependencies": [1, 5],
+        "dependencies": [
+          1,
+          5
+        ],
         "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "라면 생성(Create) 서버 액션 구현",
             "description": "관리자 UI를 통해 새로운 라면 제품을 데이터베이스에 추가하는 서버 액션 또는 API 엔드포인트를 구현합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "`lib/actions/ramen.ts` 또는 `app/api/ramens/route.ts`에 새로운 라면을 생성하는 `createRamen` 함수 또는 POST 핸들러를 구현합니다. `lib/db/queries.ts`의 데이터베이스 함수를 활용하여 `ramens` 테이블에 라면 정보를 삽입합니다. 이름, 제조업체, 재고, 이미지 URL 등 필수 필드를 처리해야 합니다.",
             "status": "done",
             "testStrategy": "API 클라이언트(예: Postman, cURL)를 사용하여 유효한 라면 데이터를 POST 요청으로 전송하고, 데이터베이스에서 해당 라면이 성공적으로 생성되었는지 확인합니다. 관리자 UI 통합 후 UI를 통해서도 생성 기능을 테스트합니다."
@@ -291,7 +351,9 @@
             "id": 2,
             "title": "라면 읽기(Read) 서버 액션 구현",
             "description": "데이터베이스에 저장된 모든 라면 목록을 조회하거나 특정 ID의 라면 상세 정보를 조회하는 서버 액션 또는 API 엔드포인트를 구현합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "`lib/actions/ramen.ts` 또는 `app/api/ramens/route.ts`에 모든 라면을 가져오는 `getAllRamens` 함수와 특정 ID의 라면을 가져오는 `getRamenById` 함수, 또는 해당 GET 핸들러를 구현합니다. `lib/db/queries.ts`의 데이터베이스 함수를 사용하여 `ramens` 테이블에서 데이터를 조회합니다.",
             "status": "done",
             "testStrategy": "API 클라이언트를 사용하여 GET 요청을 보내 모든 라면 목록이 올바르게 반환되는지, 특정 ID로 조회 시 해당 라면 정보가 반환되는지 확인합니다. 데이터베이스의 실제 데이터와 반환된 데이터를 비교하여 정확성을 검증합니다."
@@ -300,7 +362,9 @@
             "id": 3,
             "title": "라면 업데이트(Update) 서버 액션 구현",
             "description": "기존 라면 제품의 정보를 관리자 UI를 통해 수정하고 데이터베이스에 반영하는 서버 액션 또는 API 엔드포인트를 구현합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "`lib/actions/ramen.ts` 또는 `app/api/ramens/route.ts`에 기존 라면 정보를 업데이트하는 `updateRamen` 함수 또는 PUT/PATCH 핸들러를 구현합니다. 특정 라면 ID를 기반으로 `ramens` 테이블의 필드를 수정하며, 이름, 제조업체, 재고, 이미지 URL 등 변경될 수 있는 모든 필드를 처리할 수 있어야 합니다.",
             "status": "done",
             "testStrategy": "API 클라이언트를 사용하여 기존 라면의 ID와 업데이트된 데이터를 포함한 PUT/PATCH 요청을 전송하고, 데이터베이스에서 해당 라면 정보가 올바르게 수정되었는지 확인합니다. 여러 필드 변경 시나리오를 테스트합니다."
@@ -309,7 +373,9 @@
             "id": 4,
             "title": "라면 삭제(Delete) 서버 액션 구현",
             "description": "관리자 UI에서 선택된 특정 라면 제품을 데이터베이스에서 영구적으로 제거하는 서버 액션 또는 API 엔드포인트를 구현합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "`lib/actions/ramen.ts` 또는 `app/api/ramens/route.ts`에 특정 라면을 삭제하는 `deleteRamen` 함수 또는 DELETE 핸들러를 구현합니다. 특정 라면 ID를 기반으로 `ramens` 테이블에서 해당 라면 항목을 삭제하며, 삭제 전 존재 여부 확인 로직을 포함할 수 있습니다.",
             "status": "done",
             "testStrategy": "API 클라이언트를 사용하여 삭제할 라면의 ID로 DELETE 요청을 전송하고, 데이터베이스에서 해당 라면이 성공적으로 삭제되었는지 확인합니다. 존재하지 않는 ID로 삭제 요청 시 적절한 오류 응답이 반환되는지도 테스트합니다."
@@ -318,7 +384,12 @@
             "id": 5,
             "title": "라면 CRUD 액션에 대한 서버 측 입력 유효성 검사 추가",
             "description": "라면 생성, 업데이트, 삭제 서버 액션 및 API 엔드포인트로 들어오는 모든 입력 데이터에 대해 서버 측에서 강력한 유효성 검사 로직을 구현합니다.",
-            "dependencies": [1, 2, 3, 4],
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
             "details": "Zod와 같은 스키마 유효성 검사 라이브러리를 사용하여 `createRamen`, `updateRamen`, `deleteRamen` 함수 또는 해당 API 핸들러에 전달되는 데이터(예: 라면 이름이 비어있지 않음, 재고가 0 미만이 아님, ID가 유효한 UUID 형식임)에 대한 유효성 검사 스키마를 정의하고 적용합니다. 유효성 검사에 실패할 경우 사용자에게 명확하고 적절한 오류 응답을 반환하도록 처리합니다.",
             "status": "done",
             "testStrategy": "각 CRUD 작업에 대해 유효하지 않거나 누락된 필드를 포함하는 요청을 보내 유효성 검사 오류 메시지가 올바르게 반환되는지 확인합니다. 예를 들어, 필수 필드를 비워두거나, 숫자여야 할 필드에 문자열을 전달하는 등의 다양한 유효성 검사 실패 시나리오를 테스트합니다."
@@ -332,14 +403,19 @@
         "details": "`app/(kiosk)/page.tsx`에 현재 재고가 있는 라면 목록을 표시하는 UI를 구현합니다. 각 라면은 이름, 제조업체, 이미지 등을 포함하는 `RamenCard.tsx` 컴포넌트를 사용하여 표시됩니다. `lib/db/queries.ts`에서 재고가 0보다 큰 라면을 가져오는 함수를 사용합니다.",
         "testStrategy": "로그인한 사용자로 키오스크 페이지에 접근하여 재고가 있는 라면만 올바르게 표시되는지 확인합니다. 재고가 없는 라면은 표시되지 않아야 합니다.",
         "priority": "high",
-        "dependencies": [1, 4],
+        "dependencies": [
+          1,
+          4
+        ],
         "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "RamenCard.tsx 컴포넌트 구현",
             "description": "개별 라면의 이름, 제조업체, 이미지, 재고 등 세부 정보를 표시하는 재사용 가능한 `RamenCard.tsx` 컴포넌트를 디자인하고 구현합니다.",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "`components/ramen/RamenCard.tsx` 파일에 Next.js Image 컴포넌트와 TailwindCSS를 사용하여 라면 정보를 시각적으로 매력적으로 표시하는 UI 컴포넌트를 작성합니다. Prop으로는 라면 데이터를 포함하는 객체를 받습니다.",
             "status": "done",
             "testStrategy": "더미 라면 데이터를 사용하여 `RamenCard` 컴포넌트가 다양한 정보(이름, 제조업체, 이미지 URL, 재고)를 올바르게 렌더링하는지 시각적으로 확인합니다. 이미지 로딩 오류 발생 시 대체 텍스트 또는 플레이스홀더가 표시되는지 확인합니다."
@@ -348,7 +424,10 @@
             "id": 2,
             "title": "키오스크 메인 페이지 (`app/(kiosk)/page.tsx`) 기본 구조 및 데이터 페칭",
             "description": "`app/(kiosk)/page.tsx`에 키오스크 메인 페이지의 기본 레이아웃을 설정하고, `lib/db/queries.ts`에서 재고가 0보다 큰 라면 목록을 비동기적으로 가져오는 로직을 구현합니다.",
-            "dependencies": [1, 4],
+            "dependencies": [
+              1,
+              4
+            ],
             "details": "`app/(kiosk)/page.tsx` 파일을 생성하고 기본적인 페이지 구조를 정의합니다. 서버 컴포넌트에서 `lib/db/queries.ts`에 정의된 `getAvailableRamen` 함수(가정)를 호출하여 라면 데이터를 페칭합니다. 페칭된 데이터는 이후 UI 컴포넌트에 전달될 수 있도록 준비합니다.",
             "status": "done",
             "testStrategy": "키오스크 페이지에 접근하여 개발자 도구의 네트워크 탭 또는 서버 로그를 통해 라면 데이터가 성공적으로 페칭되는지 확인합니다. 데이터베이스에서 재고가 0보다 큰 라면만 페칭되는지 검증합니다."
@@ -357,7 +436,10 @@
             "id": 3,
             "title": "키오스크 라면 목록 렌더링 및 빈 상태 처리",
             "description": "페칭된 라면 목록 데이터를 사용하여 `app/(kiosk)/page.tsx`에서 `RamenCard` 컴포넌트들을 반복적으로 렌더링합니다. 재고가 없거나 목록이 비어있는 경우 사용자에게 적절한 안내 메시지를 표시하는 UI를 구현합니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "Subtask 2에서 페칭된 라면 데이터를 그리드 또는 플렉스 레이아웃을 사용하여 `RamenCard` 컴포넌트들을 렌더링합니다. 라면 목록이 비어있을 경우 '현재 재고가 있는 라면이 없습니다.'와 같은 메시지를 페이지 중앙에 표시하는 폴백(fallback) UI를 구현합니다.",
             "status": "done",
             "testStrategy": "로그인한 사용자로 키오스크 페이지에 접근하여 재고가 있는 라면이 `RamenCard` 형태로 올바르게 표시되는지 확인합니다. 모든 라면의 재고를 0으로 설정한 후, 페이지에 '현재 재고가 있는 라면이 없습니다.'와 같은 빈 목록 메시지가 올바르게 표시되는지 확인합니다."
@@ -371,14 +453,21 @@
         "details": "`RentalDialog.tsx` 컴포넌트를 구현하여 대여 확인 대화 상자를 표시합니다. `lib/actions/rental.ts`와 같은 서버 액션 파일에 `executeRental` 함수를 구현합니다. 이 함수는 `rentalRecords` 테이블에 새 항목을 생성하고, `ramens` 테이블에서 선택한 라면의 재고를 원자적으로 감소시킵니다. 이 작업은 데이터베이스 트랜잭션으로 처리되어야 합니다.",
         "testStrategy": "로그인한 사용자로 라면을 대여하고, 대여 기록이 생성되고 라면 재고가 감소하는지 확인합니다. 동시에 여러 사용자가 같은 라면을 대여하려고 할 때 재고 감소가 원자적으로 이루어지는지 테스트합니다.",
         "priority": "high",
-        "dependencies": [1, 4, 7],
+        "dependencies": [
+          1,
+          4,
+          7
+        ],
         "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "대여 확인 UI 컴포넌트 (RentalDialog.tsx) 구현",
             "description": "사용자가 라면 대여를 최종적으로 확인하고 진행할 수 있는 모달 또는 다이얼로그 컴포넌트를 `RentalDialog.tsx` 파일에 구현합니다. 선택된 라면 정보와 대여 버튼을 포함합니다.",
-            "dependencies": [2, 7],
+            "dependencies": [
+              2,
+              7
+            ],
             "details": "`shadcn/ui`의 `Dialog` 컴포넌트를 사용하여 `app/components/rental/RentalDialog.tsx`를 생성합니다. 선택된 라면의 이름, 이미지, 대여 수량 등을 표시하고, '대여' 및 '취소' 버튼을 포함합니다. 대여 버튼 클릭 시 `executeRental` 서버 액션을 호출하도록 준비합니다.",
             "status": "done",
             "testStrategy": "컴포넌트가 올바르게 렌더링되고, 라면 정보가 표시되며, 버튼 클릭 시 콜백 함수가 호출되는지 Storybook 또는 Jest를 사용하여 테스트합니다."
@@ -387,7 +476,10 @@
             "id": 2,
             "title": "`executeRental` 서버 액션 스켈레톤 및 입력 유효성 검사 구현",
             "description": "`lib/actions/rental.ts` 파일에 `executeRental` 서버 액션의 기본 구조를 정의하고, 입력으로 받은 `userId`와 `ramenId`의 유효성을 검사하는 로직을 추가합니다.",
-            "dependencies": [1, 4],
+            "dependencies": [
+              1,
+              4
+            ],
             "details": "`lib/actions/rental.ts` 파일에 `executeRental(userId: string, ramenId: string)` 함수를 생성합니다. `zod`와 같은 라이브러리를 사용하여 `userId`와 `ramenId`가 유효한 형식인지 검사하고, 유효하지 않을 경우 적절한 오류를 반환합니다. 이 함수는 Next.js 서버 액션으로 선언되어야 합니다.",
             "status": "done",
             "testStrategy": "유효한 ID와 유효하지 않은 ID를 사용하여 `executeRental`을 호출했을 때, 기대하는 성공/실패 응답과 오류 메시지가 반환되는지 단위 테스트를 작성합니다."
@@ -396,7 +488,10 @@
             "id": 3,
             "title": "라면 대여 트랜잭션 로직 구현 (기록 생성 및 재고 감소)",
             "description": "`executeRental` 서버 액션 내에서 Drizzle ORM 트랜잭션을 사용하여 `rentalRecords` 테이블에 새 대여 기록을 생성하고, 동시에 `ramens` 테이블에서 해당 라면의 재고를 원자적으로 감소시키는 로직을 구현합니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "`db.transaction`을 사용하여 다음 작업을 원자적으로 수행합니다: 1. `ramens` 테이블에서 `ramenId`에 해당하는 라면의 현재 재고를 조회합니다 (FOR UPDATE). 2. 재고가 1 이상인지 확인하고, 재고가 없으면 트랜잭션을 롤백하고 오류를 반환합니다. 3. `ramens` 테이블의 `stock` 필드를 1 감소시킵니다. 4. `rentalRecords` 테이블에 `userId`, `ramenId`, `rentalDate`를 포함하는 새 기록을 삽입합니다.",
             "status": "done",
             "testStrategy": "재고가 충분한 라면을 대여했을 때, 기록이 생성되고 재고가 1 감소하는지 확인합니다. 동시에 여러 요청이 들어왔을 때, 재고 감소 및 기록 생성이 원자적으로 처리되어 데이터 불일치가 발생하지 않는지 경쟁 조건 테스트를 수행합니다."
@@ -405,7 +500,9 @@
             "id": 4,
             "title": "재고 부족 및 기타 대여 관련 예외 처리 구현",
             "description": "`executeRental` 서버 액션 내에서 라면 재고 부족, 존재하지 않는 라면/사용자 ID, 데이터베이스 오류 등 대여 과정에서 발생할 수 있는 다양한 예외 상황을 처리하는 로직을 구현합니다.",
-            "dependencies": [3],
+            "dependencies": [
+              3
+            ],
             "details": "재고가 0인 라면 대여 시도 시 '재고 부족' 메시지 반환, 존재하지 않는 `ramenId` 또는 `userId` 사용 시 적절한 오류 메시지 반환, 데이터베이스 트랜잭션 중 발생할 수 있는 일반적인 오류를 `try-catch` 블록으로 처리하여 사용자에게 친숙한 오류 메시지를 제공합니다.",
             "status": "done",
             "testStrategy": "재고가 0인 라면을 대여 시도하여 '재고 부족' 오류가 반환되는지 확인합니다. 존재하지 않는 `ramenId` 또는 `userId`로 대여를 시도하여 적절한 오류가 반환되는지 확인합니다. 데이터베이스 오류 상황을 시뮬레이션하여 오류 처리가 작동하는지 확인합니다."
@@ -414,7 +511,10 @@
             "id": 5,
             "title": "대여 성공/실패 피드백 및 UI 업데이트 로직 구현",
             "description": "`RentalDialog.tsx`에서 `executeRental` 서버 액션 호출 후, 결과에 따라 사용자에게 대여 성공 또는 실패 메시지를 표시하고, 필요한 경우 UI 상태(예: 재고 정보)를 업데이트하는 로직을 구현합니다.",
-            "dependencies": [1, 3],
+            "dependencies": [
+              1,
+              3
+            ],
             "details": "`RentalDialog.tsx` 컴포넌트 또는 호출하는 상위 컴포넌트에서 `useFormStatus` 훅 또는 `useState`를 사용하여 로딩 상태를 관리합니다. `executeRental` 호출이 성공하면 성공 메시지를 표시하고 다이얼로그를 닫으며, 실패하면 오류 메시지를 표시합니다. Next.js의 `revalidatePath` 또는 `revalidateTag`를 사용하여 라면 목록 또는 재고 정보를 새로고침하도록 합니다.",
             "status": "done",
             "testStrategy": "성공적인 대여 후 '대여 완료' 메시지가 표시되고 다이얼로그가 닫히며, 라면 재고 표시가 업데이트되는지 확인합니다. 실패(예: 재고 부족) 시 '대여 실패: 재고 부족'과 같은 오류 메시지가 표시되는지 확인합니다."
@@ -428,14 +528,21 @@
         "details": "`app/(admin)/records/page.tsx`에 대여 기록을 표시하는 UI를 구현합니다. `rentalRecords` 테이블을 쿼리하고, 사용자 및 라면 데이터와 조인하여 표시합니다. 사용자 ID 또는 날짜 범위와 같은 선택적 필터를 구현합니다.",
         "testStrategy": "관리자 계정으로 로그인하여 대여 기록 페이지에 접근하고, 모든 대여 기록이 올바르게 표시되는지 확인합니다. 필터링 기능이 예상대로 작동하는지 테스트합니다.",
         "priority": "medium",
-        "dependencies": [1, 4, 6, 8],
+        "dependencies": [
+          1,
+          4,
+          6,
+          8
+        ],
         "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "대여 기록 표시를 위한 테이블 UI 구성",
             "description": "`app/(admin)/records/page.tsx` 파일에 shadcn/ui 컴포넌트를 활용하여 대여 기록을 표시할 기본적인 테이블 구조를 만듭니다. 테이블 헤더는 '대여 ID', '사용자명', '라면명', '대여일' 등을 포함해야 합니다.",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "`app/(admin)/records/page.tsx`에서 `DataTable` 컴포넌트 또는 유사한 UI 요소를 사용하여 대여 기록을 표시할 기본 레이아웃을 잡고, 더미 데이터를 사용하여 UI가 올바르게 렌더링되는지 확인합니다.",
             "status": "done",
             "testStrategy": "개발 서버에서 `/admin/records` 경로에 접근하여 기본적인 테이블 UI가 올바르게 렌더링되고 있는지 시각적으로 확인합니다."
@@ -444,7 +551,9 @@
             "id": 2,
             "title": "조인된 대여 기록 데이터 페칭 로직 구현",
             "description": "`rentalRecords`, `users`, `ramens` 테이블을 Drizzle ORM을 사용하여 조인하고, 관리자 페이지에 필요한 모든 대여 기록 데이터를 가져오는 서버 액션 또는 데이터 함수를 구현합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "`lib/data/rentalRecords.ts`와 같은 파일에 `getAllRentalRecords` 함수를 생성하고, Drizzle ORM의 `leftJoin` 또는 `innerJoin`을 사용하여 `rentalRecords`와 `users`, `ramens` 테이블을 연결합니다. 각 기록에 대해 사용자명과 라면명을 포함한 데이터를 반환하도록 구현합니다.",
             "status": "done",
             "testStrategy": "Postman 또는 통합 테스트를 통해 구현된 함수를 호출하여 올바른 데이터가 조인되어 반환되는지 확인하고, 오류가 발생하는 경우를 테스트합니다."
@@ -453,7 +562,10 @@
             "id": 3,
             "title": "필터링 UI 컴포넌트 및 상태 관리 구현",
             "description": "사용자 ID를 입력할 수 있는 입력 필드와 날짜 범위(시작일, 종료일)를 선택할 수 있는 DatePicker 컴포넌트를 `app/(admin)/records/page.tsx`에 추가합니다. 이 필터 값들을 관리하는 상태 로직을 구현합니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "shadcn/ui의 `Input` 컴포넌트를 사용자 ID 필터로, `DatePicker` 컴포넌트를 날짜 범위 필터로 활용합니다. `useState` 또는 `useReducer` 훅을 사용하여 필터 값을 관리하고, 값이 변경될 때마다 페이지 URL에 쿼리 파라미터로 반영되도록 `useRouter` 훅과 연동합니다.",
             "status": "done",
             "testStrategy": "페이지에 필터 UI가 올바르게 표시되는지 확인하고, 필터 값을 변경할 때 URL 쿼리 파라미터가 정확하게 업데이트되는지 브라우저 개발자 도구를 통해 확인합니다."
@@ -462,7 +574,10 @@
             "id": 4,
             "title": "사용자 ID 기반 대여 기록 필터링 로직 구현",
             "description": "Subtask 2에서 구현한 데이터 페칭 로직에 사용자 ID 쿼리 파라미터가 있을 경우, 해당 사용자 ID에 해당하는 대여 기록만 필터링하여 반환하도록 기능을 추가합니다.",
-            "dependencies": [2, 3],
+            "dependencies": [
+              2,
+              3
+            ],
             "details": "`getAllRentalRecords` 함수 또는 관련 데이터 페칭 로직을 수정하여 `userId` 파라미터를 받을 수 있도록 합니다. 이 파라미터가 제공되면 Drizzle ORM의 `where` 절을 사용하여 `rentalRecords.userId`와 일치하는 기록만 가져오도록 쿼리를 동적으로 구성합니다.",
             "status": "done",
             "testStrategy": "특정 사용자 ID로 필터링했을 때, 해당 사용자의 대여 기록만 정확히 표시되는지, 그리고 잘못된 사용자 ID를 입력했을 때 결과가 올바르게 처리되는지 확인합니다."
@@ -471,7 +586,10 @@
             "id": 5,
             "title": "날짜 범위 기반 대여 기록 필터링 로직 구현",
             "description": "Subtask 2에서 구현한 데이터 페칭 로직에 시작일과 종료일 쿼리 파라미터가 있을 경우, 해당 날짜 범위 내의 대여 기록만 필터링하여 반환하도록 기능을 추가합니다.",
-            "dependencies": [2, 3],
+            "dependencies": [
+              2,
+              3
+            ],
             "details": "`getAllRentalRecords` 함수 또는 관련 데이터 페칭 로직을 수정하여 `startDate`와 `endDate` 파라미터를 받을 수 있도록 합니다. 이 파라미터가 제공되면 Drizzle ORM의 `where` 절과 `between` 연산자를 사용하여 `rentalRecords.rentalDate`가 지정된 날짜 범위 내에 있는 기록만 가져오도록 쿼리를 동적으로 구성합니다.",
             "status": "done",
             "testStrategy": "특정 날짜 범위로 필터링했을 때, 해당 범위 내의 대여 기록만 정확히 표시되는지, 날짜가 누락되거나 잘못된 범위일 때 오류 없이 처리되는지 확인합니다."
@@ -484,8 +602,10 @@
         "description": "generalUsers 테이블 스키마를 prd.md에 명시된 대로 name, phoneNumber, birthDate, school, personalInfoConsent 필드를 포함하도록 업데이트합니다. 그리고 pin필드를 삭제합니다. 회원가입 UI와 서버 액션을 수정하여 새 필드를 반영합니다.",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
-        "dependencies": [1],
+        "status": "done",
+        "dependencies": [
+          1
+        ],
         "priority": "medium",
         "subtasks": [
           {
@@ -494,14 +614,16 @@
             "description": "Drizzle ORM을 사용하여 `generalUsers` 테이블의 스키마를 업데이트합니다. `name`, `phoneNumber`, `birthDate`, `school`, `personalInfoConsent` 필드를 추가하고, 기존의 `pin` 필드를 제거합니다.",
             "dependencies": [],
             "details": "`lib/db/schema.ts` 파일을 수정하여 `generalUsers` 테이블 정의에 새로운 필드들을 추가하고 `pin` 필드를 제거합니다. 이후 `drizzle-kit generate` 명령어를 사용하여 마이그레이션 파일을 생성하고, `drizzle-kit migrate`를 실행하여 데이터베이스 스키마를 업데이트합니다. 추가되는 필드들의 타입과 제약조건(예: `nullable`, `default`)을 명확히 정의합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Drizzle-kit 스튜디오를 통해 `generalUsers` 테이블의 스키마가 의도한 대로 변경되었는지 확인합니다. 새로운 필드들이 추가되고 `pin` 필드가 제거되었는지 검증합니다. 더미 데이터를 삽입하여 새로운 필드에 대한 데이터 저장 및 조회가 정상 작동하는지 확인합니다."
           },
           {
             "id": 2,
             "title": "회원가입 UI에 신규 필드 반영",
             "description": "회원가입 UI에 `name`, `phoneNumber`, `birthDate`, `school` 입력 필드와 `personalInfoConsent` 동의 체크박스를 추가합니다. 사용자 경험을 고려하여 적절한 UI 컴포넌트를 사용하고 유효성 검사 로직을 구현합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "회원가입 페이지 컴포넌트(예: `/app/signup/page.tsx`)를 수정하여 사용자가 `name`, `phoneNumber`, `birthDate`, `school` 정보를 입력할 수 있는 폼 필드를 추가합니다. `personalInfoConsent`는 개인정보 수집 및 이용 동의를 위한 체크박스로 구현합니다. 각 필드에 대한 클라이언트 측 유효성 검사(예: 필수 필드, 전화번호 형식 등)를 추가하고, shadcn/ui 컴포넌트를 활용하여 일관된 디자인을 유지합니다.",
             "status": "pending",
             "testStrategy": "브라우저에서 회원가입 페이지에 접속하여 모든 신규 필드들이 정상적으로 렌더링되는지 확인합니다. 각 필드에 데이터를 입력하여 UI 유효성 검사가 올바르게 동작하는지 테스트합니다. `personalInfoConsent` 체크박스를 선택/해제했을 때 UI 상태가 올바르게 변경되는지 확인합니다."
@@ -510,7 +632,10 @@
             "id": 3,
             "title": "회원가입 서버 액션 로직 업데이트",
             "description": "새로운 회원가입 필드들을 처리하도록 서버 액션 로직을 수정합니다. 전송된 데이터를 검증하고, `users` 테이블에 새 필드들을 포함하여 저장하며, `pin` 필드 관련 로직을 제거합니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "회원가입을 처리하는 서버 액션(예: `lib/actions/auth.ts`의 `signup` 함수)을 수정합니다. UI에서 전송된 `name`, `phoneNumber`, `birthDate`, `school`, `personalInfoConsent` 데이터를 안전하게 수신하고 서버 측 유효성 검사를 수행합니다. Drizzle ORM을 사용하여 `users` 테이블에 새로운 필드들을 포함하여 사용자 데이터를 삽입하도록 쿼리 로직을 업데이트합니다. 기존에 `pin` 필드를 처리하던 모든 로직(데이터 추출, 저장, 검증 등)을 제거합니다.",
             "status": "pending",
             "testStrategy": "UI를 통해 새로운 필드들을 포함하여 회원가입을 시도합니다. 성공적인 회원가입 후 데이터베이스에 해당 사용자의 `name`, `phoneNumber`, `birthDate`, `school`, `personalInfoConsent` 값이 올바르게 저장되었는지 확인합니다. 유효하지 않은 데이터를 입력했을 때 서버 측 유효성 검사가 적절한 에러 메시지를 반환하는지 테스트합니다. `pin` 필드에 대한 어떠한 데이터도 저장되지 않는지 확인합니다."
@@ -524,14 +649,18 @@
         "details": "",
         "testStrategy": "",
         "status": "pending",
-        "dependencies": [11],
+        "dependencies": [
+          11
+        ],
         "priority": "medium",
         "subtasks": [
           {
             "id": 1,
             "title": "키오스크 사용자 식별 백엔드 로직 구현 (이름/생년월일)",
             "description": "기존 PIN 번호 기반의 사용자 식별 로직을 이름과 생년월일을 기반으로 사용자를 조회하도록 백엔드 API 및 서비스 로직을 수정합니다. Task 11에서 정의된 사용자 관련 데이터 필드(이름, 생년월일)를 활용합니다.",
-            "dependencies": [11],
+            "dependencies": [
+              11
+            ],
             "details": "`generalUsers` 테이블에서 이름과 생년월일을 기준으로 사용자를 조회하는 Drizzle ORM 쿼리를 작성하고, 해당 API 엔드포인트(`/api/kiosk/identify-user` 등)를 구현합니다. 조회 결과에 따라 사용자 존재 여부 및 사용자 ID를 반환해야 합니다.",
             "status": "pending",
             "testStrategy": "이름과 생년월일로 기존 사용자를 조회하는 API 엔드포인트 테스트를 수행하여 성공 및 실패 케이스를 검증합니다. 유효한 정보로 조회 시 사용자 ID를 반환하고, 유효하지 않거나 존재하지 않는 정보로 조회 시 적절한 오류 또는 '사용자 없음' 응답을 반환하는지 확인합니다."
@@ -549,7 +678,9 @@
             "id": 3,
             "title": "키오스크 신규 사용자 등록 UI 및 백엔드 API 구현",
             "description": "사용자가 존재하지 않을 경우, 키오스크에서 전화번호, 학교 선택, 개인정보 동의를 받아 신규 사용자를 등록하는 UI와 이를 처리할 백엔드 API를 구현합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "신규 등록 화면 UI(전화번호 입력 필드, 학교 선택 드롭다운, 개인정보 동의 체크박스 및 '등록' 버튼 포함)를 개발하고, 각 필드에 대한 유효성 검사를 추가합니다. 백엔드에는 `/api/kiosk/register-user`와 같은 새로운 사용자 등록 API 엔드포인트를 구현하여 Drizzle ORM을 통해 `users` 테이블에 새 사용자를 추가합니다. (Task 11에서 정의된 학교 정보를 활용).",
             "status": "pending",
             "testStrategy": "키오스크 UI를 통해 신규 사용자 등록을 시도하고, 성공적으로 등록된 사용자가 데이터베이스에 추가되는지 확인합니다. 필수 필드 누락, 잘못된 형식 등 유효성 검사 시나리오에 대한 오류 처리가 되는지 검증합니다. 등록 후 사용자 식별이 가능한지 확인합니다."
@@ -558,7 +689,11 @@
             "id": 4,
             "title": "사용자 식별/등록 플로우 및 라면 대여 통합",
             "description": "구현된 사용자 식별 및 신규 사용자 등록 플로우를 기존 라면 대여 프로세스에 매끄럽게 연결하고, 전체 키오스크 대여 여정의 UI 흐름을 완성합니다.",
-            "dependencies": [1, 2, 3],
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
             "details": "사용자 식별 성공 시 라면 선택 및 대여 화면으로 이동, 식별 실패 시 신규 등록 화면으로 이동 로직을 구현합니다. 신규 등록 완료 후 자동으로 해당 사용자로 로그인(식별)되거나, 라면 선택/대여 화면으로 전환되는 흐름을 만듭니다. 전체 대여 프로세스 중 사용자 식별/등록 단계의 사용자 경험(UX)을 개선하고, 오류 처리 및 진행 가이드 메시지를 추가합니다.",
             "status": "pending",
             "testStrategy": "키오스크에서 처음부터 끝까지 라면 대여 과정을 시뮬레이션합니다. 기존 사용자 식별 성공 후 대여, 신규 사용자 등록 후 대여, 그리고 중간에 발생할 수 있는 오류 상황에 대한 UI/UX 흐름과 백엔드 연동이 문제없이 작동하는지 엔드-투-엔드 테스트를 수행합니다."
@@ -572,14 +707,20 @@
         "details": "",
         "testStrategy": "",
         "status": "pending",
-        "dependencies": [8, 12],
+        "dependencies": [
+          8,
+          12
+        ],
         "priority": "medium",
         "subtasks": [
           {
             "id": 1,
             "title": "라면 대여 완료 토스트/메시지 구현",
             "description": "사용자가 라면 대여를 성공적으로 완료했을 때, '대여가 완료되었습니다!'와 같은 확인 메시지를 토스트 또는 다른 UI 메시지 컴포넌트를 사용하여 화면에 표시합니다. shadcn/ui의 Toast 컴포넌트를 활용하거나, `react-hot-toast`와 같은 라이브러리를 사용하여 구현합니다.",
-            "dependencies": [8, 2],
+            "dependencies": [
+              8,
+              2
+            ],
             "details": "라면 대여 API 호출이 성공적으로 완료된 후, 클라이언트 측에서 `toast.success('대여가 완료되었습니다!')`와 같은 메시지를 트리거하도록 구현합니다. `shadcn/ui`의 Toast 컴포넌트(또는 `react-hot-toast`)를 사용하여 사용자에게 시각적인 피드백을 제공합니다. 메시지는 몇 초 후 자동으로 사라지도록 설정합니다.",
             "status": "pending",
             "testStrategy": "라면 대여 기능을 실행하여 대여가 성공적으로 처리될 때 '대여가 완료되었습니다!' 메시지가 화면에 올바르게 표시되는지 확인합니다. 메시지의 내용, 스타일, 그리고 자동 소멸 기능이 정상적으로 작동하는지 검증합니다."
@@ -593,7 +734,9 @@
         "details": "",
         "testStrategy": "",
         "status": "pending",
-        "dependencies": [9],
+        "dependencies": [
+          9
+        ],
         "priority": "medium",
         "subtasks": [
           {
@@ -618,7 +761,10 @@
             "id": 3,
             "title": "클라이언트 측 Excel 파일 다운로드 처리 구현",
             "description": "서버에서 생성된 Excel 파일 응답을 성공적으로 수신하여 사용자의 웹 브라우저에서 해당 파일을 다운로드하도록 처리하는 클라이언트 측 로직을 구현합니다.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "서버 액션으로부터 `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` 및 `Content-Disposition` 헤더와 함께 전송되는 Excel 파일 데이터(BLOB)를 처리합니다. JavaScript의 `Blob` 객체와 `URL.createObjectURL`을 사용하여 임시 URL을 생성하고, 가상의 `<a>` 태그를 생성하여 `download` 속성과 `href` 속성을 설정한 후 클릭 이벤트로 파일 다운로드를 시작합니다. 다운로드 완료 후 `URL.revokeObjectURL`을 호출하여 임시 URL을 해제합니다.",
             "status": "pending",
             "testStrategy": "관리자 페이지에서 Excel 내보내기 버튼을 클릭하여 Excel 파일이 정상적으로 다운로드되는지 확인합니다. 다운로드된 파일의 이름이 올바른지, 파일이 손상되지 않고 문제없이 열리는지 확인합니다."
@@ -632,7 +778,9 @@
         "details": "",
         "testStrategy": "",
         "status": "pending",
-        "dependencies": [9],
+        "dependencies": [
+          9
+        ],
         "priority": "medium",
         "subtasks": [
           {
@@ -648,7 +796,9 @@
             "id": 2,
             "title": "통계 데이터 조회 API 엔드포인트 개발",
             "description": "프론트엔드에서 일별, 주별, 월별, 학교별, 성별 라면 소비 통계 데이터를 조회할 수 있는 서버 액션(API 엔드포인트)을 구현합니다.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "`/api/admin/statistics`와 같은 엔드포인트를 생성하고, 쿼리 파라미터(예: `period=daily|weekly|monthly`, `school=A|B`, `gender=M|F`)에 따라 Subtask 1에서 구현된 집계 로직을 호출하여 데이터를 JSON 형식으로 반환합니다. 인증 및 에러 처리 로직을 포함합니다.",
             "status": "pending",
             "testStrategy": "Postman 또는 curl을 사용하여 다양한 쿼리 파라미터로 엔드포인트를 호출하고, 반환되는 데이터의 정확성과 형식(JSON)을 검증합니다. 에러 케이스(잘못된 파라미터 등)도 테스트합니다."
@@ -666,7 +816,10 @@
             "id": 4,
             "title": "통계 데이터 차트 시각화 및 API 연동",
             "description": "구현된 통계 API 엔드포인트와 연동하여 집계된 라면 소비 데이터를 막대 차트, 선 차트 등으로 시각화하는 기능을 개발합니다.",
-            "dependencies": [2, 3],
+            "dependencies": [
+              2,
+              3
+            ],
             "details": "Recharts나 Chart.js와 같은 차트 라이브러리를 선정하여 설치하고, Subtask 3에서 구현된 UI에 차트를 통합합니다. 필터 및 탭 선택에 따라 Subtask 2의 API를 호출하여 데이터를 가져오고, 차트를 동적으로 업데이트하도록 구현합니다. 적절한 축 레이블, 툴팁, 범례를 포함합니다.",
             "status": "pending",
             "testStrategy": "다양한 필터 및 탭 조합을 통해 차트 데이터가 API 응답과 일치하는지, 차트가 올바르게 렌더링되는지 시각적으로 확인합니다. 데이터가 없을 때의 차트 상태(예: '데이터 없음' 메시지)도 테스트합니다."
@@ -680,14 +833,23 @@
         "details": "Next.js 애플리케이션을 컨테이너화하기 위한 `Dockerfile`을 작성합니다. 데이터베이스 및 애플리케이션 서비스를 오케스트레이션하기 위한 `docker-compose.yml`을 구성합니다. PWA 기능을 위해 `public/manifest.json` 파일을 생성하고 `next.config.js`에 PWA 설정을 추가합니다. 모든 사용자 역할(일반 사용자, 관리자)에 대한 등록, 로그인, 라면 대여, 재고 관리, 기록 보기 등 핵심 사용자 흐름에 대한 엔드투엔드 테스트 시나리오를 작성하고 실행합니다.",
         "testStrategy": "Docker 컨테이너 내에서 애플리케이션을 빌드하고 실행하여 모든 서비스가 올바르게 시작되고 작동하는지 확인합니다. PWA '홈 화면에 추가' 기능이 작동하는지 모바일 장치에서 테스트합니다. 모든 사용자 흐름에 대한 수동 또는 자동화된 엔드투엔드 테스트를 수행하여 기능의 완전성을 검증합니다.",
         "priority": "low",
-        "dependencies": [1, 4, 6, 8, 9],
+        "dependencies": [
+          1,
+          4,
+          6,
+          8,
+          9
+        ],
         "status": "pending",
         "subtasks": [
           {
             "id": 1,
             "title": "Next.js 애플리케이션용 Dockerfile 작성",
             "description": "Next.js 애플리케이션을 Docker 컨테이너 내에서 빌드하고 실행하기 위한 Dockerfile을 작성합니다.",
-            "dependencies": [1, 4],
+            "dependencies": [
+              1,
+              4
+            ],
             "details": "최적화된 Docker 이미지 생성을 위해 멀티스테이지 빌드를 사용하고, 필요한 의존성 설치, 빌드 프로세스, 포트 노출 등을 포함합니다. 프로덕션 환경에 적합한 빌드 아티팩트를 생성하도록 구성합니다.",
             "status": "pending",
             "testStrategy": "`docker build -t nextjs-app .` 명령어를 실행하여 이미지가 성공적으로 빌드되는지 확인하고, `docker run -p 3000:3000 nextjs-app`으로 실행하여 애플리케이션이 정상적으로 구동되는지 확인합니다."
@@ -696,7 +858,10 @@
             "id": 2,
             "title": "docker-compose.yml을 사용한 애플리케이션 및 SQLite DB 서비스 구성",
             "description": "Next.js 애플리케이션과 SQLite 데이터베이스 서비스를 함께 오케스트레이션하기 위한 docker-compose.yml 파일을 구성합니다.",
-            "dependencies": [1, 4],
+            "dependencies": [
+              1,
+              4
+            ],
             "details": "애플리케이션 서비스와 SQLite 데이터베이스 서비스 (볼륨을 사용하여 데이터를 영속화)를 정의하고, 두 서비스 간의 네트워크 및 환경 변수 설정을 구성합니다.",
             "status": "done",
             "testStrategy": "`docker-compose up --build` 명령어를 실행하여 애플리케이션과 데이터베이스 서비스가 동시에 정상적으로 시작되는지 확인합니다. 애플리케이션이 데이터베이스에 연결하고 데이터를 읽고 쓸 수 있는지 수동으로 간단하게 확인합니다."
@@ -714,7 +879,13 @@
             "id": 4,
             "title": "핵심 사용자 흐름 엔드투엔드 테스트 시나리오 작성",
             "description": "모든 사용자 역할(일반 사용자, 관리자)에 대한 등록, 로그인, 라면 대여, 재고 관리, 기록 보기 등 핵심 사용자 흐름에 대한 포괄적인 엔드투엔드 테스트 시나리오를 작성합니다.",
-            "dependencies": [1, 4, 6, 8, 9],
+            "dependencies": [
+              1,
+              4,
+              6,
+              8,
+              9
+            ],
             "details": "각 사용자 역할별로 주요 기능(회원가입/로그인, 라면 목록 조회, 라면 대여, 재고 관리, 대여 기록 조회 등)을 포함하는 테스트 케이스를 정의합니다. 각 시나리오에 대해 예상 입력값, 예상 출력값, 테스트 단계 등을 상세히 기술합니다. Playwright 또는 Cypress와 같은 도구를 사용할 경우, 해당 도구의 스크립트 형태로 작성할 수 있습니다.",
             "status": "pending",
             "testStrategy": "작성된 시나리오 문서를 검토하여 누락된 흐름이나 엣지 케이스가 없는지 확인합니다. 팀원 간 교차 검토를 통해 시나리오의 완전성과 정확성을 높입니다."
@@ -723,7 +894,11 @@
             "id": 5,
             "title": "Docker 환경에서 애플리케이션 빌드 및 실행 확인",
             "description": "작성된 Dockerfile과 docker-compose.yml을 사용하여 애플리케이션을 Docker 환경에서 빌드하고 실행하여 모든 서비스가 정상적으로 작동하는지 확인합니다.",
-            "dependencies": [1, 2, 3],
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
             "details": "`docker-compose up --build -d` 명령어를 사용하여 컨테이너를 백그라운드에서 실행하고, `docker logs`를 통해 각 서비스의 로그를 확인하여 오류 없이 시작되었는지 검증합니다. 웹 브라우저를 통해 애플리케이션에 접속하여 기본적인 기능(예: 메인 페이지 로드, 로그인 페이지 접근)이 작동하는지 확인합니다.",
             "status": "pending",
             "testStrategy": "Docker 컨테이너 내에서 애플리케이션을 빌드하고 실행하여 모든 서비스가 올바르게 시작되고 작동하는지 확인합니다. 웹 인터페이스를 통해 최소한의 기능(홈페이지 로드, API 호출)을 수동으로 테스트합니다."
@@ -732,7 +907,10 @@
             "id": 6,
             "title": "작성된 엔드투엔드 테스트 실행 및 결과 검증",
             "description": "이전에 작성된 엔드투엔드 테스트 시나리오를 Docker 배포 환경에서 실행하고, 예상 결과와 비교하여 기능의 완전성과 안정성을 검증합니다.",
-            "dependencies": [4, 5],
+            "dependencies": [
+              4,
+              5
+            ],
             "details": "Playwright 또는 Cypress와 같은 자동화 도구를 사용하여 테스트 스크립트를 실행하거나, 수동 테스트 케이스의 경우 단계별로 실행하여 각 시나리오의 성공 여부를 기록합니다. 발견된 버그나 문제점은 추적 시스템에 보고합니다.",
             "status": "pending",
             "testStrategy": "모든 사용자 흐름에 대한 수동 또는 자동화된 엔드투엔드 테스트를 수행하여 기능의 완전성을 검증합니다. 실패한 테스트 케이스에 대해 원인을 분석하고 해당 버그를 보고합니다."
@@ -742,7 +920,7 @@
     ],
     "metadata": {
       "created": "2025-10-17T11:49:36.913Z",
-      "updated": "2025-10-24T04:56:36.959Z",
+      "updated": "2025-10-24T08:52:53.653Z",
       "description": "Tasks for master context"
     }
   }

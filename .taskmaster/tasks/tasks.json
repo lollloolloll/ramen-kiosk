@@ -686,11 +686,77 @@
             "testStrategy": "모든 사용자 흐름에 대한 수동 또는 자동화된 엔드투엔드 테스트를 수행하여 기능의 완전성을 검증합니다. 실패한 테스트 케이스에 대해 원인을 분석하고 해당 버그를 보고합니다."
           }
         ]
+      },
+      {
+        "id": 11,
+        "title": "사용자 스키마 업데이트 및 신규 등록 필드 적용",
+        "description": "users 테이블 스키마를 prd.md에 명시된 대로 name, phoneNumber, birthDate, school, personalInfoConsent 필드를 포함하도록 업데이트합니다. 그리고 pin필드를 삭제합니다. 회원가입 UI와 서버 액션을 수정하여 새 필드를 반영합니다.",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "키오스크 사용자 식별 방식 변경 및 신규 사용자 등록 플로우 구현",
+        "description": "키오스크 대여 프로세스에서 PIN 번호 대신 이름과 생년월일로 사용자를 식별하도록 변경합니다. 존재하지 않는 사용자일 경우, 키오스크에서 바로 신규 등록(전화번호, 학교, 개인정보 동의 포함)을 진행하는 UI와 로직을 구현합니다.",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          11
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "라면 대여 완료 확인 메시지 추가",
+        "description": "사용자가 라면 대여를 성공적으로 마친 후, '대여가 완료되었습니다'와 같은 확인 토스트/메시지를 표시합니다.",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          8,
+          12
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "관리자 페이지에 대여 기록 Excel 내보내기 기능 구현",
+        "description": "관리자 대여 기록 페이지(`/admin/records`)에서 현재 필터링된 대여 기록을 Excel 파일로 내보내는 기능을 구현합니다.",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          9
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "관리자 대시보드 통계 기능 개선",
+        "description": "관리자 대여 기록 페이지에 일별, 주별, 월별 데이터 조회 탭을 추가하고, 학교 및 성별에 따른 라면 소비 통계를 시각화하는 기능을 구현합니다.",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          9
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-10-17T11:49:36.913Z",
-      "updated": "2025-10-21T05:34:09.328Z",
+      "updated": "2025-10-24T04:56:36.959Z",
       "description": "Tasks for master context"
     }
   }

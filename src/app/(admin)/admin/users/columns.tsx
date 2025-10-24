@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
-import { generalUsers, users } from "@/lib/db/schema";
+import { generalUsers, users } from "@drizzle/schema";
 import { deleteGeneralUser, deleteAdminUser } from "@/lib/actions/generalUser";
 import { toast } from "sonner";
 
@@ -64,7 +64,10 @@ export const generalUserColumns: ColumnDef<GeneralUser>[] = [
     cell: ({ row }) => {
       const user = row.original;
       return (
-        <Button variant="destructive" onClick={() => handleDeleteGeneralUser(user.id)}>
+        <Button
+          variant="destructive"
+          onClick={() => handleDeleteGeneralUser(user.id)}
+        >
           삭제
         </Button>
       );
@@ -100,7 +103,10 @@ export const adminUserColumns: ColumnDef<AdminUser>[] = [
     cell: ({ row }) => {
       const user = row.original;
       return (
-        <Button variant="destructive" onClick={() => handleDeleteAdminUser(user.id)}>
+        <Button
+          variant="destructive"
+          onClick={() => handleDeleteAdminUser(user.id)}
+        >
           삭제
         </Button>
       );

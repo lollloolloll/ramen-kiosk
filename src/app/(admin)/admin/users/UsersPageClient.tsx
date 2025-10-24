@@ -1,6 +1,6 @@
 "use client";
 
-import { generalUsers, users } from "@/lib/db/schema";
+import { generalUsers, users } from "@drizzle/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { generalUserColumns, adminUserColumns } from "./columns";
 
@@ -12,7 +12,10 @@ interface UsersPageClientProps {
   adminUsers: AdminUser[];
 }
 
-export function UsersPageClient({ generalUsers, adminUsers }: UsersPageClientProps) {
+export function UsersPageClient({
+  generalUsers,
+  adminUsers,
+}: UsersPageClientProps) {
   return (
     <div>
       <div className="mb-8">

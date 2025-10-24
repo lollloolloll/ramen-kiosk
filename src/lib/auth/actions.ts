@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users } from "@drizzle/schema";
 import { registerSchema } from "@/lib/validators/auth";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";

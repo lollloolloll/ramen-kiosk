@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
-import { ramens } from "@/lib/db/schema";
+import { ramens } from "@drizzle/schema";
 import { EditRamenForm } from "./EditRamenForm";
 import { DeleteRamenDialog } from "./DeleteRamenDialog";
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { rentalRecords, ramens, users, generalUsers } from "@/lib/db/schema";
+import { rentalRecords, ramens, users, generalUsers } from "@drizzle/schema";
 import { eq, and, gte, lte, InferInsertModel } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 

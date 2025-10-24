@@ -1,12 +1,16 @@
-"use server";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+("use server");
 
 import { db } from "@/lib/db";
-import { generalUsers, users } from "@/lib/db/schema";
+import { generalUsers, users } from "@drizzle/schema";
 import { eq } from "drizzle-orm";
 import { generalUserSchema } from "@/lib/validators/generalUser";
 import { revalidatePath } from "next/cache";
 
-export async function findUserByNameAndPhone(name: string, phoneNumber: string) {
+export async function findUserByNameAndPhone(
+  name: string,
+  phoneNumber: string
+) {
   const user = await db.query.generalUsers.findFirst({
     where: (users, { and }) =>
       and(eq(users.name, name), eq(users.phoneNumber, phoneNumber)),
@@ -27,14 +31,8 @@ export async function createGeneralUser(data: unknown) {
     };
   }
 
-  const {
-    name,
-    phoneNumber,
-    gender,
-    birthDate,
-    school,
-    personalInfoConsent,
-  } = validatedData.data;
+  const { name, phoneNumber, gender, birthDate, school, personalInfoConsent } =
+    validatedData.data;
 
   try {
     const [existingUser] = await db

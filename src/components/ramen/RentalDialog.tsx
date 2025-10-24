@@ -11,7 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Ramen } from "@/app/(admin)/admin/stock/columns";
 import { rentRamen } from "@/lib/actions/rental";
-import { findUserByNameAndPhone, createGeneralUser } from "@/lib/actions/generalUser";
+import {
+  findUserByNameAndPhone,
+  createGeneralUser,
+} from "@/lib/actions/generalUser";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,18 +30,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { generalUserSchema } from "@/lib/validators/generalUser";
-import { useState, ChangeEvent } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RentalDialogProps {
   ramen: Ramen | null;
@@ -75,6 +76,15 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 생년월일 상태
+  const [birthYear, setBirthYear] = useState<string>();
+  const [birthMonth, setBirthMonth] = useState<string>();
+  const [birthDay, setBirthDay] = useState<string>();
+
+  // 학교 정보 상태
+  const [schoolLevel, setSchoolLevel] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+
   const identificationForm = useForm<IdentificationFormValues>({
     resolver: zodResolver(identificationSchema),
     defaultValues: { name: "", phoneNumber: "" },
@@ -93,10 +103,33 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
     mode: "onChange",
   });
 
-  const handleIdentificationSubmit = async (values: IdentificationFormValues) => {
+  useEffect(() => {
+    if (birthYear && birthMonth && birthDay) {
+      registerForm.setValue("birthDate", `${birthYear}-${birthMonth}-${birthDay}`);
+    } else {
+      registerForm.setValue("birthDate", "");
+    }
+  }, [birthYear, birthMonth, birthDay, registerForm]);
+
+  useEffect(() => {
+    if (schoolLevel === "해당없음") {
+      registerForm.setValue("school", "해당없음");
+    } else if (schoolLevel && schoolName) {
+      registerForm.setValue("school", `${schoolLevel} ${schoolName}`);
+    } else {
+      registerForm.setValue("school", "");
+    }
+  }, [schoolLevel, schoolName, registerForm]);
+
+  const handleIdentificationSubmit = async (
+    values: IdentificationFormValues
+  ) => {
     setIsSubmitting(true);
     try {
-      const user = await findUserByNameAndPhone(values.name, values.phoneNumber);
+      const user = await findUserByNameAndPhone(
+        values.name,
+        values.phoneNumber
+      );
       if (user) {
         await handleRental(user.id);
       } else {
@@ -163,6 +196,11 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
     setStep("identification");
     identificationForm.reset();
     registerForm.reset();
+    setBirthYear(undefined);
+    setBirthMonth(undefined);
+    setBirthDay(undefined);
+    setSchoolLevel("");
+    setSchoolName("");
   };
 
   if (!ramen) return null;
@@ -173,13 +211,15 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
         return (
           <Form {...identificationForm}>
             <form
-              onSubmit={identificationForm.handleSubmit(handleIdentificationSubmit)}
+              onSubmit={identificationForm.handleSubmit(
+                handleIdentificationSubmit
+              )}
               className="space-y-4"
             >
               <DialogHeader>
                 <DialogTitle>라면 대여</DialogTitle>
                 <DialogDescription>
-                  '{ramen.name}'을(를) 대여하려면 이름과 휴대폰 번호를
+                  `'{ramen.name}'`을(를) 대여하려면 이름과 휴대폰 번호를
                   입력하세요.
                 </DialogDescription>
               </DialogHeader>
@@ -203,14 +243,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   <FormItem>
                     <FormLabel>휴대폰 번호</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="010-1234-5678"
-                        {...field}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                          const formatted = formatPhoneNumber(e.target.value);
-                          field.onChange(formatted);
-                        }}
-                      />
+                      <Input placeholder="010-1234-5678" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -243,6 +276,15 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
           </Form>
         );
       case "register":
+        const years = Array.from(
+          { length: 100 },
+          (_, i) => new Date().getFullYear() - i
+        );
+        const months = Array.from({ length: 12 }, (_, i) => i + 1);
+        const daysInMonth = (year: number, month: number) =>
+          new Date(year, month, 0).getDate();
+        const days = birthYear && birthMonth ? Array.from({ length: daysInMonth(parseInt(birthYear), parseInt(birthMonth)) }, (_, i) => i + 1) : [];
+
         return (
           <Form {...registerForm}>
             <form
@@ -275,13 +317,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   <FormItem>
                     <FormLabel>휴대폰 번호</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="010-1234-5678"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(formatPhoneNumber(e.target.value))
-                        }
-                      />
+                      <Input placeholder="010-1234-5678" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -319,60 +355,80 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                 control={registerForm.control}
                 name="birthDate"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>생년월일</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>생년월일을 선택하세요</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={
-                            field.value ? new Date(field.value) : undefined
-                          }
-                          onSelect={(date) =>
-                            field.onChange(date?.toISOString().split("T")[0])
-                          }
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={registerForm.control}
-                name="school"
-                render={({ field }) => (
                   <FormItem>
-                    <FormLabel>학교 (선택)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="땡땡 초등학교" {...field} />
-                    </FormControl>
+                    <FormLabel>생년월일</FormLabel>
+                    <div className="flex gap-2">
+                      <Select onValueChange={setBirthYear} value={birthYear}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="년" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={String(year)}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select onValueChange={setBirthMonth} value={birthMonth}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="월" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month) => (
+                            <SelectItem key={month} value={String(month)}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select onValueChange={setBirthDay} value={birthDay}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="일" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {days.map((day) => (
+                            <SelectItem key={day} value={String(day)}>
+                              {day}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              <FormItem>
+                <FormLabel>학교</FormLabel>
+                <div className="flex gap-2">
+                  <Select onValueChange={setSchoolLevel} value={schoolLevel}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="분류" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        "초등학교",
+                        "중학교",
+                        "고등학교",
+                        "대학교",
+                        "해당없음",
+                      ].map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="학교 이름"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    disabled={schoolLevel === "해당없음" || !schoolLevel}
+                  />
+                </div>
+              </FormItem>
+
               <FormField
                 control={registerForm.control}
                 name="personalInfoConsent"

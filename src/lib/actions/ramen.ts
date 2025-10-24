@@ -1,11 +1,11 @@
-"use server";
+("use server");
 
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { eq, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { ramens } from "@/lib/db/schema";
+import { ramens } from "@drizzle/schema";
 import { ramenSchema, updateRamenSchema } from "@/lib/validators/ramen";
 
 export async function getRamens() {

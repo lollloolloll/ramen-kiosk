@@ -103,49 +103,47 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
       school: "",
       personalInfoConsent: false,
     },
-    mode: "onChange",
   });
 
-  // 🔥 핵심 수정: registerForm을 의존성에서 제거
+  // 생년월일 useEffect (이것 하나만 남깁니다)
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {
       registerForm.setValue(
         "birthDate",
-        `${birthYear}-${birthMonth}-${birthDay}`,
-        { shouldValidate: true }
+        `${birthYear}-${birthMonth}-${birthDay}`
       );
     } else {
-      registerForm.setValue("birthDate", "", { shouldValidate: true });
+      registerForm.setValue("birthDate", "");
     }
-  }, [birthYear, birthMonth, birthDay]); // registerForm 제거
+  }, [birthYear, birthMonth, birthDay, registerForm.setValue]);
 
+  // 학교 useEffect (이것 하나만 남깁니다)
   useEffect(() => {
     if (schoolLevel === "해당없음") {
-      registerForm.setValue("school", "해당없음", { shouldValidate: true });
+      registerForm.setValue("school", "해당없음");
     } else if (schoolLevel && schoolName) {
-      registerForm.setValue("school", `${schoolLevel} ${schoolName}`, {
-        shouldValidate: true,
-      });
-    } else if (schoolLevel) {
-      registerForm.setValue("school", `${schoolLevel}`, {
-        shouldValidate: true,
-      });
+      let suffix = "";
+      switch (schoolLevel) {
+        case "초등학교":
+          suffix = "초";
+          break;
+        case "중학교":
+          suffix = "중";
+          break;
+        case "고등학교":
+          suffix = "고";
+          break;
+        case "대학교":
+          suffix = "대";
+          break;
+        default:
+          suffix = "";
+      }
+      registerForm.setValue("school", `${schoolName}${suffix}`);
     } else {
-      registerForm.setValue("school", "", { shouldValidate: true });
+      registerForm.setValue("school", "");
     }
-  }, [schoolLevel, schoolName]); // registerForm 제거
-
-  // 년도 셀렉트가 열릴 때 2010년으로 스크롤
-  useEffect(() => {
-    if (yearSelectOpen) {
-      setTimeout(() => {
-        const selectedItem = document.querySelector(`[data-value="2010"]`);
-        if (selectedItem) {
-          selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
-        }
-      }, 50);
-    }
-  }, [yearSelectOpen]);
+  }, [schoolLevel, schoolName, registerForm.setValue]);
 
   const handleIdentificationSubmit = async (
     values: IdentificationFormValues
@@ -335,6 +333,13 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
           </Form>
         );
       case "register":
+        const watchedValues = registerForm.watch();
+        const isButtonDisabled =
+          !watchedValues.name ||
+          !watchedValues.phoneNumber ||
+          !watchedValues.gender ||
+          !watchedValues.birthDate ||
+          !watchedValues.school;
         return (
           <Form {...registerForm} key="register">
             <form
@@ -397,14 +402,20 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                         <Button
                           type="button"
                           variant={field.value === "남" ? "default" : "outline"}
-                          onClick={() => field.onChange("남")}
+                          onClick={() => {
+                            field.onChange("남");
+                            registerForm.trigger("gender");
+                          }}
                         >
                           남
                         </Button>
                         <Button
                           type="button"
                           variant={field.value === "여" ? "default" : "outline"}
-                          onClick={() => field.onChange("여")}
+                          onClick={() => {
+                            field.onChange("여");
+                            registerForm.trigger("gender");
+                          }}
                         >
                           여
                         </Button>
@@ -562,7 +573,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSubmitting || !registerForm.formState.isValid}
+                  disabled={isSubmitting || isButtonDisabled}
                 >
                   {isSubmitting ? "등록 중..." : "등록 및 대여"}
                 </Button>

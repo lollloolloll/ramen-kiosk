@@ -56,8 +56,20 @@ export const generalUserColumns: ColumnDef<GeneralUser>[] = [
     header: "성별",
   },
   {
-    accessorKey: "age",
-    header: "나이",
+    accessorKey: "birthDate",
+    header: "생년월일",
+  },
+  {
+    accessorKey: "school",
+    header: "학교",
+  },
+  {
+    accessorKey: "personalInfoConsent",
+    header: "개인정보동의",
+    cell: ({ row }) => {
+      const consent = row.getValue("personalInfoConsent");
+      return consent ? "동의" : "비동의";
+    },
   },
   {
     id: "actions",

@@ -7,7 +7,6 @@ import {
   foreignKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-
 export const ramens = sqliteTable("ramens", {
   id: integer().primaryKey({ autoIncrement: true }).notNull(),
   name: text().notNull(),
@@ -33,9 +32,10 @@ export const generalUsers = sqliteTable(
     id: integer().primaryKey({ autoIncrement: true }).notNull(),
     name: text().notNull(),
     phoneNumber: text("phone_number").notNull(),
-    gender: text(),
-    age: integer(),
-    hashedPin: text("hashed_pin").notNull(),
+    gender: text().notNull(),
+    birthDate: text("birth_date"),
+    school: text(),
+    personalInfoConsent: integer("personal_info_consent", { mode: "boolean" }),
   },
   (table) => [
     uniqueIndex("general_users_phone_number_unique").on(table.phoneNumber),

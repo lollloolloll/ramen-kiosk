@@ -698,7 +698,40 @@
           1
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Drizzle 마이그레이션으로 users 테이블 스키마 업데이트",
+            "description": "Drizzle ORM을 사용하여 `users` 테이블의 스키마를 업데이트합니다. `name`, `phoneNumber`, `birthDate`, `school`, `personalInfoConsent` 필드를 추가하고, 기존의 `pin` 필드를 제거합니다.",
+            "dependencies": [],
+            "details": "`lib/db/schema.ts` 파일을 수정하여 `users` 테이블 정의에 새로운 필드들을 추가하고 `pin` 필드를 제거합니다. 이후 `drizzle-kit generate` 명령어를 사용하여 마이그레이션 파일을 생성하고, `drizzle-kit migrate`를 실행하여 데이터베이스 스키마를 업데이트합니다. 추가되는 필드들의 타입과 제약조건(예: `nullable`, `default`)을 명확히 정의합니다.",
+            "status": "pending",
+            "testStrategy": "Drizzle-kit 스튜디오를 통해 `users` 테이블의 스키마가 의도한 대로 변경되었는지 확인합니다. 새로운 필드들이 추가되고 `pin` 필드가 제거되었는지 검증합니다. 더미 데이터를 삽입하여 새로운 필드에 대한 데이터 저장 및 조회가 정상 작동하는지 확인합니다."
+          },
+          {
+            "id": 2,
+            "title": "회원가입 UI에 신규 필드 반영",
+            "description": "회원가입 UI에 `name`, `phoneNumber`, `birthDate`, `school` 입력 필드와 `personalInfoConsent` 동의 체크박스를 추가합니다. 사용자 경험을 고려하여 적절한 UI 컴포넌트를 사용하고 유효성 검사 로직을 구현합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "회원가입 페이지 컴포넌트(예: `/app/signup/page.tsx`)를 수정하여 사용자가 `name`, `phoneNumber`, `birthDate`, `school` 정보를 입력할 수 있는 폼 필드를 추가합니다. `personalInfoConsent`는 개인정보 수집 및 이용 동의를 위한 체크박스로 구현합니다. 각 필드에 대한 클라이언트 측 유효성 검사(예: 필수 필드, 전화번호 형식 등)를 추가하고, shadcn/ui 컴포넌트를 활용하여 일관된 디자인을 유지합니다.",
+            "status": "pending",
+            "testStrategy": "브라우저에서 회원가입 페이지에 접속하여 모든 신규 필드들이 정상적으로 렌더링되는지 확인합니다. 각 필드에 데이터를 입력하여 UI 유효성 검사가 올바르게 동작하는지 테스트합니다. `personalInfoConsent` 체크박스를 선택/해제했을 때 UI 상태가 올바르게 변경되는지 확인합니다."
+          },
+          {
+            "id": 3,
+            "title": "회원가입 서버 액션 로직 업데이트",
+            "description": "새로운 회원가입 필드들을 처리하도록 서버 액션 로직을 수정합니다. 전송된 데이터를 검증하고, `users` 테이블에 새 필드들을 포함하여 저장하며, `pin` 필드 관련 로직을 제거합니다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "회원가입을 처리하는 서버 액션(예: `lib/actions/auth.ts`의 `signup` 함수)을 수정합니다. UI에서 전송된 `name`, `phoneNumber`, `birthDate`, `school`, `personalInfoConsent` 데이터를 안전하게 수신하고 서버 측 유효성 검사를 수행합니다. Drizzle ORM을 사용하여 `users` 테이블에 새로운 필드들을 포함하여 사용자 데이터를 삽입하도록 쿼리 로직을 업데이트합니다. 기존에 `pin` 필드를 처리하던 모든 로직(데이터 추출, 저장, 검증 등)을 제거합니다.",
+            "status": "pending",
+            "testStrategy": "UI를 통해 새로운 필드들을 포함하여 회원가입을 시도합니다. 성공적인 회원가입 후 데이터베이스에 해당 사용자의 `name`, `phoneNumber`, `birthDate`, `school`, `personalInfoConsent` 값이 올바르게 저장되었는지 확인합니다. 유효하지 않은 데이터를 입력했을 때 서버 측 유효성 검사가 적절한 에러 메시지를 반환하는지 테스트합니다. `pin` 필드에 대한 어떠한 데이터도 저장되지 않는지 확인합니다."
+          }
+        ]
       },
       {
         "id": 12,
@@ -711,7 +744,52 @@
           11
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "키오스크 사용자 식별 백엔드 로직 구현 (이름/생년월일)",
+            "description": "기존 PIN 번호 기반의 사용자 식별 로직을 이름과 생년월일을 기반으로 사용자를 조회하도록 백엔드 API 및 서비스 로직을 수정합니다. Task 11에서 정의된 사용자 관련 데이터 필드(이름, 생년월일)를 활용합니다.",
+            "dependencies": [
+              11
+            ],
+            "details": "`users` 테이블에서 이름과 생년월일을 기준으로 사용자를 조회하는 Drizzle ORM 쿼리를 작성하고, 해당 API 엔드포인트(`/api/kiosk/identify-user` 등)를 구현합니다. 조회 결과에 따라 사용자 존재 여부 및 사용자 ID를 반환해야 합니다.",
+            "status": "pending",
+            "testStrategy": "이름과 생년월일로 기존 사용자를 조회하는 API 엔드포인트 테스트를 수행하여 성공 및 실패 케이스를 검증합니다. 유효한 정보로 조회 시 사용자 ID를 반환하고, 유효하지 않거나 존재하지 않는 정보로 조회 시 적절한 오류 또는 '사용자 없음' 응답을 반환하는지 확인합니다."
+          },
+          {
+            "id": 2,
+            "title": "키오스크 사용자 식별 입력 UI 개발",
+            "description": "키오스크 화면에 사용자 이름과 생년월일(YYYYMMDD 형식)을 입력받는 UI를 구현하고, 입력된 정보로 백엔드 식별 API를 호출하는 기능을 개발합니다. shadcn/ui 컴포넌트를 활용합니다.",
+            "dependencies": [],
+            "details": "shadcn/ui 컴포넌트를 활용하여 사용자 이름 입력 필드, 생년월일 입력 필드(마스킹 또는 숫자 전용 입력), '확인' 버튼을 디자인합니다. 입력 유효성 검사(예: 생년월일 형식)를 포함하고, 백엔드 식별 API 호출 및 응답에 따른 UI 상태(예: 로딩, 성공 메시지, 오류 메시지, 신규 등록 유도)를 업데이트하는 로직을 구현합니다.",
+            "status": "pending",
+            "testStrategy": "키오스크 UI에서 이름과 생년월일을 입력하여 사용자 식별 API가 올바르게 호출되는지, 그리고 성공/실패 응답에 따라 UI가 적절히 변경되는지 시각적으로 확인합니다. 입력 유효성 검사가 정상 작동하는지 테스트합니다."
+          },
+          {
+            "id": 3,
+            "title": "키오스크 신규 사용자 등록 UI 및 백엔드 API 구현",
+            "description": "사용자가 존재하지 않을 경우, 키오스크에서 전화번호, 학교 선택, 개인정보 동의를 받아 신규 사용자를 등록하는 UI와 이를 처리할 백엔드 API를 구현합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "신규 등록 화면 UI(전화번호 입력 필드, 학교 선택 드롭다운, 개인정보 동의 체크박스 및 '등록' 버튼 포함)를 개발하고, 각 필드에 대한 유효성 검사를 추가합니다. 백엔드에는 `/api/kiosk/register-user`와 같은 새로운 사용자 등록 API 엔드포인트를 구현하여 Drizzle ORM을 통해 `users` 테이블에 새 사용자를 추가합니다. (Task 11에서 정의된 학교 정보를 활용).",
+            "status": "pending",
+            "testStrategy": "키오스크 UI를 통해 신규 사용자 등록을 시도하고, 성공적으로 등록된 사용자가 데이터베이스에 추가되는지 확인합니다. 필수 필드 누락, 잘못된 형식 등 유효성 검사 시나리오에 대한 오류 처리가 되는지 검증합니다. 등록 후 사용자 식별이 가능한지 확인합니다."
+          },
+          {
+            "id": 4,
+            "title": "사용자 식별/등록 플로우 및 라면 대여 통합",
+            "description": "구현된 사용자 식별 및 신규 사용자 등록 플로우를 기존 라면 대여 프로세스에 매끄럽게 연결하고, 전체 키오스크 대여 여정의 UI 흐름을 완성합니다.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "사용자 식별 성공 시 라면 선택 및 대여 화면으로 이동, 식별 실패 시 신규 등록 화면으로 이동 로직을 구현합니다. 신규 등록 완료 후 자동으로 해당 사용자로 로그인(식별)되거나, 라면 선택/대여 화면으로 전환되는 흐름을 만듭니다. 전체 대여 프로세스 중 사용자 식별/등록 단계의 사용자 경험(UX)을 개선하고, 오류 처리 및 진행 가이드 메시지를 추가합니다.",
+            "status": "pending",
+            "testStrategy": "키오스크에서 처음부터 끝까지 라면 대여 과정을 시뮬레이션합니다. 기존 사용자 식별 성공 후 대여, 신규 사용자 등록 후 대여, 그리고 중간에 발생할 수 있는 오류 상황에 대한 UI/UX 흐름과 백엔드 연동이 문제없이 작동하는지 엔드-투-엔드 테스트를 수행합니다."
+          }
+        ]
       },
       {
         "id": 13,
@@ -725,7 +803,20 @@
           12
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "라면 대여 완료 토스트/메시지 구현",
+            "description": "사용자가 라면 대여를 성공적으로 완료했을 때, '대여가 완료되었습니다!'와 같은 확인 메시지를 토스트 또는 다른 UI 메시지 컴포넌트를 사용하여 화면에 표시합니다. shadcn/ui의 Toast 컴포넌트를 활용하거나, `react-hot-toast`와 같은 라이브러리를 사용하여 구현합니다.",
+            "dependencies": [
+              8,
+              2
+            ],
+            "details": "라면 대여 API 호출이 성공적으로 완료된 후, 클라이언트 측에서 `toast.success('대여가 완료되었습니다!')`와 같은 메시지를 트리거하도록 구현합니다. `shadcn/ui`의 Toast 컴포넌트(또는 `react-hot-toast`)를 사용하여 사용자에게 시각적인 피드백을 제공합니다. 메시지는 몇 초 후 자동으로 사라지도록 설정합니다.",
+            "status": "pending",
+            "testStrategy": "라면 대여 기능을 실행하여 대여가 성공적으로 처리될 때 '대여가 완료되었습니다!' 메시지가 화면에 올바르게 표시되는지 확인합니다. 메시지의 내용, 스타일, 그리고 자동 소멸 기능이 정상적으로 작동하는지 검증합니다."
+          }
+        ]
       },
       {
         "id": 14,
@@ -738,7 +829,38 @@
           9
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "관리자 대여 기록 페이지에 Excel 내보내기 버튼 추가",
+            "description": "관리자 대여 기록 페이지(`/admin/records`)에 'Excel 내보내기' 버튼 UI 요소를 추가하고, 이 버튼 클릭 시 서버의 Excel 내보내기 API 엔드포인트를 호출하도록 클라이언트 측 로직을 구현합니다.",
+            "dependencies": [],
+            "details": "`admin/records` 페이지 컴포넌트에 shadcn/ui의 Button 컴포넌트를 활용하여 Excel 내보내기 버튼을 추가합니다. 버튼 클릭 시 `/api/admin/records/export`와 같은 서버 액션 또는 API 엔드포인트를 호출하는 클라이언트 측 함수를 작성합니다.",
+            "status": "pending",
+            "testStrategy": "관리자 대여 기록 페이지에 접속하여 Excel 내보내기 버튼이 올바르게 렌더링되고 시각적으로 문제가 없는지 확인합니다. 개발자 도구를 통해 버튼 클릭 시 API 호출이 정상적으로 시작되는지 검증합니다."
+          },
+          {
+            "id": 2,
+            "title": "필터링된 대여 기록 기반 Excel 파일 생성 서버 액션 구현",
+            "description": "서버 측에 `/api/admin/records/export` 엔드포인트를 구현하여 현재 필터링된 대여 기록 데이터를 조회하고, 조회된 데이터를 기반으로 Excel 파일을 생성하는 로직을 개발합니다.",
+            "dependencies": [],
+            "details": "Drizzle ORM을 사용하여 데이터베이스에서 필터링 조건(쿼리 파라미터로 전달된)에 맞는 대여 기록을 조회합니다. `exceljs` 또는 유사한 라이브러리를 활용하여 조회된 데이터를 Excel 워크북 형태로 변환하고, 적절한 헤더와 셀 서식을 적용합니다. 생성된 Excel 파일을 버퍼 형태로 HTTP 응답 본문에 담아 클라이언트에 전송할 준비를 합니다.",
+            "status": "pending",
+            "testStrategy": "Postman이나 Insomnia와 같은 API 테스트 도구를 사용하여 `/api/admin/records/export` 엔드포인트에 필터링 파라미터와 함께 요청을 보냅니다. 응답으로 유효한 Excel 파일이 다운로드되는지 확인하고, 파일 내용을 열어 데이터의 정확성과 형식이 올바른지 검증합니다."
+          },
+          {
+            "id": 3,
+            "title": "클라이언트 측 Excel 파일 다운로드 처리 구현",
+            "description": "서버에서 생성된 Excel 파일 응답을 성공적으로 수신하여 사용자의 웹 브라우저에서 해당 파일을 다운로드하도록 처리하는 클라이언트 측 로직을 구현합니다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "서버 액션으로부터 `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` 및 `Content-Disposition` 헤더와 함께 전송되는 Excel 파일 데이터(BLOB)를 처리합니다. JavaScript의 `Blob` 객체와 `URL.createObjectURL`을 사용하여 임시 URL을 생성하고, 가상의 `<a>` 태그를 생성하여 `download` 속성과 `href` 속성을 설정한 후 클릭 이벤트로 파일 다운로드를 시작합니다. 다운로드 완료 후 `URL.revokeObjectURL`을 호출하여 임시 URL을 해제합니다.",
+            "status": "pending",
+            "testStrategy": "관리자 페이지에서 Excel 내보내기 버튼을 클릭하여 Excel 파일이 정상적으로 다운로드되는지 확인합니다. 다운로드된 파일의 이름이 올바른지, 파일이 손상되지 않고 문제없이 열리는지 확인합니다."
+          }
+        ]
       },
       {
         "id": 15,
@@ -751,7 +873,49 @@
           9
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "통계 데이터 집계 로직 및 DB 쿼리 설계",
+            "description": "일별, 주별, 월별, 학교별, 성별 라면 소비 통계를 위한 데이터베이스 쿼리 및 집계 로직을 설계하고 Drizzle ORM을 활용하여 구현합니다.",
+            "dependencies": [],
+            "details": "`rentalRecords` 테이블과 `users` 테이블 (성별, 학교 정보 포함 가정)을 조인하여 필요한 통계 데이터를 추출하는 SQL 쿼리 또는 Drizzle ORM 표현식을 정의합니다. 기간별(일, 주, 월), 학교별, 성별 필터링 및 그룹화 로직을 포함합니다.",
+            "status": "pending",
+            "testStrategy": "설계된 쿼리를 직접 데이터베이스에서 실행하여 예상되는 통계 결과가 올바르게 나오는지 검증합니다. 더미 데이터를 사용하여 다양한 시나리오(데이터 없음, 특정 기간 데이터)를 테스트합니다."
+          },
+          {
+            "id": 2,
+            "title": "통계 데이터 조회 API 엔드포인트 개발",
+            "description": "프론트엔드에서 일별, 주별, 월별, 학교별, 성별 라면 소비 통계 데이터를 조회할 수 있는 서버 액션(API 엔드포인트)을 구현합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "`/api/admin/statistics`와 같은 엔드포인트를 생성하고, 쿼리 파라미터(예: `period=daily|weekly|monthly`, `school=A|B`, `gender=M|F`)에 따라 Subtask 1에서 구현된 집계 로직을 호출하여 데이터를 JSON 형식으로 반환합니다. 인증 및 에러 처리 로직을 포함합니다.",
+            "status": "pending",
+            "testStrategy": "Postman 또는 curl을 사용하여 다양한 쿼리 파라미터로 엔드포인트를 호출하고, 반환되는 데이터의 정확성과 형식(JSON)을 검증합니다. 에러 케이스(잘못된 파라미터 등)도 테스트합니다."
+          },
+          {
+            "id": 3,
+            "title": "관리자 대시보드 통계 UI (탭, 필터) 개발",
+            "description": "관리자 대여 기록 페이지에 통계 데이터를 시각화하기 위한 탭(일별, 주별, 월별) 및 필터(학교, 성별) UI 컴포넌트를 shadcn/ui를 활용하여 구현합니다.",
+            "dependencies": [],
+            "details": "`admin/records` 페이지 내 또는 새로운 페이지에 `Tabs` 컴포넌트를 사용하여 기간별 보기를 구현합니다. `Select` 또는 `RadioGroup` 컴포넌트를 사용하여 학교 및 성별 필터를 추가합니다. 필터 선택에 따라 데이터 로딩 상태를 표시하는 로딩 스피너 등의 UI를 포함합니다.",
+            "status": "pending",
+            "testStrategy": "브라우저에서 페이지를 렌더링하여 탭 전환, 필터 선택 등의 UI 요소가 올바르게 작동하고 시각적으로 일관성을 유지하는지 확인합니다. 콘솔에서 UI 컴포넌트의 상태 변경을 확인합니다."
+          },
+          {
+            "id": 4,
+            "title": "통계 데이터 차트 시각화 및 API 연동",
+            "description": "구현된 통계 API 엔드포인트와 연동하여 집계된 라면 소비 데이터를 막대 차트, 선 차트 등으로 시각화하는 기능을 개발합니다.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Recharts나 Chart.js와 같은 차트 라이브러리를 선정하여 설치하고, Subtask 3에서 구현된 UI에 차트를 통합합니다. 필터 및 탭 선택에 따라 Subtask 2의 API를 호출하여 데이터를 가져오고, 차트를 동적으로 업데이트하도록 구현합니다. 적절한 축 레이블, 툴팁, 범례를 포함합니다.",
+            "status": "pending",
+            "testStrategy": "다양한 필터 및 탭 조합을 통해 차트 데이터가 API 응답과 일치하는지, 차트가 올바르게 렌더링되는지 시각적으로 확인합니다. 데이터가 없을 때의 차트 상태(예: '데이터 없음' 메시지)도 테스트합니다."
+          }
+        ]
       }
     ],
     "metadata": {

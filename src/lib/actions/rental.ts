@@ -1,20 +1,18 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { rentalRecords, ramens, users, generalUsers } from "@drizzle/schema";
-import { eq, and, gte, lte, InferInsertModel } from "drizzle-orm";
+import { rentalRecords, ramens, generalUsers } from "@drizzle/schema";
+import { eq, and, gte, lte, sql, InferInsertModel } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function rentRamen(userId: number, ramenId: number) {
   try {
-    // db.transaction()의 콜백에서 'async'와 'await'를 제거합니다.
-    // better-sqlite3는 동기적으로 작동하므로 이게 올바른 방법입니다.
     db.transaction((tx) => {
-      const [ramenToRent] = tx
+      const ramenToRent = tx
         .select()
         .from(ramens)
         .where(eq(ramens.id, ramenId))
-        .all(); // .all() 또는 .get()을 사용하여 즉시 실행
+        .get();
 
       if (!ramenToRent) {
         throw new Error("해당 라면을 찾을 수 없습니다.");
@@ -24,39 +22,35 @@ export async function rentRamen(userId: number, ramenId: number) {
         throw new Error("재고가 부족합니다.");
       }
 
-      // 재고 감소
       tx.update(ramens)
         .set({ stock: ramenToRent.stock - 1 })
         .where(eq(ramens.id, ramenId))
-        .run(); // .run()으로 즉시 실행
+        .run();
 
-      // 대여 기록 추가
       tx.insert(rentalRecords)
         .values({
-          userId: userId as InferInsertModel<typeof rentalRecords>["userId"],
-          ramenId: ramenId as InferInsertModel<typeof rentalRecords>["ramenId"],
-          rentalDate: new Date(),
+          userId: userId,
+          ramenId: ramenId,
         })
-        .run(); // .run()으로 즉시 실행
+        .run();
     });
 
-    // 트랜잭션이 성공적으로 완료되었을 때만 이 코드가 실행됩니다.
     revalidatePath("/");
     revalidatePath("/admin/stock");
+    revalidatePath("/admin/records");
 
     return { success: true };
   } catch (error) {
-    // 트랜잭션 내부에서 throw된 에러는 여기서 잡힙니다.
-    // Drizzle은 에러가 발생하면 자동으로 트랜잭션을 '롤백'합니다.
     console.error("Rental Transaction Failed:", error);
-
-    if (error instanceof Error) {
-      return { error: error.message };
-    }
-
-    return { error: "대여 처리 중 예상치 못한 오류가 발생했습니다." };
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "대여 처리 중 예상치 못한 오류가 발생했습니다.",
+    };
   }
 }
+
 export async function getRentalRecords(
   filters: {
     username?: string;
@@ -68,24 +62,28 @@ export async function getRentalRecords(
     const whereConditions = [];
 
     if (filters.username) {
-        whereConditions.push(eq(generalUsers.name, filters.username));
+      whereConditions.push(eq(generalUsers.name, filters.username));
     }
     if (filters.startDate) {
-      whereConditions.push(gte(rentalRecords.rentalDate, filters.startDate));
+      whereConditions.push(
+        gte(rentalRecords.rentalDate, filters.startDate.getTime())
+      );
     }
     if (filters.endDate) {
-      whereConditions.push(lte(rentalRecords.rentalDate, filters.endDate));
+      whereConditions.push(
+        lte(rentalRecords.rentalDate, filters.endDate.getTime())
+      );
     }
 
     const query = db
       .select({
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
-        userName: generalUsers.name, // join with generalUsers
+        userName: generalUsers.name,
         ramenName: ramens.name,
       })
       .from(rentalRecords)
-      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id)) // join with generalUsers
+      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
       .leftJoin(ramens, eq(rentalRecords.ramenId, ramens.id));
 
     if (whereConditions.length > 0) {
@@ -101,21 +99,38 @@ export async function getRentalRecords(
   }
 }
 
+function calculateAge(birthDate: string | null): number | null {
+  if (!birthDate) return null;
+  const birth = new Date(birthDate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 export async function getRentalRecordsWithUserDetails() {
   try {
-    const data = await db
+    const records = await db
       .select({
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
         userId: generalUsers.id,
         userName: generalUsers.name,
         userGender: generalUsers.gender,
-        userAge: generalUsers.age,
+        userBirthDate: generalUsers.birthDate, // birthDate를 가져옵니다.
         ramenName: ramens.name,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
       .leftJoin(ramens, eq(rentalRecords.ramenId, ramens.id));
+
+    const data = records.map((record) => ({
+      ...record,
+      userAge: calculateAge(record.userBirthDate), // 나이를 계산합니다.
+    }));
 
     return { success: true, data };
   } catch (error) {

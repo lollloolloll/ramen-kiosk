@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { generalUserSchema } from "@/lib/validators/generalUser";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -85,6 +85,9 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
   const [schoolLevel, setSchoolLevel] = useState("");
   const [schoolName, setSchoolName] = useState("");
 
+  // 년도 Select가 열렸을 때 2010년으로 스크롤
+  const [yearSelectOpen, setYearSelectOpen] = useState(false);
+
   const identificationForm = useForm<IdentificationFormValues>({
     resolver: zodResolver(identificationSchema),
     defaultValues: { name: "", phoneNumber: "" },
@@ -103,13 +106,17 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
     mode: "onChange",
   });
 
+  // 🔥 핵심 수정: registerForm을 의존성에서 제거
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {
-      registerForm.setValue("birthDate", `${birthYear}-${birthMonth}-${birthDay}`);
+      registerForm.setValue(
+        "birthDate",
+        `${birthYear}-${birthMonth}-${birthDay}`
+      );
     } else {
       registerForm.setValue("birthDate", "");
     }
-  }, [birthYear, birthMonth, birthDay, registerForm]);
+  }, [birthYear, birthMonth, birthDay]); // registerForm 제거
 
   useEffect(() => {
     if (schoolLevel === "해당없음") {
@@ -119,7 +126,19 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
     } else {
       registerForm.setValue("school", "");
     }
-  }, [schoolLevel, schoolName, registerForm]);
+  }, [schoolLevel, schoolName]); // registerForm 제거
+
+  // 년도 셀렉트가 열릴 때 2010년으로 스크롤
+  useEffect(() => {
+    if (yearSelectOpen) {
+      setTimeout(() => {
+        const selectedItem = document.querySelector(`[data-value="2010"]`);
+        if (selectedItem) {
+          selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+      }, 50);
+    }
+  }, [yearSelectOpen]);
 
   const handleIdentificationSubmit = async (
     values: IdentificationFormValues
@@ -201,7 +220,32 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
     setBirthDay(undefined);
     setSchoolLevel("");
     setSchoolName("");
+    setYearSelectOpen(false);
   };
+
+  const years = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    // 1930년부터 현재년도까지 (역순)
+    return Array.from(
+      { length: currentYear - 1929 },
+      (_, i) => currentYear - i
+    );
+  }, []);
+
+  const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
+
+  const days = useMemo(() => {
+    if (!birthYear || !birthMonth) {
+      // 년/월이 선택 안됐으면 1~31일까지 기본 표시
+      return Array.from({ length: 31 }, (_, i) => i + 1);
+    }
+    const daysInMonth = new Date(
+      parseInt(birthYear),
+      parseInt(birthMonth),
+      0
+    ).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  }, [birthYear, birthMonth]);
 
   if (!ramen) return null;
 
@@ -209,7 +253,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
     switch (step) {
       case "identification":
         return (
-          <Form {...identificationForm}>
+          <Form {...identificationForm} key="identification">
             <form
               onSubmit={identificationForm.handleSubmit(
                 handleIdentificationSubmit
@@ -219,7 +263,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
               <DialogHeader>
                 <DialogTitle>라면 대여</DialogTitle>
                 <DialogDescription>
-                  `'{ramen.name}'`을(를) 대여하려면 이름과 휴대폰 번호를
+                  '{ramen.name}'을(를) 대여하려면 이름과 휴대폰 번호를
                   입력하세요.
                 </DialogDescription>
               </DialogHeader>
@@ -243,7 +287,14 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   <FormItem>
                     <FormLabel>휴대폰 번호</FormLabel>
                     <FormControl>
-                      <Input placeholder="010-1234-5678" {...field} />
+                      <Input
+                        placeholder="010-1234-5678"
+                        type="tel"
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(formatPhoneNumber(e.target.value));
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -276,17 +327,8 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
           </Form>
         );
       case "register":
-        const years = Array.from(
-          { length: 100 },
-          (_, i) => new Date().getFullYear() - i
-        );
-        const months = Array.from({ length: 12 }, (_, i) => i + 1);
-        const daysInMonth = (year: number, month: number) =>
-          new Date(year, month, 0).getDate();
-        const days = birthYear && birthMonth ? Array.from({ length: daysInMonth(parseInt(birthYear), parseInt(birthMonth)) }, (_, i) => i + 1) : [];
-
         return (
-          <Form {...registerForm}>
+          <Form {...registerForm} key="register">
             <form
               onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
               className="space-y-4"
@@ -317,7 +359,14 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   <FormItem>
                     <FormLabel>휴대폰 번호</FormLabel>
                     <FormControl>
-                      <Input placeholder="010-1234-5678" {...field} />
+                      <Input
+                        placeholder="010-1234-5678"
+                        type="tel"
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(formatPhoneNumber(e.target.value));
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -358,11 +407,19 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                   <FormItem>
                     <FormLabel>생년월일</FormLabel>
                     <div className="flex gap-2">
-                      <Select onValueChange={setBirthYear} value={birthYear}>
+                      <Select
+                        onValueChange={setBirthYear}
+                        value={birthYear}
+                        open={yearSelectOpen}
+                        onOpenChange={setYearSelectOpen}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="년" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent
+                          position="popper"
+                          className="max-h-[300px]"
+                        >
                           {years.map((year) => (
                             <SelectItem key={year} value={String(year)}>
                               {year}
@@ -374,7 +431,10 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                         <SelectTrigger>
                           <SelectValue placeholder="월" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent
+                          position="popper"
+                          className="max-h-[300px]"
+                        >
                           {months.map((month) => (
                             <SelectItem key={month} value={String(month)}>
                               {month}
@@ -386,7 +446,10 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                         <SelectTrigger>
                           <SelectValue placeholder="일" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent
+                          position="popper"
+                          className="max-h-[300px]"
+                        >
                           {days.map((day) => (
                             <SelectItem key={day} value={String(day)}>
                               {day}
@@ -441,9 +504,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        개인정보 수집 및 이용에 동의합니다.
-                      </FormLabel>
+                      <FormLabel>개인정보 수집 및 이용에 동의합니다.</FormLabel>
                       <FormDescription>
                         (필수) 이름, 연락처, 성별, 생년월일
                       </FormDescription>

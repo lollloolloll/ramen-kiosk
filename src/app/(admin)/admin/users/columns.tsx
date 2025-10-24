@@ -31,17 +31,7 @@ const handleDeleteAdminUser = async (id: number) => {
 export const generalUserColumns: ColumnDef<GeneralUser>[] = [
   {
     accessorKey: "id",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          ID
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: "ID",
   },
   {
     accessorKey: "name",
@@ -90,17 +80,7 @@ export const generalUserColumns: ColumnDef<GeneralUser>[] = [
 export const adminUserColumns: ColumnDef<AdminUser>[] = [
   {
     accessorKey: "id",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          ID
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: "ID",
   },
   {
     accessorKey: "username",

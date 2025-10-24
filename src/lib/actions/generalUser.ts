@@ -3,56 +3,66 @@
 import { db } from "@/lib/db";
 import { generalUsers, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcrypt";
 import { generalUserSchema } from "@/lib/validators/generalUser";
 import { revalidatePath } from "next/cache";
 
-// This is not an efficient way to query by PIN, as it requires fetching all users.
-// For a small number of users, this is acceptable.
-// A better approach would be to use a different authentication method if the number of users grows.
-export async function getUsersByPin(pin: string) {
-  const allUsers = await db.select().from(generalUsers);
-  const matchingUsers = [];
-  for (const user of allUsers) {
-    const isMatch = await bcrypt.compare(pin, user.hashedPin);
-    if (isMatch) {
-      matchingUsers.push({ id: user.id, name: user.name });
-    }
-  }
-  return matchingUsers;
+export async function findUserByNameAndPhone(name: string, phoneNumber: string) {
+  const user = await db.query.generalUsers.findFirst({
+    where: (users, { and }) =>
+      and(eq(users.name, name), eq(users.phoneNumber, phoneNumber)),
+  });
+
+  return user;
 }
 
 export async function createGeneralUser(data: unknown) {
   const validatedData = generalUserSchema.safeParse(data);
   if (!validatedData.success) {
-    return { error: "유효하지 않은 데이터입니다." };
+    console.error("Validation Error:", validatedData.error.flatten());
+    // 에러 메시지를 좀 더 구체적으로 반환
+    return {
+      error:
+        validatedData.error.flatten().fieldErrors.personalInfoConsent?.[0] ||
+        "유효하지 않은 데이터입니다.",
+    };
   }
 
-  const { name, phoneNumber, gender, age, pin } = validatedData.data;
+  const {
+    name,
+    phoneNumber,
+    gender,
+    birthDate,
+    school,
+    personalInfoConsent,
+  } = validatedData.data;
 
-  const [existingUser] = await db
-    .select()
-    .from(generalUsers)
-    .where(eq(generalUsers.phoneNumber, phoneNumber));
+  try {
+    const [existingUser] = await db
+      .select()
+      .from(generalUsers)
+      .where(eq(generalUsers.phoneNumber, phoneNumber));
 
-  if (existingUser) {
-    return { error: "이미 등록된 휴대폰 번호입니다." };
+    if (existingUser) {
+      return { error: "이미 등록된 휴대폰 번호입니다." };
+    }
+
+    const [newUser] = await db
+      .insert(generalUsers)
+      .values({
+        name,
+        phoneNumber,
+        gender,
+        birthDate: birthDate || "",
+        school: school || "",
+        personalInfoConsent: personalInfoConsent,
+      })
+      .returning();
+
+    return { success: true, user: { id: newUser.id, name: newUser.name } };
+  } catch (error) {
+    console.error("Error creating general user:", error);
+    return { error: "사용자 등록 중 오류가 발생했습니다." };
   }
-
-  const hashedPin = await bcrypt.hash(pin, 10);
-
-  const [newUser] = await db
-    .insert(generalUsers)
-    .values({
-      name,
-      phoneNumber,
-      gender,
-      age,
-      hashedPin,
-    })
-    .returning();
-
-  return { success: true, user: { id: newUser.id, name: newUser.name } };
 }
 
 export async function getAllGeneralUsers() {

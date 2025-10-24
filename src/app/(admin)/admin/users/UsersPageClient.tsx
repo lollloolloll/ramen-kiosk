@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ArrowUp, ArrowDown } from "lucide-react"; // Import ArrowUp and ArrowDown
 
 type GeneralUser = typeof generalUsers.$inferSelect;
 
@@ -24,6 +26,7 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("age"); // 'age', 'name', 'createdAt'
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); // New state for sort direction
 
   const years = useMemo(() => {
     const allYears = generalUsers
@@ -58,18 +61,26 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
     // Sorting
     if (sortOrder === "age") {
       filtered.sort((a, b) => {
-        if (!a.birthDate) return 1;
-        if (!b.birthDate) return -1;
-        return new Date(a.birthDate).getTime() - new Date(b.birthDate).getTime();
+        if (!a.birthDate) return sortDirection === 'asc' ? 1 : -1; // Handle null birthDate
+        if (!b.birthDate) return sortDirection === 'asc' ? -1 : 1; // Handle null birthDate
+        const dateA = new Date(a.birthDate).getTime();
+        const dateB = new Date(b.birthDate).getTime();
+        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
       });
     } else if (sortOrder === "name") {
-      filtered.sort((a, b) => a.name.localeCompare(b.name));
+      filtered.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      });
     } else if (sortOrder === "createdAt") {
-      filtered.sort((a, b) => a.id - b.id); // Assuming ID reflects creation order
+      filtered.sort((a, b) => {
+        return sortDirection === 'asc' ? a.id - b.id : b.id - a.id; // Assuming ID reflects creation order
+      });
     }
 
     return filtered;
-  }, [generalUsers, filterType, selectedYear, searchTerm, sortOrder]);
+  }, [generalUsers, filterType, selectedYear, searchTerm, sortOrder, sortDirection]); // Added sortDirection to dependencies
 
   const renderDateFilters = () => {
     if (filterType === "year") {
@@ -130,6 +141,14 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
                         <SelectItem value="createdAt">생성순</SelectItem>
                     </SelectContent>
                 </Select>
+                {/* Sort Direction Toggle Button */}
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'))}
+                >
+                    {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                </Button>
             </div>
         </div>
 

@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown } from "lucide-react";
-import { Pagination } from "@/lib/shared/pagination"; // Import Pagination component
+import { Pagination } from "@/lib/shared/pagination";
+import { useRouter, useSearchParams } from "next/navigation"; // Import these
 
 type GeneralUser = typeof generalUsers.$inferSelect;
 
@@ -31,6 +32,8 @@ interface UsersPageClientProps {
   page: number;
   per_page: number;
   total_count: number;
+  sort: string; // Add sort prop
+  order: string; // Add order prop
 }
 
 export function UsersPageClient({
@@ -38,12 +41,33 @@ export function UsersPageClient({
   page,
   per_page,
   total_count,
+  sort, // Destructure sort from props
+  order, // Destructure order from props
 }: UsersPageClientProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOrder, setSortOrder] = useState("name");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const router = useRouter(); // Initialize useRouter
+  const searchParams = useSearchParams(); // Initialize useSearchParams
 
-  const filteredAndSortedUsers = useMemo(() => {
+  const [searchTerm, setSearchTerm] = useState("");
+  // Remove sortOrder and sortDirection states, use props instead
+  // const [sortOrder, setSortOrder] = useState("name");
+  // const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  const handleSortChange = (newSortOrder: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("sort", newSortOrder);
+    params.set("page", "1"); // Reset page to 1 when sorting changes
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleDirectionChange = () => {
+    const params = new URLSearchParams(searchParams);
+    const currentOrder = params.get("order") || "asc";
+    params.set("order", currentOrder === "asc" ? "desc" : "asc");
+    params.set("page", "1"); // Reset page to 1 when sorting changes
+    router.push(`?${params.toString()}`);
+  };
+
+  const filteredUsers = useMemo(() => { // Renamed from filteredAndSortedUsers
     let filtered = [...generalUsers];
 
     if (searchTerm) {
@@ -60,55 +84,31 @@ export function UsersPageClient({
         return nameMatch || phoneMatch;
       });
     }
-
-    if (sortOrder === "age") {
-      filtered.sort((a, b) => {
-        if (!a.birthDate) return sortDirection === "asc" ? 1 : -1;
-        if (!b.birthDate) return sortDirection === "asc" ? -1 : 1;
-        const dateA = new Date(a.birthDate).getTime();
-        const dateB = new Date(b.birthDate).getTime();
-        return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
-      });
-    } else if (sortOrder === "name") {
-      filtered.sort((a, b) => {
-        const nameA = a.name.toLowerCase();
-        const nameB = b.name.toLowerCase();
-        return sortDirection === "asc"
-          ? nameA.localeCompare(nameB)
-          : nameB.localeCompare(nameA);
-      });
-    } else if (sortOrder === "createdAt") {
-      filtered.sort((a, b) => {
-        return sortDirection === "asc" ? a.id - b.id : b.id - a.id;
-      });
-    }
-
+    // Remove client-side sorting logic, as it's now handled by the server
     return filtered;
-  }, [generalUsers, searchTerm, sortOrder, sortDirection]);
+  }, [generalUsers, searchTerm]); // Remove sortOrder and sortDirection from dependencies
 
   return (
     <div>
       <div className="mb-8">
         <div className="flex justify-end items-center mb-4 gap-2">
           <div className="flex items-center gap-2">
-            <Select onValueChange={setSortOrder} defaultValue="name">
+            <Select onValueChange={handleSortChange} defaultValue={sort}> {/* Use handleSortChange and sort prop */}
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="정렬" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">이름순</SelectItem>
                 <SelectItem value="age">나이순</SelectItem>
+                <SelectItem value="name">이름순</SelectItem>
                 <SelectItem value="createdAt">생성순</SelectItem>
               </SelectContent>
             </Select>
             <Button
               variant="outline"
               size="icon"
-              onClick={() =>
-                setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
-              }
+              onClick={handleDirectionChange} // Use handleDirectionChange
             >
-              {sortDirection === "asc" ? (
+              {order === "asc" ? ( // Use order prop
                 <ArrowUp className="h-4 w-4" />
               ) : (
                 <ArrowDown className="h-4 w-4" />
@@ -134,7 +134,7 @@ export function UsersPageClient({
           </div>
         </div>
 
-        <DataTable columns={generalUserColumns} data={filteredAndSortedUsers} />
+        <DataTable columns={generalUserColumns} data={filteredUsers} /> {/* Use filteredUsers */}
       </div>
       <Pagination page={page} per_page={per_page} total_count={total_count} />
     </div>

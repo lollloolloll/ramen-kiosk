@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { generalUsers, users } from "@drizzle/schema";
-import { eq } from "drizzle-orm";
+import { eq, asc, desc } from "drizzle-orm";
 import { generalUserSchema } from "@/lib/validators/generalUser";
 import { revalidatePath } from "next/cache";
 
@@ -64,19 +64,45 @@ export async function createGeneralUser(data: unknown) {
 
 import { count } from "drizzle-orm";
 
-export async function getAllGeneralUsers({ 
-  page = 1, 
-  per_page = 10 
+export async function getAllGeneralUsers({
+  page = 1,
+  per_page = 10,
+  sort = "name",
+  order = "asc",
 }: {
   page?: number;
   per_page?: number;
+  sort?: string;
+  order?: string;
 }) {
   try {
     const offset = (page - 1) * per_page;
     const [total] = await db.select({ value: count() }).from(generalUsers);
     const total_count = total.value;
 
-    const allUsers = await db.select().from(generalUsers).limit(per_page).offset(offset);
+    const orderDirection = order === "asc" ? asc : desc;
+    let orderBy;
+
+    switch (sort) {
+      case "name":
+        orderBy = orderDirection(generalUsers.name);
+        break;
+      case "age":
+        orderBy = orderDirection(generalUsers.birthDate);
+        break;
+      case "createdAt":
+        orderBy = orderDirection(generalUsers.id);
+        break;
+      default:
+        orderBy = asc(generalUsers.name);
+    }
+
+    const allUsers = await db
+      .select()
+      .from(generalUsers)
+      .orderBy(orderBy)
+      .limit(per_page)
+      .offset(offset);
     return { data: allUsers, total_count };
   } catch (error) {
     return { error: "사용자 정보를 가져오는 데 실패했습니다." };
@@ -155,3 +181,4 @@ export async function deleteAdminUser(id: number) {
     return { error: "관리자 삭제에 실패했습니다." };
   }
 }
+

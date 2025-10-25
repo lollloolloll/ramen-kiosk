@@ -5,14 +5,18 @@ interface AdminUsersPageProps {
   searchParams: {
     page?: string;
     per_page?: string;
+    sort?: string;
+    order?: string;
   };
 }
 
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
   const page = Number(searchParams.page) || 1;
   const per_page = Number(searchParams.per_page) || 10;
+  const sort = searchParams.sort || 'name'; // Default sort to 'name'
+  const order = searchParams.order || 'asc'; // Default order to 'asc'
 
-  const generalUsersResult = await getAllGeneralUsers({ page, per_page });
+  const generalUsersResult = await getAllGeneralUsers({ page, per_page, sort, order });
 
   const generalUsers = generalUsersResult.data || [];
   const total_count = generalUsersResult.total_count || 0;
@@ -25,6 +29,8 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         page={page}
         per_page={per_page}
         total_count={total_count}
+        sort={sort}
+        order={order}
       />
     </div>
   );

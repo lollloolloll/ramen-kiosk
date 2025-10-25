@@ -23,7 +23,10 @@ export default function AdminLayout({
       <aside className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <a href="/admin" className="flex items-center gap-2 font-semibold px-2">
+            <a
+              href="/admin"
+              className="flex items-center gap-2 font-semibold px-16"
+            >
               <span>Ramen Kiosk</span>
             </a>
           </div>
@@ -50,7 +53,10 @@ export default function AdminLayout({
         }`}
       >
         <div className="flex h-14 items-center justify-between border-b px-4 lg:h-[60px] lg:px-6">
-          <a href="/admin" className="flex items-center gap-2 font-semibold px-2">
+          <a
+            href="/admin"
+            className="flex items-center gap-2 font-semibold px-2"
+          >
             <span>Ramen Kiosk</span>
           </a>
           <Button variant="ghost" size="icon" onClick={toggleSidebar}>

@@ -39,30 +39,12 @@ export function UsersPageClient({
   per_page,
   total_count,
 }: UsersPageClientProps) {
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortOrder, setSortOrder] = useState("age");
+  const [sortOrder, setSortOrder] = useState("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-
-  const years = useMemo(() => {
-    const allYears = generalUsers
-      .filter((user) => user.birthDate)
-      .map((user) => new Date(user.birthDate!).getFullYear());
-    return [...new Set(allYears)].sort((a, b) => b - a);
-  }, [generalUsers]);
 
   const filteredAndSortedUsers = useMemo(() => {
     let filtered = [...generalUsers];
-
-    if (selectedYear) {
-      filtered = filtered.filter((user) => {
-        if (!user.birthDate) return false;
-        const birthDate = new Date(user.birthDate);
-        if (isNaN(birthDate.getTime())) return false;
-
-        return birthDate.getFullYear() === selectedYear;
-      });
-    }
 
     if (searchTerm) {
       const normalizedSearch = searchTerm.replace(/-/g, "").toLowerCase();
@@ -102,53 +84,20 @@ export function UsersPageClient({
     }
 
     return filtered;
-  }, [
-    generalUsers,
-    selectedYear,
-    searchTerm,
-    sortOrder,
-    sortDirection,
-  ]);
-
-  const renderYearSelect = () => {
-    return (
-      <Select
-        onValueChange={(value) =>
-          setSelectedYear(value === "all" ? null : parseInt(value))
-        }
-        defaultValue={selectedYear?.toString() || "all"}
-      >
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="연도 선택" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">전체</SelectItem>
-          {years.map((year) => (
-            <SelectItem key={year} value={year.toString()}>
-              {year}년
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
-  };
+  }, [generalUsers, searchTerm, sortOrder, sortDirection]);
 
   return (
     <div>
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-4 gap-2">
+        <div className="flex justify-end items-center mb-4 gap-2">
           <div className="flex items-center gap-2">
-            {renderYearSelect()}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Select onValueChange={setSortOrder} defaultValue="age">
+            <Select onValueChange={setSortOrder} defaultValue="name">
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="정렬" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="age">나이순</SelectItem>
                 <SelectItem value="name">이름순</SelectItem>
+                <SelectItem value="age">나이순</SelectItem>
                 <SelectItem value="createdAt">생성순</SelectItem>
               </SelectContent>
             </Select>

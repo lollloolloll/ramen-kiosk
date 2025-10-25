@@ -178,17 +178,6 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="mt-6 flex gap-4">
-        <Link href="/admin/records">
-          <Button>기록 관리</Button>
-        </Link>
-        <Link href="/admin/stock">
-          <Button>재고 관리</Button>
-        </Link>
-        <Link href="/admin/users">
-          <Button>사용자 관리</Button>
-        </Link>
-      </div>
 
       {/* Analytics Section */}
       <div className="mt-8">

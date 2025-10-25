@@ -43,7 +43,7 @@ export const columns: ColumnDef<Ramen>[] = [
         <img
           src={imageUrl}
           alt={`${ramenName} 이미지`}
-          className="h-16 w-16 rounded-md object-cover" // 이미지 크기와 스타일 지정
+          className="h-16 w-16 rounded-md object-cover mx-auto" // 이미지 크기와 스타일 지정, mx-auto로 중앙 정렬
         />
       ) : (
         <span className="text-muted-foreground">이미지 없음</span>

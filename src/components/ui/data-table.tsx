@@ -67,7 +67,7 @@ export function DataTable<TData, TValue>({
                 {row.getVisibleCells().map((cell, index) => (
                   <TableCell
                     key={cell.id}
-                    className={`text-center ${
+                    className={`text-center align-middle ${
                       index < row.getVisibleCells().length - 1 ? "border-r" : ""
                     }`}
                   >

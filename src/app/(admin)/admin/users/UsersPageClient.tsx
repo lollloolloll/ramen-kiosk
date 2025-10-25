@@ -146,12 +146,6 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Input
-              placeholder="이름 또는 전화번호 검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-[250px]"
-            />
             <Select onValueChange={setSortOrder} defaultValue="age">
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="정렬" />
@@ -176,6 +170,12 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
                 <ArrowDown className="h-4 w-4" />
               )}
             </Button>
+            <Input
+              placeholder="이름 또는 전화번호 검색..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-[250px]"
+            />
             <Dialog>
               <DialogTrigger asChild>
                 <Button>사용자 추가</Button>

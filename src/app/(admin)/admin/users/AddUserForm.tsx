@@ -308,7 +308,7 @@ export function AddUserForm() {
               <FormLabel>
                 학교<span className="text-red-500">*</span>
               </FormLabel>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 whitespace-nowrap ">
                 {/* 학교 분류 선택 Select Box */}
                 <Select onValueChange={setSchoolLevel} value={schoolLevel}>
                   <SelectTrigger className="w-[120px]">

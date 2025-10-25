@@ -364,7 +364,7 @@ export function EditUserForm({ user, children }: EditUserFormProps) {
                   <FormLabel>
                     학교<span className="text-red-500">*</span>
                   </FormLabel>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 whitespace-nowrap ">
                     <Select onValueChange={setSchoolLevel} value={schoolLevel}>
                       <SelectTrigger className="w-[120px]">
                         <SelectValue placeholder="선택" />

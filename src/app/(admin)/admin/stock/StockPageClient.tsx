@@ -20,7 +20,7 @@ export function StockPageClient({ initialRamens }: StockPageClientProps) {
   return (
     <div className="container px-16 py-10">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Ramen Stock Management</h1>
+        <h1 className="text-3xl font-bold">라면 재고 관리</h1>
         <Dialog>
           <DialogTrigger asChild>
             <Button>라면 추가</Button>

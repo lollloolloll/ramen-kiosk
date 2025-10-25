@@ -131,8 +131,6 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">일반 사용자 관리</h2>
-
         <div className="flex justify-between items-center mb-4 gap-2">
           <div className="flex items-center gap-2">
             <Select onValueChange={setFilterType} defaultValue="all">

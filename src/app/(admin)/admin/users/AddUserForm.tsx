@@ -2,11 +2,11 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -25,65 +25,149 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { DialogFooter } from "@/components/ui/dialog";
 import { createGeneralUser } from "@/lib/actions/generalUser";
+import { generalUserSchema } from "@/lib/validators/generalUser";
+import { useState, useEffect, useMemo } from "react";
+import { z } from "zod";
 
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "이름은 2자 이상이어야 합니다.",
-  }),
-  phoneNumber: z.string().regex(/^010-\d{4}-\d{4}$/, {
-    message: "유효한 전화번호 형식이 아닙니다 (예: 010-1234-5678).",
-  }),
-  gender: z.enum(["MALE", "FEMALE"], {
-    message: "성별을 선택해주세요.",
-  }),
-  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
-    message: "유효한 생년월일 형식이 아닙니다 (예: 2000-01-01).",
-  }),
-  school: z.string().min(2, {
-    message: "학교는 2자 이상이어야 합니다.",
-  }),
-  personalInfoConsent: z.boolean().refine((val) => val === true, {
-    message: "개인정보 수집 및 이용에 동의해야 합니다.",
-  }),
-});
+type GeneralUserFormValues = z.infer<typeof generalUserSchema>;
+
+const formatPhoneNumber = (value: string) => {
+  if (!value) return value;
+  const phoneNumber = value.replace(/[^\d]/g, "");
+  const phoneNumberLength = phoneNumber.length;
+  if (phoneNumberLength < 4) return phoneNumber;
+  if (phoneNumberLength < 8) {
+    return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3)}`;
+  }
+  return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(
+    3,
+    7
+  )}-${phoneNumber.slice(7, 11)}`;
+};
 
 export function AddUserForm() {
   const router = useRouter();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 생년월일 상태
+  const [birthYear, setBirthYear] = useState<string>();
+  const [birthMonth, setBirthMonth] = useState<string>();
+  const [birthDay, setBirthDay] = useState<string>();
+
+  // 학교 정보 상태
+  const [schoolLevel, setSchoolLevel] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+
+  // 년도 Select가 열렸을 때 2010년으로 스크롤
+  const [yearSelectOpen, setYearSelectOpen] = useState(false);
+
+  const form = useForm<GeneralUserFormValues>({
+    resolver: zodResolver(generalUserSchema),
     defaultValues: {
       name: "",
       phoneNumber: "",
-      gender: "MALE", // Default gender
+      gender: "",
       birthDate: "",
       school: "",
       personalInfoConsent: false,
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    const formData = new FormData();
-    formData.append("name", values.name);
-    formData.append("phoneNumber", values.phoneNumber);
-    formData.append("gender", values.gender);
-    formData.append("birthDate", values.birthDate);
-    formData.append("school", values.school);
-    formData.append(
-      "personalInfoConsent",
-      values.personalInfoConsent.toString()
-    );
-
-    const result = await createGeneralUser(formData);
-
-    if (result?.error) {
-      toast.error(result.error);
+  // 생년월일 useEffect
+  useEffect(() => {
+    if (birthYear && birthMonth && birthDay) {
+      form.setValue("birthDate", `${birthYear}-${birthMonth}-${birthDay}`);
     } else {
-      toast.success("사용자가 성공적으로 추가되었습니다!");
-      router.refresh();
-      form.reset();
-      // TODO: Close the dialog here. This component likely receives a prop like `onSuccess` or `setOpen(false)`. For now, just refreshing.
+      form.setValue("birthDate", "");
+    }
+  }, [birthYear, birthMonth, birthDay, form.setValue]);
+
+  // 학교 useEffect
+  useEffect(() => {
+    if (schoolLevel === "해당없음") {
+      form.setValue("school", "해당없음");
+    } else if (schoolLevel && schoolName) {
+      let suffix = "";
+      switch (schoolLevel) {
+        case "초등학교":
+          suffix = "초";
+          break;
+        case "중학교":
+          suffix = "중";
+          break;
+        case "고등학교":
+          suffix = "고";
+          break;
+        case "대학교":
+          suffix = "대";
+          break;
+        default:
+          suffix = "";
+      }
+      form.setValue("school", `${schoolName}${suffix}`);
+    } else {
+      form.setValue("school", "");
+    }
+  }, [schoolLevel, schoolName, form.setValue]);
+
+  const years = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    // 1930년부터 현재년도까지 (역순)
+    return Array.from(
+      { length: currentYear - 1929 },
+      (_, i) => currentYear - i
+    );
+  }, []);
+
+  const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
+
+  const days = useMemo(() => {
+    if (!birthYear || !birthMonth) {
+      // 년/월이 선택 안됐으면 1~31일까지 기본 표시
+      return Array.from({ length: 31 }, (_, i) => i + 1);
+    }
+    const daysInMonth = new Date(
+      parseInt(birthYear),
+      parseInt(birthMonth),
+      0
+    ).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  }, [birthYear, birthMonth]);
+
+  async function onSubmit(values: GeneralUserFormValues) {
+    setIsSubmitting(true);
+    try {
+      const result = await createGeneralUser(values);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      if (result.user) {
+        toast.success("사용자가 성공적으로 추가되었습니다!");
+        router.refresh();
+        form.reset();
+        setBirthYear(undefined);
+        setBirthMonth(undefined);
+        setBirthDay(undefined);
+        setSchoolLevel("");
+        setSchoolName("");
+        setYearSelectOpen(false);
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "사용자 등록에 실패했습니다."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   }
+
+  const watchedValues = form.watch();
+  const isButtonDisabled =
+    !watchedValues.name ||
+    !watchedValues.phoneNumber ||
+    !watchedValues.gender ||
+    !watchedValues.birthDate ||
+    !watchedValues.school;
 
   return (
     <Form {...form}>
@@ -93,9 +177,11 @@ export function AddUserForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>이름</FormLabel>
+              <FormLabel>
+                이름<span className="text-red-500">*</span>
+              </FormLabel>
               <FormControl>
-                <Input placeholder="사용자 이름" {...field} />
+                <Input placeholder="홍길동" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -106,9 +192,18 @@ export function AddUserForm() {
           name="phoneNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>전화번호</FormLabel>
+              <FormLabel>
+                휴대폰 번호<span className="text-red-500">*</span>
+              </FormLabel>
               <FormControl>
-                <Input placeholder="010-1234-5678" {...field} />
+                <Input
+                  placeholder="010-1234-5678"
+                  type="tel"
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(formatPhoneNumber(e.target.value));
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -119,18 +214,33 @@ export function AddUserForm() {
           name="gender"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>성별</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="성별을 선택하세요" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="MALE">남성</SelectItem>
-                  <SelectItem value="FEMALE">여성</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>
+                성별<span className="text-red-500">*</span>
+              </FormLabel>
+              <FormControl>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={field.value === "남" ? "default" : "outline"}
+                    onClick={() => {
+                      field.onChange("남");
+                      form.trigger("gender");
+                    }}
+                  >
+                    남
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={field.value === "여" ? "default" : "outline"}
+                    onClick={() => {
+                      field.onChange("여");
+                      form.trigger("gender");
+                    }}
+                  >
+                    여
+                  </Button>
+                </div>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -140,10 +250,52 @@ export function AddUserForm() {
           name="birthDate"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>생년월일</FormLabel>
-              <FormControl>
-                <Input placeholder="YYYY-MM-DD" {...field} />
-              </FormControl>
+              <FormLabel>
+                생년월일<span className="text-red-500">*</span>
+              </FormLabel>
+              <div className="flex gap-2">
+                <Select
+                  onValueChange={setBirthYear}
+                  value={birthYear}
+                  open={yearSelectOpen}
+                  onOpenChange={setYearSelectOpen}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="년" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" className="max-h-[300px]">
+                    {years.map((year) => (
+                      <SelectItem key={year} value={String(year)}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select onValueChange={setBirthMonth} value={birthMonth}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="월" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" className="max-h-[300px]">
+                    {months.map((month) => (
+                      <SelectItem key={month} value={String(month)}>
+                        {month}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select onValueChange={setBirthDay} value={birthDay}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="일" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" className="max-h-[300px]">
+                    {days.map((day) => (
+                      <SelectItem key={day} value={String(day)}>
+                        {day}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -151,16 +303,47 @@ export function AddUserForm() {
         <FormField
           control={form.control}
           name="school"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
-              <FormLabel>학교</FormLabel>
-              <FormControl>
-                <Input placeholder="학교 이름" {...field} />
-              </FormControl>
+              <FormLabel>
+                학교<span className="text-red-500">*</span>
+              </FormLabel>
+              <div className="flex items-center gap-2">
+                {/* 학교 분류 선택 Select Box */}
+                <Select onValueChange={setSchoolLevel} value={schoolLevel}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      "초등학교",
+                      "중학교",
+                      "고등학교",
+                      "대학교",
+                      "해당없음",
+                    ].map((level) => (
+                      <SelectItem key={level} value={level}>
+                        {level}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* 학교 이름 입력 Input */}
+                <FormControl>
+                  <Input
+                    placeholder="학교 이름 (예: 선덕, 자운)"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    disabled={!schoolLevel || schoolLevel === "해당없음"}
+                  />
+                </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="personalInfoConsent"
@@ -173,14 +356,19 @@ export function AddUserForm() {
                 />
               </FormControl>
               <div className="space-y-1 leading-none">
-                <FormLabel>개인정보 수집 및 이용 동의</FormLabel>
-                <FormMessage />
+                <FormLabel>개인정보 수집 및 이용 동의 (선택)</FormLabel>
+                <FormDescription>
+                  동의 시 맞춤형 서비스 제공에 활용될 수 있습니다. 동의하지
+                  않아도 서비스 이용이 가능합니다.
+                </FormDescription>
               </div>
             </FormItem>
           )}
         />
         <DialogFooter>
-          <Button type="submit">사용자 추가</Button>
+          <Button type="submit" disabled={isSubmitting || isButtonDisabled}>
+            {isSubmitting ? "등록 중..." : "사용자 추가"}
+          </Button>
         </DialogFooter>
       </form>
     </Form>

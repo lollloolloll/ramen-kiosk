@@ -23,11 +23,11 @@ export function StockPageClient({ initialRamens }: StockPageClientProps) {
         <h1 className="text-3xl font-bold">Ramen Stock Management</h1>
         <Dialog>
           <DialogTrigger asChild>
-            <Button>Add New Ramen</Button>
+            <Button>라면 추가</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Add New Ramen</DialogTitle>
+              <DialogTitle>라면 수정</DialogTitle>
             </DialogHeader>
             <AddRamenForm />
           </DialogContent>

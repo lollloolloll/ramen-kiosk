@@ -2,7 +2,6 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
 import { generalUsers, users } from "@drizzle/schema";
 import { deleteGeneralUser, deleteAdminUser } from "@/lib/actions/generalUser";
 import { toast } from "sonner";

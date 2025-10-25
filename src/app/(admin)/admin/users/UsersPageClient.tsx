@@ -12,6 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AddUserForm } from "./AddUserForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown } from "lucide-react"; // Import ArrowUp and ArrowDown
 
@@ -170,6 +178,17 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
                 <ArrowDown className="h-4 w-4" />
               )}
             </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>Add New Ramen</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Ramen</DialogTitle>
+                </DialogHeader>
+                <AddUserForm />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 

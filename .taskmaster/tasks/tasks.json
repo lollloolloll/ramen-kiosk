@@ -571,7 +571,7 @@
         "description": "사용자가 라면 대여를 성공적으로 마친 후, '대여가 완료되었습니다'와 같은 확인 토스트/메시지를 표시합니다.",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [8, 12],
         "priority": "medium",
         "subtasks": [

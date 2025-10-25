@@ -26,7 +26,7 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("age"); // 'age', 'name', 'createdAt'
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); // New state for sort direction
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc"); // New state for sort direction
 
   const years = useMemo(() => {
     const allYears = generalUsers
@@ -49,38 +49,53 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
       });
     }
 
-    // Search filtering
     if (searchTerm) {
-      filtered = filtered.filter(
-        (user) =>
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.phoneNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const normalizedSearch = searchTerm.replace(/-/g, "").toLowerCase();
+
+      filtered = filtered.filter((user) => {
+        const nameMatch = user.name.toLowerCase().includes(normalizedSearch);
+        const phoneMatch = user.phoneNumber
+          ? user.phoneNumber
+              .replace(/-/g, "")
+              .toLowerCase()
+              .includes(normalizedSearch)
+          : false;
+        return nameMatch || phoneMatch;
+      });
     }
 
     // Sorting
     if (sortOrder === "age") {
       filtered.sort((a, b) => {
-        if (!a.birthDate) return sortDirection === 'asc' ? 1 : -1; // Handle null birthDate
-        if (!b.birthDate) return sortDirection === 'asc' ? -1 : 1; // Handle null birthDate
+        if (!a.birthDate) return sortDirection === "asc" ? 1 : -1; // Handle null birthDate
+        if (!b.birthDate) return sortDirection === "asc" ? -1 : 1; // Handle null birthDate
         const dateA = new Date(a.birthDate).getTime();
         const dateB = new Date(b.birthDate).getTime();
-        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+        return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
       });
     } else if (sortOrder === "name") {
       filtered.sort((a, b) => {
         const nameA = a.name.toLowerCase();
         const nameB = b.name.toLowerCase();
-        return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        return sortDirection === "asc"
+          ? nameA.localeCompare(nameB)
+          : nameB.localeCompare(nameA);
       });
     } else if (sortOrder === "createdAt") {
       filtered.sort((a, b) => {
-        return sortDirection === 'asc' ? a.id - b.id : b.id - a.id; // Assuming ID reflects creation order
+        return sortDirection === "asc" ? a.id - b.id : b.id - a.id; // Assuming ID reflects creation order
       });
     }
 
     return filtered;
-  }, [generalUsers, filterType, selectedYear, searchTerm, sortOrder, sortDirection]); // Added sortDirection to dependencies
+  }, [
+    generalUsers,
+    filterType,
+    selectedYear,
+    searchTerm,
+    sortOrder,
+    sortDirection,
+  ]); // Added sortDirection to dependencies
 
   const renderDateFilters = () => {
     if (filterType === "year") {
@@ -109,47 +124,53 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
     <div>
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">일반 사용자 관리</h2>
-        
-        <div className="flex justify-between items-center mb-4 gap-2">
-            <div className="flex items-center gap-2">
-                <Select onValueChange={setFilterType} defaultValue="all">
-                    <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="필터 기준" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">전체</SelectItem>
-                        <SelectItem value="year">연도별</SelectItem>
-                    </SelectContent>
-                </Select>
-                {renderDateFilters()}
-            </div>
 
-            <div className="flex items-center gap-2">
-                <Input
-                    placeholder="이름 또는 전화번호 검색..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-[250px]"
-                />
-                <Select onValueChange={setSortOrder} defaultValue="age">
-                    <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="정렬" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="age">나이순</SelectItem>
-                        <SelectItem value="name">이름순</SelectItem>
-                        <SelectItem value="createdAt">생성순</SelectItem>
-                    </SelectContent>
-                </Select>
-                {/* Sort Direction Toggle Button */}
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'))}
-                >
-                    {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                </Button>
-            </div>
+        <div className="flex justify-between items-center mb-4 gap-2">
+          <div className="flex items-center gap-2">
+            <Select onValueChange={setFilterType} defaultValue="all">
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="필터 기준" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="year">연도별</SelectItem>
+              </SelectContent>
+            </Select>
+            {renderDateFilters()}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="이름 또는 전화번호 검색..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-[250px]"
+            />
+            <Select onValueChange={setSortOrder} defaultValue="age">
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="정렬" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="age">나이순</SelectItem>
+                <SelectItem value="name">이름순</SelectItem>
+                <SelectItem value="createdAt">생성순</SelectItem>
+              </SelectContent>
+            </Select>
+            {/* Sort Direction Toggle Button */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() =>
+                setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
+              }
+            >
+              {sortDirection === "asc" ? (
+                <ArrowUp className="h-4 w-4" />
+              ) : (
+                <ArrowDown className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
 
         <DataTable columns={generalUserColumns} data={filteredAndSortedUsers} />

@@ -180,11 +180,11 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
             </Button>
             <Dialog>
               <DialogTrigger asChild>
-                <Button>Add New Ramen</Button>
+                <Button>사용자 추가</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Add New Ramen</DialogTitle>
+                  <DialogTitle>사용자 추가</DialogTitle>
                 </DialogHeader>
                 <AddUserForm />
               </DialogContent>

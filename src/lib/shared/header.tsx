@@ -22,7 +22,12 @@ export function Header({ onMenuClick }: HeaderProps) {
         <Menu className="h-5 w-5" />
         <span className="sr-only">Toggle navigation menu</span>
       </Button>
-      <h1 className="text-lg font-semibold">관리자메뉴얼</h1>
+      <Button
+        variant="ghost"
+        className="text-lg font-semibold cursor-pointer underline"
+      >
+        관리자메뉴얼
+      </Button>
       <div className="flex items-center gap-4 ml-auto">
         <Button variant="ghost">마이페이지</Button>
         <Button variant="ghost">로그아웃</Button>

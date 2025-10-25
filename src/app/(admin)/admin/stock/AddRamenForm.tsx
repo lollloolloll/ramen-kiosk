@@ -74,9 +74,9 @@ export function AddRamenForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>이름</FormLabel>
               <FormControl>
-                <Input placeholder="Ramen Name" {...field} />
+                <Input placeholder="ex)신라면" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -87,9 +87,9 @@ export function AddRamenForm() {
           name="manufacturer"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Manufacturer</FormLabel>
+              <FormLabel>제조사</FormLabel>
               <FormControl>
-                <Input placeholder="Manufacturer" {...field} />
+                <Input placeholder="ex)농심" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -100,7 +100,7 @@ export function AddRamenForm() {
           name="stock"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Stock</FormLabel>
+              <FormLabel>수량</FormLabel>
               <FormControl>
                 <Input type="number" {...field} />
               </FormControl>
@@ -113,7 +113,7 @@ export function AddRamenForm() {
           name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Ramen Image</FormLabel>
+              <FormLabel>이미지</FormLabel>
               <FormControl>
                 <Input
                   type="file"
@@ -141,7 +141,7 @@ export function AddRamenForm() {
           )}
         />
         <DialogFooter>
-          <Button type="submit">Add Ramen</Button>
+          <Button type="submit">라면 추가</Button>
         </DialogFooter>
       </form>
     </Form>

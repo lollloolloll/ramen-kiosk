@@ -27,7 +27,7 @@ export function StockPageClient({ initialRamens }: StockPageClientProps) {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>라면 수정</DialogTitle>
+              <DialogTitle>라면 추가</DialogTitle>
             </DialogHeader>
             <AddRamenForm />
           </DialogContent>

@@ -18,7 +18,9 @@ export function RecordsPageClient({ records }: RecordsPageClientProps) {
   const searchParams = useSearchParams();
   const [username, setUsername] = useState(searchParams.get("username") || "");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: searchParams.get("from") ? new Date(searchParams.get("from")!) : undefined,
+    from: searchParams.get("from")
+      ? new Date(searchParams.get("from")!)
+      : undefined,
     to: searchParams.get("to") ? new Date(searchParams.get("to")!) : undefined,
   });
 
@@ -31,7 +33,7 @@ export function RecordsPageClient({ records }: RecordsPageClientProps) {
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container px-16 py-10">
       <h1 className="text-3xl font-bold mb-6">Rental Records</h1>
       <div className="flex items-center gap-4 mb-6">
         <Input

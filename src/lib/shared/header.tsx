@@ -4,22 +4,21 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-
+import { Home } from "lucide-react";
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const router = useRouter();
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
       <Button
         variant="outline"
         size="icon"
-        className="shrink-0 md:hidden"
+        className="shrink-0 "
         onClick={onMenuClick}
       >
-        <Menu className="h-5 w-5" />
+        <Home className="h-5 w-5" />
         <span className="sr-only">Toggle navigation menu</span>
       </Button>
       <Button

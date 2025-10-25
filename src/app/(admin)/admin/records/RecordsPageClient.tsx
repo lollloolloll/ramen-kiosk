@@ -34,7 +34,7 @@ export function RecordsPageClient({ records }: RecordsPageClientProps) {
 
   return (
     <div className="container px-16 py-10">
-      <h1 className="text-3xl font-bold mb-6">Rental Records</h1>
+      <h1 className="text-3xl font-bold mb-6">대여 관리</h1>
       <div className="flex items-center gap-4 mb-6">
         <Input
           placeholder="Filter by username..."

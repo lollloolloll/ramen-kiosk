@@ -5,6 +5,7 @@ import { Header } from "@/lib/shared/header";
 import { Sidebar } from "@/lib/shared/sidebar";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function AdminLayout({
   children,
@@ -12,9 +13,10 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const router = useRouter();
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!isSidebarOpen);
+  const goMain = () => {
+    router.push("/");
   };
 
   return (
@@ -38,14 +40,6 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
-          onClick={toggleSidebar}
-        />
-      )}
-
       {/* Mobile Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-50 flex h-full max-h-screen w-[220px] transform flex-col border-r bg-background transition-transform duration-300 ease-in-out md:hidden ${
@@ -59,7 +53,7 @@ export default function AdminLayout({
           >
             <span>Ramen Kiosk</span>
           </a>
-          <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+          <Button variant="ghost" size="icon">
             <X className="h-6 w-6" />
           </Button>
         </div>
@@ -71,7 +65,7 @@ export default function AdminLayout({
       </div>
 
       <div className="flex flex-col">
-        <Header onMenuClick={toggleSidebar} />
+        <Header onMenuClick={goMain} />
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           {children}
         </main>

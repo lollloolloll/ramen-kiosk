@@ -30,7 +30,6 @@ interface UsersPageClientProps {
 }
 
 export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
-  const [filterType, setFilterType] = useState("all"); // 'all', 'year'
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("age"); // 'age', 'name', 'createdAt'
@@ -47,7 +46,7 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
     let filtered = [...generalUsers];
 
     // Date filtering
-    if (filterType === "year" && selectedYear) {
+    if (selectedYear) {
       filtered = filtered.filter((user) => {
         if (!user.birthDate) return false;
         const birthDate = new Date(user.birthDate);
@@ -98,34 +97,33 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
     return filtered;
   }, [
     generalUsers,
-    filterType,
     selectedYear,
     searchTerm,
     sortOrder,
     sortDirection,
   ]); // Added sortDirection to dependencies
 
-  const renderDateFilters = () => {
-    if (filterType === "year") {
-      return (
-        <Select
-          onValueChange={(value) => setSelectedYear(parseInt(value))}
-          defaultValue={selectedYear?.toString()}
-        >
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="연도 선택" />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map((year) => (
-              <SelectItem key={year} value={year.toString()}>
-                {year}년
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-    }
-    return null;
+  const renderYearSelect = () => {
+    return (
+      <Select
+        onValueChange={(value) =>
+          setSelectedYear(value === "all" ? null : parseInt(value))
+        }
+        defaultValue={selectedYear?.toString() || "all"}
+      >
+        <SelectTrigger className="w-[120px]">
+          <SelectValue placeholder="연도 선택" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">전체</SelectItem>
+          {years.map((year) => (
+            <SelectItem key={year} value={year.toString()}>
+              {year}년
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
   };
 
   return (
@@ -133,16 +131,7 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4 gap-2">
           <div className="flex items-center gap-2">
-            <Select onValueChange={setFilterType} defaultValue="all">
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="필터 기준" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="year">연도별</SelectItem>
-              </SelectContent>
-            </Select>
-            {renderDateFilters()}
+            {renderYearSelect()}
           </div>
 
           <div className="flex items-center gap-2">

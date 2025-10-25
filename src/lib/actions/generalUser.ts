@@ -62,10 +62,22 @@ export async function createGeneralUser(data: unknown) {
   }
 }
 
-export async function getAllGeneralUsers() {
+import { count } from "drizzle-orm";
+
+export async function getAllGeneralUsers({ 
+  page = 1, 
+  per_page = 10 
+}: {
+  page?: number;
+  per_page?: number;
+}) {
   try {
-    const allUsers = await db.select().from(generalUsers);
-    return { data: allUsers };
+    const offset = (page - 1) * per_page;
+    const [total] = await db.select({ value: count() }).from(generalUsers);
+    const total_count = total.value;
+
+    const allUsers = await db.select().from(generalUsers).limit(per_page).offset(offset);
+    return { data: allUsers, total_count };
   } catch (error) {
     return { error: "사용자 정보를 가져오는 데 실패했습니다." };
   }

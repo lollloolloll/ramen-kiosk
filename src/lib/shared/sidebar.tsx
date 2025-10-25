@@ -14,7 +14,6 @@ const links = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  console.log("사이드바 렌더링~~~~~~***********************8");
 
   return (
     <div className="flex flex-col space-y-4">

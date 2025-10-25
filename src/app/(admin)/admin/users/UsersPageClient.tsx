@@ -21,19 +21,28 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown } from "lucide-react"; // Import ArrowUp and ArrowDown
+import { ArrowUp, ArrowDown } from "lucide-react";
+import { Pagination } from "@/lib/shared/pagination"; // Import Pagination component
 
 type GeneralUser = typeof generalUsers.$inferSelect;
 
 interface UsersPageClientProps {
   generalUsers: GeneralUser[];
+  page: number;
+  per_page: number;
+  total_count: number;
 }
 
-export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
+export function UsersPageClient({
+  generalUsers,
+  page,
+  per_page,
+  total_count,
+}: UsersPageClientProps) {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortOrder, setSortOrder] = useState("age"); // 'age', 'name', 'createdAt'
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc"); // New state for sort direction
+  const [sortOrder, setSortOrder] = useState("age");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const years = useMemo(() => {
     const allYears = generalUsers
@@ -45,7 +54,6 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
   const filteredAndSortedUsers = useMemo(() => {
     let filtered = [...generalUsers];
 
-    // Date filtering
     if (selectedYear) {
       filtered = filtered.filter((user) => {
         if (!user.birthDate) return false;
@@ -71,11 +79,10 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
       });
     }
 
-    // Sorting
     if (sortOrder === "age") {
       filtered.sort((a, b) => {
-        if (!a.birthDate) return sortDirection === "asc" ? 1 : -1; // Handle null birthDate
-        if (!b.birthDate) return sortDirection === "asc" ? -1 : 1; // Handle null birthDate
+        if (!a.birthDate) return sortDirection === "asc" ? 1 : -1;
+        if (!b.birthDate) return sortDirection === "asc" ? -1 : 1;
         const dateA = new Date(a.birthDate).getTime();
         const dateB = new Date(b.birthDate).getTime();
         return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
@@ -90,7 +97,7 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
       });
     } else if (sortOrder === "createdAt") {
       filtered.sort((a, b) => {
-        return sortDirection === "asc" ? a.id - b.id : b.id - a.id; // Assuming ID reflects creation order
+        return sortDirection === "asc" ? a.id - b.id : b.id - a.id;
       });
     }
 
@@ -101,7 +108,7 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
     searchTerm,
     sortOrder,
     sortDirection,
-  ]); // Added sortDirection to dependencies
+  ]);
 
   const renderYearSelect = () => {
     return (
@@ -145,7 +152,6 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
                 <SelectItem value="createdAt">생성순</SelectItem>
               </SelectContent>
             </Select>
-            {/* Sort Direction Toggle Button */}
             <Button
               variant="outline"
               size="icon"
@@ -163,7 +169,7 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
               placeholder="이름 또는 전화번호 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-[250px]"
+              className="w-[250px] mr-2"
             />
             <Dialog>
               <DialogTrigger asChild>
@@ -181,6 +187,7 @@ export function UsersPageClient({ generalUsers }: UsersPageClientProps) {
 
         <DataTable columns={generalUserColumns} data={filteredAndSortedUsers} />
       </div>
+      <Pagination page={page} per_page={per_page} total_count={total_count} />
     </div>
   );
 }

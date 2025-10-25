@@ -79,30 +79,43 @@ export async function getAllAdminUsers() {
     return { error: "관리자 정보를 가져오는 데 실패했습니다." };
   }
 }
-
-export async function updateUser(
-  id: number,
-  data: {
-    name: string;
-    phoneNumber: string;
-    gender: "남" | "여"; // Changed to not null
-    birthDate: string | null; // Changed to string | null
-    school: string | null;
-    personalInfoConsent: boolean;
+export async function updateUser(id: number, data: unknown) {
+  const validatedData = generalUserSchema.safeParse(data);
+  if (!validatedData.success) {
+    console.error("Validation Error:", validatedData.error.flatten());
+    return {
+      error:
+        validatedData.error.flatten().fieldErrors.personalInfoConsent?.[0] ||
+        "유효하지 않은 데이터입니다.",
+    };
   }
-) {
+
+  const { name, phoneNumber, gender, birthDate, school, personalInfoConsent } =
+    validatedData.data;
+
   try {
+    // 다른 사용자가 같은 전화번호를 사용하고 있는지 확인
+    const [existingUser] = await db
+      .select()
+      .from(generalUsers)
+      .where(eq(generalUsers.phoneNumber, phoneNumber));
+
+    if (existingUser && existingUser.id !== id) {
+      return { error: "이미 등록된 휴대폰 번호입니다." };
+    }
+
     await db
       .update(generalUsers)
       .set({
-        name: data.name,
-        phoneNumber: data.phoneNumber,
-        gender: data.gender,
-        birthDate: data.birthDate,
-        school: data.school,
-        personalInfoConsent: data.personalInfoConsent,
+        name,
+        phoneNumber,
+        gender,
+        birthDate: birthDate || "",
+        school: school || "",
+        personalInfoConsent,
       })
       .where(eq(generalUsers.id, id));
+
     revalidatePath("/admin/users");
     return { success: true };
   } catch (error) {

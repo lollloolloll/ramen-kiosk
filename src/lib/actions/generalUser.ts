@@ -80,6 +80,37 @@ export async function getAllAdminUsers() {
   }
 }
 
+export async function updateUser(
+  id: number,
+  data: {
+    name: string;
+    phoneNumber: string;
+    gender: "남" | "여"; // Changed to not null
+    birthDate: string | null; // Changed to string | null
+    school: string | null;
+    personalInfoConsent: boolean;
+  }
+) {
+  try {
+    await db
+      .update(generalUsers)
+      .set({
+        name: data.name,
+        phoneNumber: data.phoneNumber,
+        gender: data.gender,
+        birthDate: data.birthDate,
+        school: data.school,
+        personalInfoConsent: data.personalInfoConsent,
+      })
+      .where(eq(generalUsers.id, id));
+    revalidatePath("/admin/users");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating general user:", error);
+    return { error: "사용자 정보 업데이트에 실패했습니다." };
+  }
+}
+
 export async function deleteGeneralUser(id: number) {
   try {
     await db.delete(generalUsers).where(eq(generalUsers.id, id));

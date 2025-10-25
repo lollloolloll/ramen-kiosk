@@ -5,6 +5,17 @@ import { Button } from "@/components/ui/button";
 import { generalUsers, users } from "@drizzle/schema";
 import { deleteGeneralUser, deleteAdminUser } from "@/lib/actions/generalUser";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
+import { EditUserForm } from "./EditUserForm";
+import { DeleteUserDialog } from "./DeleteUserDialog";
 
 type GeneralUser = typeof generalUsers.$inferSelect;
 type AdminUser = typeof users.$inferSelect;
@@ -65,12 +76,36 @@ export const generalUserColumns: ColumnDef<GeneralUser>[] = [
     cell: ({ row }) => {
       const user = row.original;
       return (
-        <Button
-          variant="destructive"
-          onClick={() => handleDeleteGeneralUser(user.id)}
-        >
-          삭제
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => navigator.clipboard.writeText(String(user.id))}
+            >
+              Copy User ID
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <EditUserForm user={user}>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                Edit
+              </DropdownMenuItem>
+            </EditUserForm>
+            <DeleteUserDialog userId={user.id}>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                className="text-red-500"
+              >
+                Delete
+              </DropdownMenuItem>
+            </DeleteUserDialog>
+          </DropdownMenuContent>
+        </DropdownMenu>
       );
     },
   },

@@ -30,7 +30,7 @@ export function KioskPageClient({ items }: KioskPageClientProps) {
         </div>
       ) : (
         <div className="text-center text-gray-500 mt-20">
-          <p className="text-2xl">현재 대여 가능한 라면이 없습니다.</p>
+          <p className="text-2xl">현재 대여가능한 상품이 없습니다.</p>
           <p>관리자에게 문의해주세요.</p>
         </div>
       )}

@@ -13,17 +13,20 @@ interface RecordsPageClientProps {
   order: string;
 }
 
-export function RecordsPageClient({ 
-  records, 
+export function RecordsPageClient({
+  records,
   page,
   per_page,
   total_count,
   sort,
-  order 
+  order,
 }: RecordsPageClientProps) {
   return (
     <div>
-      <DataTable columns={columns} data={records} />
+      <div className="mb-8">
+        <DataTable columns={columns} data={records} />
+      </div>
+
       <Pagination page={page} per_page={per_page} total_count={total_count} />
     </div>
   );

@@ -1,7 +1,5 @@
--- Current sql file was generated after introspecting the database
--- If you want to run this migration please uncomment this code before executing migrations
-/*
-CREATE TABLE `ramens` (
+
+CREATE TABLE IF NOT EXISTS `ramens` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
 	`manufacturer` text NOT NULL,
@@ -9,15 +7,15 @@ CREATE TABLE `ramens` (
 	`image_url` text
 );
 --> statement-breakpoint
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`username` text NOT NULL,
 	`hashed_password` text NOT NULL,
 	`role` text DEFAULT 'USER' NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `users_username_unique` ON `users` (`username`);--> statement-breakpoint
-CREATE TABLE `general_users` (
+CREATE UNIQUE INDEX IF NOT EXISTS `users_username_unique` ON `users` (`username`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `general_users` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
 	`phone_number` text NOT NULL,
@@ -26,8 +24,8 @@ CREATE TABLE `general_users` (
 	`hashed_pin` text NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `general_users_phone_number_unique` ON `general_users` (`phone_number`);--> statement-breakpoint
-CREATE TABLE `rental_records` (
+CREATE UNIQUE INDEX  IF NOT EXISTS`general_users_phone_number_unique` ON `general_users` (`phone_number`);--> statement-breakpoint
+CREATE TABLE  IF NOT EXISTS `rental_records` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`ramen_id` integer NOT NULL,
@@ -36,4 +34,3 @@ CREATE TABLE `rental_records` (
 	FOREIGN KEY (`user_id`) REFERENCES `general_users`(`id`) ON UPDATE no action ON DELETE no action
 );
 
-*/

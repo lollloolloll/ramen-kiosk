@@ -11,7 +11,8 @@ CREATE TABLE `__new_rental_records` (
 	FOREIGN KEY (`items_id`) REFERENCES `items`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-INSERT INTO `__new_rental_records`("id", "user_id", "items_id", "rental_date") SELECT "id", "user_id", "items_id", "rental_date" FROM `rental_records`;--> statement-breakpoint
+INSERT INTO `__new_rental_records`("id", "user_id", "items_id", "rental_date") 
+SELECT "id", "user_id", "ramen_id" AS "items_id", "rental_date" FROM `rental_records`;--> statement-breakpoint
 DROP TABLE `rental_records`;--> statement-breakpoint
 ALTER TABLE `__new_rental_records` RENAME TO `rental_records`;--> statement-breakpoint
 PRAGMA foreign_keys=ON;

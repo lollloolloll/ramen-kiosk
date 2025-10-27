@@ -104,7 +104,8 @@ export function AddUserForm() {
         default:
           suffix = "";
       }
-      form.setValue("school", `${schoolName}${suffix}`);
+      const cleanedSchoolName = schoolName.trim().replace(/\s+/g, "");
+      form.setValue("school", `${cleanedSchoolName}${suffix}`);
     } else {
       form.setValue("school", "");
     }
@@ -181,7 +182,13 @@ export function AddUserForm() {
                 이름<span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
-                <Input placeholder="홍길동" {...field} />
+                <Input
+                  placeholder="홍길동"
+                  {...field}
+                  onChange={(e) =>
+                    field.onChange(e.target.value.replace(/\s/g, ""))
+                  }
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -334,7 +341,9 @@ export function AddUserForm() {
                   <Input
                     placeholder="학교 이름 (예: 선덕, 자운)"
                     value={schoolName}
-                    onChange={(e) => setSchoolName(e.target.value)}
+                    onChange={(e) =>
+                      setSchoolName(e.target.value.replace(/\s/g, ""))
+                    }
                     disabled={!schoolLevel || schoolLevel === "해당없음"}
                   />
                 </FormControl>

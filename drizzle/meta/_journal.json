@@ -15,6 +15,13 @@
       "when": 1761295626532,
       "tag": "0001_silent_spacker_dave",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1761531180561,
+      "tag": "0002_spotty_triathlon",
+      "breakpoints": true
     }
   ]
 }

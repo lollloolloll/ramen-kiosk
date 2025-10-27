@@ -22,14 +22,23 @@ export function FilterControls({ categories }: FilterControlsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [username, setUsername] = React.useState(searchParams.get("username") || "");
+  const today = new Date();
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(today.getMonth() - 1);
+
+  const [username, setUsername] = React.useState(
+    searchParams.get("username") || ""
+  );
+
   const [fromDate, setFromDate] = React.useState<Date | undefined>(
-    searchParams.get("from") ? new Date(searchParams.get("from")!) : undefined
+    searchParams.get("from") ? new Date(searchParams.get("from")!) : oneMonthAgo
   );
   const [toDate, setToDate] = React.useState<Date | undefined>(
-    searchParams.get("to") ? new Date(searchParams.get("to")!) : undefined
+    searchParams.get("to") ? new Date(searchParams.get("to")!) : today
   );
-  const [category, setCategory] = React.useState(searchParams.get("category") || "all");
+  const [category, setCategory] = React.useState(
+    searchParams.get("category") || "all"
+  );
 
   const handleFilter = () => {
     const params = new URLSearchParams();
@@ -62,10 +71,7 @@ export function FilterControls({ categories }: FilterControlsProps) {
       </div>
       <div>
         <Label>카테고리</Label>
-        <Select
-          onValueChange={setCategory}
-          defaultValue={category}
-        >
+        <Select onValueChange={setCategory} defaultValue={category}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="모두" />
           </SelectTrigger>

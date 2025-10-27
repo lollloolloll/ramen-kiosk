@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { CalendarIcon } from "@radix-ui/react-icons"
-import { format } from "date-fns"
-import { ko } from "date-fns/locale"
+import * as React from "react";
+import { CalendarIcon } from "@radix-ui/react-icons";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 
 interface DatePickerProps {
   date: Date | undefined;
@@ -35,7 +35,7 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date ? (
-              format(date, "LLL dd, y", { locale: ko })
+              format(date, "PPP", { locale: ko })
             ) : (
               <span>Pick a date</span>
             )}
@@ -49,9 +49,12 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
             onSelect={setDate}
             numberOfMonths={1}
             locale={ko}
+            captionLayout="dropdown"
+            fromYear={1930}
+            toYear={new Date().getFullYear()}
           />
         </PopoverContent>
       </Popover>
     </div>
-  )
+  );
 }

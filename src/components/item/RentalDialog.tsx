@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/select";
 
 interface RentalDialogProps {
-  ramen: Ramen | null;
+  item: Item | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -71,7 +71,7 @@ const formatPhoneNumber = (value: string) => {
   )}-${phoneNumber.slice(7, 11)}`;
 };
 
-export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
+export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -190,17 +190,17 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
   };
 
   const handleRental = async (userId: number) => {
-    if (!ramen) {
-      toast.error("라면 정보가 없습니다.");
+    if (!item) {
+      toast.error("아이템 정보가 없습니다.");
       return;
     }
     setIsSubmitting(true);
     try {
-      const result = await rentRamen(userId, ramen.id);
+      const result = await rentItem(userId, item.id);
       if (result.error) {
         throw new Error(result.error);
       }
-      toast.success(`'${ramen.name}' 대여가 완료되었습니다.`);
+      toast.success(`'${item.name}' 대여가 완료되었습니다.`);
       resetDialog(); // 폼 초기화
       closeDialog();
       router.refresh();
@@ -253,7 +253,7 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
     return Array.from({ length: daysInMonth }, (_, i) => i + 1);
   }, [birthYear, birthMonth]);
 
-  if (!ramen) return null;
+  if (!item) return null;
 
   const renderStep = () => {
     switch (step) {
@@ -267,9 +267,9 @@ export function RentalDialog({ ramen, open, onOpenChange }: RentalDialogProps) {
               className="space-y-4"
             >
               <DialogHeader>
-                <DialogTitle>라면 대여</DialogTitle>
+                <DialogTitle>아이템 대여</DialogTitle>
                 <DialogDescription>
-                  '{ramen.name}'을(를) 대여하려면 이름과 휴대폰 번호를
+                  '{item.name}'을(를) 대여하려면 이름과 휴대폰 번호를
                   입력하세요.
                 </DialogDescription>
               </DialogHeader>

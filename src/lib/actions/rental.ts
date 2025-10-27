@@ -5,34 +5,23 @@ import { rentalRecords, items, generalUsers } from "@drizzle/schema";
 import { eq, and, gte, lte, sql, InferInsertModel } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function rentItem(userId: number,  itemId: number) {
+export async function rentItem(userId: number, itemId: number) {
   try {
-    db.transaction((tx) => {
-      const  itemToRent = tx
+    await db.transaction(async (tx) => {
+      const itemToRent = await tx
         .select()
-        .from( items)
-        .where(eq( items.id,  itemId))
+        .from(items)
+        .where(eq(items.id, itemId))
         .get();
 
-      if (! itemToRent) {
-        throw new Error("해당 라면을 찾을 수 없습니다.");
+      if (!itemToRent) {
+        throw new Error("해당 아이템을 찾을 수 없습니다.");
       }
 
-      if ( itemToRent.stock <= 0) {
-        throw new Error("재고가 부족합니다.");
-      }
-
-      tx.update( items)
-        .set({ stock:  itemToRent.stock - 1 })
-        .where(eq( items.id,  itemId))
-        .run();
-
-      tx.insert(rentalRecords)
-        .values({
-          userId: userId,
-           itemId:  itemId,
-        })
-        .run();
+      await tx.insert(rentalRecords).values({
+        userId: userId,
+        itemsId: itemId,
+      });
     });
 
     revalidatePath("/");
@@ -84,7 +73,7 @@ export async function getRentalRecords(
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
-      .leftJoin( items, eq(rentalRecords. itemId,  items.id));
+      .leftJoin(items, eq(rentalRecords.itemsId, items.id));
 
     if (whereConditions.length > 0) {
       // @ts-ignore
@@ -125,7 +114,7 @@ export async function getRentalRecordsWithUserDetails() {
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
-      .leftJoin( items, eq(rentalRecords. itemId,  items.id));
+      .leftJoin(items, eq(rentalRecords.itemsId, items.id));
 
     const data = records.map((record) => ({
       ...record,

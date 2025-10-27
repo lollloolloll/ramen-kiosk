@@ -132,8 +132,7 @@ export default async function AdminDashboardPage() {
   const allUsers = await db.query.generalUsers.findMany();
   const rentalDetailsResult = await getRentalRecordsWithUserDetails();
 
-  const totalStock = allItems.reduce((sum,  item) => sum +  item.stock, 0);
-  const  itemTypesCount = allItems.length;
+  const itemTypesCount = allItems.length;
   const totalRentals = rentalDetailsResult.data?.length ?? 0;
   const userCount = allUsers.length;
 
@@ -147,18 +146,10 @@ export default async function AdminDashboardPage() {
         {/* Summary Cards */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">총 라면 재고</CardTitle>
+            <CardTitle className="text-sm font-medium">아이템 종류</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalStock}개</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">라면 종류</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{ itemTypesCount}종</div>
+            <div className="text-2xl font-bold">{itemTypesCount}종</div>
           </CardContent>
         </Card>
         <Card>

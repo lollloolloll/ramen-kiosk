@@ -10,13 +10,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { updateRamen } from "@/lib/actions/item";
+import { updateItem } from "@/lib/actions/item";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useState } from "react";
 import { useForm, Resolver } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
-import { Ramen } from "./columns";
+import { Item } from "./columns";
 import { useRouter } from "next/navigation";
 import {
   Form,
@@ -27,40 +27,38 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-const updateRamenClientSchema = z.object({
+const updateItemClientSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요."),
-  manufacturer: z.string().min(1, "제조사를 입력해주세요."),
-  stock: z.coerce.number().int().min(0, "재고는 0 이상이어야 합니다."),
+  category: z.string().min(1, "카테고리를 입력해주세요."),
   imageUrl: z.any().optional(),
 });
 
-type UpdateRamenSchema = z.infer<typeof updateRamenClientSchema>;
+type UpdateItemSchema = z.infer<typeof updateItemClientSchema>;
 
-interface EditRamenFormProps {
-  ramen: Ramen;
+interface EditItemFormProps {
+  item: Item;
   children: React.ReactNode;
 }
 
-export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
+export function EditItemForm({ item, children }: EditItemFormProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const form = useForm<UpdateRamenSchema>({
+  const form = useForm<UpdateItemSchema>({
     resolver: zodResolver(
-      updateRamenClientSchema
-    ) as Resolver<UpdateRamenSchema>,
+      updateItemClientSchema
+    ) as Resolver<UpdateItemSchema>,
     defaultValues: {
-      name: ramen.name,
-      manufacturer: ramen.manufacturer,
-      stock: ramen.stock,
-      imageUrl: ramen.imageUrl || undefined,
+      name: item.name,
+      category: item.category,
+      imageUrl: item.imageUrl || undefined,
     },
   });
 
-  const onSubmit = async (values: UpdateRamenSchema) => {
+  const onSubmit = async (values: UpdateItemSchema) => {
     const formData = new FormData();
+    formData.append("id", item.id.toString());
     formData.append("name", values.name);
-    formData.append("manufacturer", values.manufacturer);
-    formData.append("stock", values.stock.toString());
+    formData.append("category", values.category);
     if (values.imageUrl && values.imageUrl instanceof File) {
       formData.append("image", values.imageUrl);
     } else if (typeof values.imageUrl === "string") {
@@ -68,18 +66,18 @@ export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
     }
 
     try {
-      const result = await updateRamen(formData);
+      const result = await updateItem(formData);
       if (result.error) {
         throw new Error(result.error);
       }
-      toast.success("라면 정보가 수정되었습니다.");
+      toast.success("아이템 정보가 수정되었습니다.");
       setOpen(false);
       router.refresh();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "라면 정보 수정에 실패했습니다."
+          : "아이템 정보 수정에 실패했습니다."
       );
     }
   };
@@ -89,7 +87,7 @@ export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>라면 정보 수정</DialogTitle>
+          <DialogTitle>아이템 정보 수정</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -100,7 +98,7 @@ export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
                 <FormItem>
                   <FormLabel>이름</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ramen Name" {...field} />
+                    <Input placeholder="Item Name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -108,25 +106,12 @@ export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
             />
             <FormField
               control={form.control}
-              name="manufacturer"
+              name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>제조사</FormLabel>
+                  <FormLabel>카테고리</FormLabel>
                   <FormControl>
-                    <Input placeholder="Manufacturer" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="stock"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>재고</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
+                    <Input placeholder="Category" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -137,7 +122,7 @@ export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
               name="imageUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>라면 이미지</FormLabel>
+                  <FormLabel>아이템 이미지</FormLabel>
                   <FormControl>
                     <Input
                       type="file"
@@ -161,9 +146,9 @@ export function EditRamenForm({ ramen, children }: EditRamenFormProps) {
                       className="mt-2 h-20 w-20 object-cover rounded-md"
                     />
                   ) : (
-                    ramen.imageUrl && (
+                    item.imageUrl && (
                       <img
-                        src={ramen.imageUrl}
+                        src={item.imageUrl}
                         alt="Current Image"
                         className="mt-2 h-20 w-20 object-cover rounded-md"
                       />

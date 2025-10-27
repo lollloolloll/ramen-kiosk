@@ -11,28 +11,28 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { deleteRamen } from "@/lib/actions/item";
+import { deleteItem } from "@/lib/actions/item";
 import { toast } from "sonner";
 
-interface DeleteRamenDialogProps {
-  ramenId: number;
+interface DeleteItemDialogProps {
+  itemId: number;
   children: React.ReactNode;
 }
 
-export function DeleteRamenDialog({
-  ramenId,
+export function DeleteItemDialog({
+  itemId,
   children,
-}: DeleteRamenDialogProps) {
+}: DeleteItemDialogProps) {
   const handleDelete = async () => {
     try {
-      const result = await deleteRamen(ramenId);
+      const result = await deleteItem(itemId);
       if (result.error) {
         throw new Error(result.error);
       }
-      toast.success("라면이 삭제되었습니다.");
+      toast.success("아이템이 삭제되었습니다.");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "라면 삭제에 실패했습니다."
+        error instanceof Error ? error.message : "아이템 삭제에 실패했습니다."
       );
     }
   };
@@ -44,7 +44,7 @@ export function DeleteRamenDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>정말로 삭제하시겠습니까?</AlertDialogTitle>
           <AlertDialogDescription>
-            이 작업은 되돌릴 수 없습니다. 해당 라면 정보가 서버에서 영구적으로
+            이 작업은 되돌릴 수 없습니다. 해당 아이템 정보가 서버에서 영구적으로
             삭제됩니다.
           </AlertDialogDescription>
         </AlertDialogHeader>

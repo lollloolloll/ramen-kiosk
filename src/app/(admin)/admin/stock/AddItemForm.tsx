@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { addRamen } from "@/lib/actions/item";
+import { addItem } from "@/lib/actions/item";
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -25,23 +25,19 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  manufacturer: z.string().min(2, {
-    message: "Manufacturer must be at least 2 characters.",
-  }),
-  stock: z.coerce.number().min(0, {
-    message: "Stock cannot be negative.",
+  category: z.string().min(2, {
+    message: "Category must be at least 2 characters.",
   }),
   imageUrl: z.any().optional(),
 });
 
-export function AddRamenForm() {
+export function AddItemForm() {
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema) as Resolver<z.infer<typeof formSchema>>,
     defaultValues: {
       name: "",
-      manufacturer: "",
-      stock: 1,
+      category: "",
       imageUrl: undefined, // Changed to undefined for file input
     },
   });
@@ -49,19 +45,18 @@ export function AddRamenForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const formData = new FormData();
     formData.append("name", values.name);
-    formData.append("manufacturer", values.manufacturer);
-    formData.append("stock", values.stock.toString());
+    formData.append("category", values.category);
     if (values.imageUrl) {
       formData.append("image", values.imageUrl);
     }
 
-    const result = await addRamen(formData);
+    const result = await addItem(formData);
 
     if (result?.error) {
       toast.error(result.error);
     } else {
-      toast.success("Ramen added successfully!");
-      router.refresh(); // Refresh the page to show new ramen
+      toast.success("Item added successfully!");
+      router.refresh(); // Refresh the page to show new item
       // TODO: Close the dialog here. This component likely receives a prop like `onSuccess` or `setOpen(false)`. For now, just refreshing.
     }
   }
@@ -84,25 +79,12 @@ export function AddRamenForm() {
         />
         <FormField
           control={form.control}
-          name="manufacturer"
+          name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>제조사</FormLabel>
+              <FormLabel>카테고리</FormLabel>
               <FormControl>
                 <Input placeholder="ex)농심" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="stock"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>수량</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -141,7 +123,7 @@ export function AddRamenForm() {
           )}
         />
         <DialogFooter>
-          <Button type="submit">라면 추가</Button>
+          <Button type="submit">아이템 추가</Button>
         </DialogFooter>
       </form>
     </Form>

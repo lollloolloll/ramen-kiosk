@@ -25,7 +25,7 @@ export async function rentItem(userId: number, itemId: number) {
     });
 
     revalidatePath("/");
-    revalidatePath("/admin/stock");
+    revalidatePath("/admin/items");
     revalidatePath("/admin/records");
 
     return { success: true };
@@ -69,7 +69,7 @@ export async function getRentalRecords(
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
         userName: generalUsers.name,
-         itemName:  items.name,
+        itemName: items.name,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
@@ -110,7 +110,7 @@ export async function getRentalRecordsWithUserDetails() {
         userName: generalUsers.name,
         userGender: generalUsers.gender,
         userBirthDate: generalUsers.birthDate, // birthDate를 가져옵니다.
-         itemName:  items.name,
+        itemName: items.name,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))

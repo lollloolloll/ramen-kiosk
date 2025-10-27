@@ -13,7 +13,7 @@ export async function middleware(req: NextRequest) {
   const { nextUrl } = req;
 
   // 보호할 경로와 인증 관련 경로 정의
-  const protectedRoutes = ["/stock", "/records"];
+  const protectedRoutes = ["/items", "/records"];
   const authRoutes = ["/login", "/register"];
 
   // 현재 경로가 인증 관련 경로인지 확인

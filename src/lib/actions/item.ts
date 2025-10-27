@@ -66,7 +66,7 @@ export async function addItem(formData: FormData) {
     await db.insert(items).values({
       ...validatedData.data,
     });
-    revalidatePath("/admin/stock");
+    revalidatePath("/admin/items");
     return { success: true };
   } catch (error) {
     console.error("Failed to add item:", error);
@@ -111,7 +111,8 @@ export async function updateItem(formData: FormData) {
     imageUrl = imageUrlFromForm;
   }
 
-  const dataToUpdate: { name?: string; category?: string; imageUrl?: string } = {};
+  const dataToUpdate: { name?: string; category?: string; imageUrl?: string } =
+    {};
   if (name) dataToUpdate.name = name;
   if (category) dataToUpdate.category = category;
   if (imageUrl) dataToUpdate.imageUrl = imageUrl;
@@ -123,7 +124,7 @@ export async function updateItem(formData: FormData) {
 
   try {
     await db.update(items).set(validatedData.data).where(eq(items.id, id));
-    revalidatePath("/admin/stock");
+    revalidatePath("/admin/items");
     return { success: true };
   } catch (error) {
     return { error: "아이템 정보 업데이트에 실패했습니다." };
@@ -133,7 +134,7 @@ export async function updateItem(formData: FormData) {
 export async function deleteItem(id: number) {
   try {
     await db.delete(items).where(eq(items.id, id));
-    revalidatePath("/admin/stock");
+    revalidatePath("/admin/items");
     return { success: true };
   } catch (error) {
     return { error: "아이템 삭제에 실패했습니다." };

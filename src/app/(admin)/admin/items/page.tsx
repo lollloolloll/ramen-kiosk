@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
-import { StockPageClient } from "./StockPageClient";
+import { ItemPageClient } from "./ItemPageClient";
 
-export default async function AdminStockPage() {
+export default async function AdminItemPage() {
   const itemList = await db.query.items.findMany();
-  return <StockPageClient initialItems={itemList} />;
+  return <ItemPageClient initialItems={itemList} />;
 }

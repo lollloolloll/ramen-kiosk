@@ -12,11 +12,11 @@ import {
 } from "@/components/ui/dialog";
 import { AddItemForm } from "./AddItemForm";
 
-interface StockPageClientProps {
+interface ItemPageClientProps {
   initialItems: Item[];
 }
 
-export function StockPageClient({ initialItems }: StockPageClientProps) {
+export function ItemPageClient({ initialItems }: ItemPageClientProps) {
   return (
     <div className="container px-16 py-10">
       <div className="flex items-center justify-between mb-6">

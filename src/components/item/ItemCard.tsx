@@ -1,6 +1,6 @@
 "use client";
 
-import { Item } from "@/app/(admin)/admin/stock/columns";
+import { Item } from "@/app/(admin)/admin/items/columns";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
 

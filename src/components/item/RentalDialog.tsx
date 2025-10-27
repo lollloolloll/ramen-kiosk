@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Item } from "@/app/(admin)/admin/stock/columns";
+import { Item } from "@/app/(admin)/admin/items/columns";
 import { rentItem } from "@/lib/actions/rental";
 import {
   findUserByNameAndPhone,

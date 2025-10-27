@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ItemCard } from "@/components/item/ItemCard";
-import { Item } from "@/app/(admin)/admin/stock/columns";
+import { Item } from "@/app/(admin)/admin/items/columns";
 import { RentalDialog } from "@/components/item/RentalDialog";
 
 interface KioskPageClientProps {

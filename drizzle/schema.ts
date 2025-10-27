@@ -7,11 +7,10 @@ import {
   foreignKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-export const ramens = sqliteTable("ramens", {
+export const items = sqliteTable("items", {
   id: integer().primaryKey({ autoIncrement: true }).notNull(),
   name: text().notNull(),
-  manufacturer: text().notNull(),
-  stock: integer().default(0).notNull(),
+  category: text().notNull(),
   imageUrl: text("image_url"),
 });
 
@@ -48,9 +47,9 @@ export const rentalRecords = sqliteTable("rental_records", {
     .notNull()
     .references(() => generalUsers.id, { onDelete: "cascade" }), // 사용자 삭제 시 관련 기록도 삭제
 
-  ramenId: integer("ramen_id")
+  itemsId: integer("items_id")
     .notNull()
-    .references(() => ramens.id, {
+    .references(() => items.id, {
       onDelete: "cascade", // 👈 이 옵션을 추가!
     }),
 

@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { rentalRecords, items, generalUsers } from "@drizzle/schema";
-import { eq, and, gte, lte, sql, asc, desc, InferInsertModel } from "drizzle-orm";
+import { eq, and, gte, lte, sql, asc, desc, like } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function rentItem(userId: number, itemId: number) {
@@ -39,7 +39,6 @@ export async function rentItem(userId: number, itemId: number) {
     };
   }
 }
-
 export async function getRentalRecords(
   filters: {
     username?: string;
@@ -53,45 +52,63 @@ export async function getRentalRecords(
   } = {}
 ) {
   try {
-    const { page = 1, per_page = 10, sort = 'rentalDate', order = 'desc' } = filters;
+    const {
+      page = 1,
+      per_page = 10,
+      sort = "rentalDate",
+      order = "desc",
+    } = filters;
     const offset = (page - 1) * per_page;
 
     const whereConditions = [];
     if (filters.username) {
-      whereConditions.push(eq(generalUsers.name, filters.username));
+      whereConditions.push(like(generalUsers.name, `%${filters.username}%`));
     }
     if (filters.startDate) {
+      // 2. .getTime()을 다시 추가하여 Date를 숫자로 변환합니다. (DB 컬럼이 INTEGER 타입이므로)
       whereConditions.push(
         gte(rentalRecords.rentalDate, filters.startDate.getTime())
       );
     }
     if (filters.endDate) {
-      whereConditions.push(
-        lte(rentalRecords.rentalDate, filters.endDate.getTime())
-      );
+      const endOfDay = new Date(filters.endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      // 2. .getTime()을 다시 추가하여 Date를 숫자로 변환합니다.
+      whereConditions.push(lte(rentalRecords.rentalDate, endOfDay.getTime()));
     }
     if (filters.category) {
       whereConditions.push(eq(items.category, filters.category));
     }
 
-    const dataQuery = db
+    const baseQuery = db
       .select({
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
         userName: generalUsers.name,
         itemName: items.name,
+        itemCategory: items.category,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
-      .leftJoin(items, eq(rentalRecords.itemsId, items.id))
-      .where(and(...whereConditions))
-      .limit(per_page)
-      .offset(offset);
+      .leftJoin(items, eq(rentalRecords.itemsId, items.id));
 
-    // Dynamically set the order by clause
+    const filteredQuery =
+      whereConditions.length > 0
+        ? baseQuery.where(and(...whereConditions))
+        : baseQuery;
+
+    const dataQuery = filteredQuery.limit(per_page).offset(offset);
+
     if (sort) {
-      const sortColumn = sort === 'username' ? generalUsers.name : sort === 'itemName' ? items.name : rentalRecords.rentalDate;
-      dataQuery.orderBy(order === 'asc' ? asc(sortColumn) : desc(sortColumn));
+      const sortColumnMap = {
+        rentalDate: rentalRecords.rentalDate,
+        username: generalUsers.name,
+        itemName: items.name,
+      };
+      const sortColumn =
+        sortColumnMap[sort as keyof typeof sortColumnMap] ||
+        rentalRecords.rentalDate;
+      dataQuery.orderBy(order === "asc" ? asc(sortColumn) : desc(sortColumn));
     }
 
     const countQuery = db
@@ -101,15 +118,15 @@ export async function getRentalRecords(
       .leftJoin(items, eq(rentalRecords.itemsId, items.id))
       .where(and(...whereConditions));
 
-    const [data, total] = await Promise.all([
-      dataQuery,
-      countQuery,
-    ]);
+    // Drizzle v0.29.0 이상에서는 dataQuery가 Promise가 아니므로 .execute()가 필요할 수 있습니다.
+    // 하지만 현재 구조에서는 Promise.all이 잘 동작할 것입니다.
+    const [data, total] = await Promise.all([dataQuery, countQuery]);
 
     const total_count = total[0].count;
 
     return { success: true, data, total_count };
   } catch (error) {
+    console.error("Error fetching rental records:", error);
     return { error: "대여 기록을 불러오는 데 실패했습니다." };
   }
 }

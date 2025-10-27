@@ -22,12 +22,20 @@ import { Input } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
 
 const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  category: z.string().min(2, {
-    message: "Category must be at least 2 characters.",
-  }),
+  name: z
+    .string()
+    .trim()
+    .min(2, {
+      message: "Name must be at least 2 characters.",
+    })
+    .transform((val) => val.replace(/\s/g, "")),
+  category: z
+    .string()
+    .trim()
+    .min(2, {
+      message: "Category must be at least 2 characters.",
+    })
+    .transform((val) => val.replace(/\s/g, "")),
   imageUrl: z.any().optional(),
 });
 

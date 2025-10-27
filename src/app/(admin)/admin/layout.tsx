@@ -29,7 +29,7 @@ export default function AdminLayout({
               href="/admin"
               className="flex items-center gap-2 font-semibold px-16"
             >
-              <span>Ramen Kiosk</span>
+              <span>Item Kiosk</span>
             </a>
           </div>
           <div className="flex-1">
@@ -51,7 +51,7 @@ export default function AdminLayout({
             href="/admin"
             className="flex items-center gap-2 font-semibold px-2"
           >
-            <span>Ramen Kiosk</span>
+            <span>Item Kiosk</span>
           </a>
           <Button variant="ghost" size="icon">
             <X className="h-6 w-6" />

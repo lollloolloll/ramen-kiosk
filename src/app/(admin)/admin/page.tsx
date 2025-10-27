@@ -13,7 +13,7 @@ import { RentalAnalyticsClient } from "./RentalAnalyticsClient";
 interface RentalRecord {
   id: number;
   rentalDate: number;
-  ramenName: string | null;
+  itemName: string | null;
   userName: string | null;
   userId: number | null;
   userAge: number | null;
@@ -28,7 +28,7 @@ const processAnalytics = (records: RentalRecord[]) => {
       genderData: [],
       dayOfWeekData: [],
       hourData: [],
-      topRamens: [],
+      topItems: [],
       topUsers: [],
       repeatRentalRate: 0,
     };
@@ -85,12 +85,12 @@ const processAnalytics = (records: RentalRecord[]) => {
   });
   const hourData = hourCounts.map((count, i) => ({ name: `${i}시`, count }));
 
-  // Top Ramens
-  const ramenCounts = records.reduce((acc, r) => {
-    if (r.ramenName) acc[r.ramenName] = (acc[r.ramenName] || 0) + 1;
+  // Top Items
+  const  itemCounts = records.reduce((acc, r) => {
+    if (r. itemName) acc[r. itemName] = (acc[r. itemName] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
-  const topRamens = Object.entries(ramenCounts)
+  const topItems = Object.entries( itemCounts)
     .sort((a, b) => b[1] - a[1]) // 이제 a[1]과 b[1]은 number 타입으로 올바르게 추론됩니다.
     .slice(0, 5)
     .map(([name, count]) => ({ name, count }));
@@ -121,19 +121,19 @@ const processAnalytics = (records: RentalRecord[]) => {
     genderData,
     dayOfWeekData,
     hourData,
-    topRamens,
+    topItems,
     topUsers,
     repeatRentalRate,
   };
 };
 
 export default async function AdminDashboardPage() {
-  const allRamens = await db.query.ramens.findMany();
+  const allItems = await db.query.items.findMany();
   const allUsers = await db.query.generalUsers.findMany();
   const rentalDetailsResult = await getRentalRecordsWithUserDetails();
 
-  const totalStock = allRamens.reduce((sum, ramen) => sum + ramen.stock, 0);
-  const ramenTypesCount = allRamens.length;
+  const totalStock = allItems.reduce((sum,  item) => sum +  item.stock, 0);
+  const  itemTypesCount = allItems.length;
   const totalRentals = rentalDetailsResult.data?.length ?? 0;
   const userCount = allUsers.length;
 
@@ -158,7 +158,7 @@ export default async function AdminDashboardPage() {
             <CardTitle className="text-sm font-medium">라면 종류</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{ramenTypesCount}종</div>
+            <div className="text-2xl font-bold">{ itemTypesCount}종</div>
           </CardContent>
         </Card>
         <Card>

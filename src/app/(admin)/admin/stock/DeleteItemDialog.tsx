@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { deleteRamen } from "@/lib/actions/ramen";
+import { deleteRamen } from "@/lib/actions/item";
 import { toast } from "sonner";
 
 interface DeleteRamenDialogProps {

@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { updateRamen } from "@/lib/actions/ramen";
+import { updateRamen } from "@/lib/actions/item";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useState } from "react";
 import { useForm, Resolver } from "react-hook-form";

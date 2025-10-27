@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ramen Kiosk",
-  description: "A self-service ramen ordering kiosk.",
+  title: "Item Kiosk",
+  description: "A self-service item ordering kiosk.",
 };
 
 export default function RootLayout({

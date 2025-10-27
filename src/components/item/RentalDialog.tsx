@@ -9,8 +9,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Ramen } from "@/app/(admin)/admin/stock/columns";
-import { rentRamen } from "@/lib/actions/rental";
+import { Item } from "@/app/(admin)/admin/stock/columns";
+import { rentItem } from "@/lib/actions/rental";
 import {
   findUserByNameAndPhone,
   createGeneralUser,

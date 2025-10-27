@@ -1,19 +1,19 @@
-"use server"
+"use server";
 
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { eq, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { ramens } from "@drizzle/schema";
-import { ramenSchema, updateRamenSchema } from "@/lib/validators/ramen";
+import { items } from "@drizzle/schema";
+import { itemSchema, updateItemSchema } from "@/lib/validators/item";
 
-export async function getRamens() {
-  const data = await db.select().from(ramens);
+export async function getItems() {
+  const data = await db.select().from(items);
   return data;
 }
 
-export async function addRamen(formData: FormData) {
+export async function addItem(formData: FormData) {
   const name = formData.get("name") as string;
   const manufacturer = formData.get("manufacturer") as string;
   const stock = parseInt(formData.get("stock") as string);
@@ -58,32 +58,32 @@ export async function addRamen(formData: FormData) {
     imageUrl,
   };
 
-  const validatedData = ramenSchema.safeParse(data);
+  const validatedData = itemSchema.safeParse(data);
   if (!validatedData.success) {
     console.error("Validation error:", validatedData.error);
     return { error: "유효하지 않은 데이터입니다." };
   }
 
   try {
-    await db.insert(ramens).values({
+    await db.insert(items).values({
       ...validatedData.data,
     });
     revalidatePath("/admin/stock");
     return { success: true };
   } catch (error) {
-    console.error("Failed to add ramen:", error);
+    console.error("Failed to add item:", error);
     return { error: "라면 추가에 실패했습니다." };
   }
 }
 
-export async function updateRamen(data: unknown) {
-  const validatedData = updateRamenSchema.safeParse(data);
+export async function updateItem(data: unknown) {
+  const validatedData = updateItemSchema.safeParse(data);
   if (!validatedData.success) {
     return { error: "유효하지 않은 데이터입니다." };
   }
   const { id, ...rest } = validatedData.data;
   try {
-    await db.update(ramens).set(rest).where(eq(ramens.id, id));
+    await db.update(items).set(rest).where(eq(items.id, id));
     revalidatePath("/admin/stock");
     return { success: true };
   } catch (error) {
@@ -93,7 +93,7 @@ export async function updateRamen(data: unknown) {
 
 export async function deleteRamen(id: number) {
   try {
-    await db.delete(ramens).where(eq(ramens.id, id));
+    await db.delete(items).where(eq(items.id, id));
     revalidatePath("/admin/stock");
     return { success: true };
   } catch (error) {
@@ -101,7 +101,7 @@ export async function deleteRamen(id: number) {
   }
 }
 
-export async function getAvailableRamens() {
-  const data = await db.select().from(ramens).where(gt(ramens.stock, 0));
+export async function getAvailableItems() {
+  const data = await db.select().from(items).where(gt(items.stock, 0));
   return data;
 }

@@ -1,36 +1,36 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { rentalRecords, ramens, generalUsers } from "@drizzle/schema";
+import { rentalRecords, items, generalUsers } from "@drizzle/schema";
 import { eq, and, gte, lte, sql, InferInsertModel } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function rentRamen(userId: number, ramenId: number) {
+export async function rentItem(userId: number,  itemId: number) {
   try {
     db.transaction((tx) => {
-      const ramenToRent = tx
+      const  itemToRent = tx
         .select()
-        .from(ramens)
-        .where(eq(ramens.id, ramenId))
+        .from( items)
+        .where(eq( items.id,  itemId))
         .get();
 
-      if (!ramenToRent) {
+      if (! itemToRent) {
         throw new Error("해당 라면을 찾을 수 없습니다.");
       }
 
-      if (ramenToRent.stock <= 0) {
+      if ( itemToRent.stock <= 0) {
         throw new Error("재고가 부족합니다.");
       }
 
-      tx.update(ramens)
-        .set({ stock: ramenToRent.stock - 1 })
-        .where(eq(ramens.id, ramenId))
+      tx.update( items)
+        .set({ stock:  itemToRent.stock - 1 })
+        .where(eq( items.id,  itemId))
         .run();
 
       tx.insert(rentalRecords)
         .values({
           userId: userId,
-          ramenId: ramenId,
+           itemId:  itemId,
         })
         .run();
     });
@@ -80,11 +80,11 @@ export async function getRentalRecords(
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
         userName: generalUsers.name,
-        ramenName: ramens.name,
+         itemName:  items.name,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
-      .leftJoin(ramens, eq(rentalRecords.ramenId, ramens.id));
+      .leftJoin( items, eq(rentalRecords. itemId,  items.id));
 
     if (whereConditions.length > 0) {
       // @ts-ignore
@@ -121,11 +121,11 @@ export async function getRentalRecordsWithUserDetails() {
         userName: generalUsers.name,
         userGender: generalUsers.gender,
         userBirthDate: generalUsers.birthDate, // birthDate를 가져옵니다.
-        ramenName: ramens.name,
+         itemName:  items.name,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
-      .leftJoin(ramens, eq(rentalRecords.ramenId, ramens.id));
+      .leftJoin( items, eq(rentalRecords. itemId,  items.id));
 
     const data = records.map((record) => ({
       ...record,

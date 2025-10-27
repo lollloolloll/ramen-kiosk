@@ -1,13 +1,28 @@
 "use client";
 
 import {
-  Bar, BarChart, CartesianGrid, Legend, Pie, PieChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, Line, LineChart
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Pie,
+  PieChart,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  Line,
+  LineChart,
 } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Card, CardContent, CardHeader, CardTitle,
-} from "@/components/ui/card";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 
 // Define the types for the props
@@ -16,7 +31,7 @@ interface AnalyticsData {
   genderData: { name: string; value: number }[];
   dayOfWeekData: { name: string; count: number }[];
   hourData: { name: string; count: number }[];
-  topRamens: { name: string; count: number }[];
+  topItems: { name: string; count: number }[];
   topUsers: { name: string; count: number }[];
   repeatRentalRate: number;
 }
@@ -27,10 +42,17 @@ interface RentalAnalyticsClientProps {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-export function RentalAnalyticsClient({ analyticsData }: RentalAnalyticsClientProps) {
-  const { 
-    ageGroupData, genderData, dayOfWeekData, hourData, 
-    topRamens, topUsers, repeatRentalRate 
+export function RentalAnalyticsClient({
+  analyticsData,
+}: RentalAnalyticsClientProps) {
+  const {
+    ageGroupData,
+    genderData,
+    dayOfWeekData,
+    hourData,
+    topItems,
+    topUsers,
+    repeatRentalRate,
   } = analyticsData;
 
   return (
@@ -41,8 +63,10 @@ export function RentalAnalyticsClient({ analyticsData }: RentalAnalyticsClientPr
           <CardTitle>핵심 지표</CardTitle>
         </CardHeader>
         <CardContent>
-            <div className="text-4xl font-bold">{repeatRentalRate.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">재방문 대여율</p>
+          <div className="text-4xl font-bold">
+            {repeatRentalRate.toFixed(1)}%
+          </div>
+          <p className="text-xs text-muted-foreground">재방문 대여율</p>
         </CardContent>
       </Card>
 
@@ -72,9 +96,21 @@ export function RentalAnalyticsClient({ analyticsData }: RentalAnalyticsClientPr
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie data={genderData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
+              <Pie
+                data={genderData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                fill="#8884d8"
+                label
+              >
                 {genderData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip />
@@ -110,18 +146,23 @@ export function RentalAnalyticsClient({ analyticsData }: RentalAnalyticsClientPr
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={hourData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="count" stroke="#8884d8" activeDot={{ r: 8 }} />
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="count"
+                stroke="#8884d8"
+                activeDot={{ r: 8 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      {/* Top Ramens */}
+      {/* Top Item */}
       <Card className="lg:col-span-1">
         <CardHeader>
           <CardTitle>인기 라면 TOP 5</CardTitle>
@@ -135,10 +176,10 @@ export function RentalAnalyticsClient({ analyticsData }: RentalAnalyticsClientPr
               </TableRow>
             </TableHeader>
             <TableBody>
-              {topRamens.map((ramen) => (
-                <TableRow key={ramen.name}>
-                  <TableCell>{ramen.name}</TableCell>
-                  <TableCell className="text-right">{ramen.count}</TableCell>
+              {topItems.map((item) => (
+                <TableRow key={item.name}>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell className="text-right">{item.count}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -170,7 +211,6 @@ export function RentalAnalyticsClient({ analyticsData }: RentalAnalyticsClientPr
           </Table>
         </CardContent>
       </Card>
-
     </div>
   );
 }

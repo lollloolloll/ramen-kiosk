@@ -1,20 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { RamenCard } from "@/components/ramen/RamenCard";
-import { Ramen } from "@/app/(admin)/admin/stock/columns";
-import { RentalDialog } from "@/components/ramen/RentalDialog";
+import { ItemCard } from "@/components/ item/ itemCard";
+import { Item } from "@/app/(admin)/admin/stock/columns";
+import { RentalDialog } from "@/components/item/RentalDialog";
 
 interface KioskPageClientProps {
-  ramens: Ramen[];
+  items: Item[];
 }
 
-export function KioskPageClient({ ramens }: KioskPageClientProps) {
-  const [selectedRamen, setSelectedRamen] = useState<Ramen | null>(null);
+export function KioskPageClient({ items }: KioskPageClientProps) {
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleOrder = (ramen: Ramen) => {
-    setSelectedRamen(ramen);
+  const handleOrder = (item: Item) => {
+    setSelectedItem(item);
     setIsDialogOpen(true);
     console.log("isDialogOpen set to true in KioskPageClient");
   };
@@ -22,10 +22,10 @@ export function KioskPageClient({ ramens }: KioskPageClientProps) {
   return (
     <div className="container px-16 py-10">
       <h1 className="text-3xl font-bold text-center mb-10">라면 키오스크</h1>
-      {ramens.length > 0 ? (
+      {items.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {ramens.map((ramen) => (
-            <RamenCard key={ramen.id} ramen={ramen} onOrder={handleOrder} />
+          {items.map((item) => (
+            <ItemCard key={item.id} item={item} onOrder={handleOrder} />
           ))}
         </div>
       ) : (
@@ -36,7 +36,7 @@ export function KioskPageClient({ ramens }: KioskPageClientProps) {
       )}
 
       <RentalDialog
-        ramen={selectedRamen}
+        item={selectedItem}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
       />

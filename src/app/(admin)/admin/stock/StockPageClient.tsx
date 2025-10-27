@@ -1,7 +1,7 @@
 "use client";
 
 import { DataTable } from "@/components/ui/data-table";
-import { Ramen, columns } from "./columns";
+import { Item, columns } from "./columns";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,13 +10,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { AddRamenForm } from "./AddRamenForm";
+import { AddItemForm } from "./AddItemForm";
 
 interface StockPageClientProps {
-  initialRamens: Ramen[];
+  initialItems: Item[];
 }
 
-export function StockPageClient({ initialRamens }: StockPageClientProps) {
+export function StockPageClient({ initialItems }: StockPageClientProps) {
   return (
     <div className="container px-16 py-10">
       <div className="flex items-center justify-between mb-6">
@@ -29,11 +29,11 @@ export function StockPageClient({ initialRamens }: StockPageClientProps) {
             <DialogHeader>
               <DialogTitle>라면 추가</DialogTitle>
             </DialogHeader>
-            <AddRamenForm />
+            <AddItemForm />
           </DialogContent>
         </Dialog>
       </div>
-      <DataTable columns={columns} data={initialRamens} />
+      <DataTable columns={columns} data={initialItems} />
     </div>
   );
 }

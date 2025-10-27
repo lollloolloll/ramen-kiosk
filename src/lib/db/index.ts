@@ -1,8 +1,8 @@
+import { drizzle } from "drizzle-orm/better-sqlite3";
 // src/lib/db/index.ts
 
-import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import * as schema from "./schema";
+import * as schema from "@drizzle/schema";
 
 // .env 파일에 DATABASE_URL이 설정되어 있는지 확인합니다.
 if (!process.env.DATABASE_URL) {

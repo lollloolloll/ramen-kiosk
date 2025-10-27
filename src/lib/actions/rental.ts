@@ -45,6 +45,7 @@ export async function getRentalRecords(
     username?: string;
     startDate?: Date;
     endDate?: Date;
+    category?: string;
   } = {}
 ) {
   try {
@@ -62,6 +63,9 @@ export async function getRentalRecords(
       whereConditions.push(
         lte(rentalRecords.rentalDate, filters.endDate.getTime())
       );
+    }
+    if (filters.category) {
+      whereConditions.push(eq(items.category, filters.category));
     }
 
     const query = db

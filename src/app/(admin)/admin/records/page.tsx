@@ -1,41 +1,51 @@
 import { Suspense } from "react";
 import { getRentalRecords } from "@/lib/actions/rental";
+import { getDistinctCategories } from "@/lib/actions/item";
 import { RecordsPageClient } from "./RecordsPageClient";
-// 1. Props 인터페이스를 완전히 변경합니다.
-//    `searchParams` 객체 대신, URL 파라미터와 동일한 이름의 속성을 직접 정의합니다.
+import { FilterControls } from "./FilterControls";
+
 interface RecordsPageProps {
-  // `searchParams` 객체를 제거하고,
-  // 예상되는 URL 파라미터를 직접 명시합니다.
-  username?: string;
-  from?: string;
-  to?: string;
+  searchParams: {
+    username?: string;
+    from?: string;
+    to?: string;
+    category?: string;
+  };
 }
 
-// 2. 함수 시그니처에서 `searchParams` 대신 개별 변수를 직접 받습니다.
-//    Next.js는 URL의 ?username=...&from=... 등을 자동으로 이 props에 매핑해줍니다.
-export default async function RecordsPage({
-  username,
-  from,
-  to,
-}: RecordsPageProps) {
-  // 3. 이제 `searchParams`를 거치지 않고 바로 변수를 사용합니다.
+export default async function RecordsPage({ searchParams }: RecordsPageProps) {
+  const { username, from, to, category } = searchParams;
+
   const filters = {
-    userId: username,
+    username,
     startDate: from ? new Date(from) : undefined,
     endDate: to ? new Date(to) : undefined,
+    category: category,
   };
 
-  const result = await getRentalRecords(filters);
+  const [rentalResult, categoryResult] = await Promise.all([
+    getRentalRecords(filters),
+    getDistinctCategories(),
+  ]);
 
-  if (result.error || !result.data) {
+  if (rentalResult.error || !rentalResult.data) {
     return <p>Error loading records.</p>;
   }
 
-  const records = result.data as any;
+  if (categoryResult.error || !categoryResult.data) {
+    return <p>Error loading categories.</p>;
+  }
+
+  const records = rentalResult.data as any;
+  const categories = categoryResult.data;
 
   return (
-    <Suspense fallback={<div>Loading records...</div>}>
-      <RecordsPageClient records={records} />
-    </Suspense>
+    <div className="container mx-auto py-10">
+      <h1 className="text-3xl font-bold mb-6">대여 기록</h1>
+      <FilterControls categories={categories} />
+      <Suspense fallback={<div>Loading records...</div>}>
+        <RecordsPageClient records={records} />
+      </Suspense>
+    </div>
   );
 }

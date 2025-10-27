@@ -140,3 +140,12 @@ export async function deleteItem(id: number) {
     return { error: "아이템 삭제에 실패했습니다." };
   }
 }
+
+export async function getDistinctCategories() {
+  try {
+    const categories = await db.selectDistinct({ category: items.category }).from(items);
+    return { success: true, data: categories.map(c => c.category) };
+  } catch (error) {
+    return { error: "카테고리를 불러오는 데 실패했습니다." };
+  }
+}

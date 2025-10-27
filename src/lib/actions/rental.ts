@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { rentalRecords, items, generalUsers } from "@drizzle/schema";
-import { eq, and, gte, lte, sql, InferInsertModel } from "drizzle-orm";
+import { eq, and, gte, lte, sql, asc, desc, InferInsertModel } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function rentItem(userId: number, itemId: number) {
@@ -46,11 +46,17 @@ export async function getRentalRecords(
     startDate?: Date;
     endDate?: Date;
     category?: string;
+    page?: number;
+    per_page?: number;
+    sort?: string;
+    order?: string;
   } = {}
 ) {
   try {
-    const whereConditions = [];
+    const { page = 1, per_page = 10, sort = 'rentalDate', order = 'desc' } = filters;
+    const offset = (page - 1) * per_page;
 
+    const whereConditions = [];
     if (filters.username) {
       whereConditions.push(eq(generalUsers.name, filters.username));
     }
@@ -68,7 +74,7 @@ export async function getRentalRecords(
       whereConditions.push(eq(items.category, filters.category));
     }
 
-    const query = db
+    const dataQuery = db
       .select({
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
@@ -77,16 +83,32 @@ export async function getRentalRecords(
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
-      .leftJoin(items, eq(rentalRecords.itemsId, items.id));
+      .leftJoin(items, eq(rentalRecords.itemsId, items.id))
+      .where(and(...whereConditions))
+      .limit(per_page)
+      .offset(offset);
 
-    if (whereConditions.length > 0) {
-      // @ts-ignore
-      query.where(and(...whereConditions));
+    // Dynamically set the order by clause
+    if (sort) {
+      const sortColumn = sort === 'username' ? generalUsers.name : sort === 'itemName' ? items.name : rentalRecords.rentalDate;
+      dataQuery.orderBy(order === 'asc' ? asc(sortColumn) : desc(sortColumn));
     }
 
-    const data = await query;
+    const countQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(rentalRecords)
+      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
+      .leftJoin(items, eq(rentalRecords.itemsId, items.id))
+      .where(and(...whereConditions));
 
-    return { success: true, data };
+    const [data, total] = await Promise.all([
+      dataQuery,
+      countQuery,
+    ]);
+
+    const total_count = total[0].count;
+
+    return { success: true, data, total_count };
   } catch (error) {
     return { error: "대여 기록을 불러오는 데 실패했습니다." };
   }

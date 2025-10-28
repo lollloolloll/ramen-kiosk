@@ -130,9 +130,9 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
   return (
     <div className="flex items-end space-x-4 mb-6 w-full">
       <div>
-        <Label>Username</Label>
+        <Label>이름</Label>
         <Input
-          placeholder="Filter by username..."
+          placeholder="이름..."
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           className="max-w-sm"
@@ -191,7 +191,7 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
             if (result.success && result.buffer && result.mimeType) {
               const link = document.createElement("a");
               link.href = `data:${result.mimeType};base64,${result.buffer}`;
-              link.download = `rental_records_${new Date().toISOString()}.xlsx`;
+              link.download = `쌍청문_쉬다_대여기록_${new Date().toISOString()}.xlsx`;
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);

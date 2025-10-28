@@ -76,6 +76,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [peopleCount, setPeopleCount] = useState("1");
+  const [countdown, setCountdown] = useState(5);
 
   // 생년월일 상태
   const [birthYear, setBirthYear] = useState<string>();
@@ -106,7 +107,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     },
   });
 
-  // 생년월일 useEffect (이것 하나만 남깁니다)
+  // 생년월일 useEffect
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {
       registerForm.setValue(
@@ -118,7 +119,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
   }, [birthYear, birthMonth, birthDay, registerForm.setValue]);
 
-  // 학교 useEffect (이것 하나만 남깁니다)
+  // 학교 useEffect
   useEffect(() => {
     if (schoolLevel === "해당없음") {
       registerForm.setValue("school", "해당없음");
@@ -145,6 +146,25 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       registerForm.setValue("school", "");
     }
   }, [schoolLevel, schoolName, registerForm.setValue]);
+
+  // Success 화면 카운트다운 및 자동 종료
+  useEffect(() => {
+    if (step === "success") {
+      setCountdown(5);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            handleSuccessConfirm();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [step]);
 
   const handleIdentificationSubmit = async (
     values: IdentificationFormValues
@@ -224,6 +244,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
 
   const resetDialog = () => {
     setStep("identification");
+    setCountdown(5);
     identificationForm.reset();
     registerForm.reset();
     setBirthYear(undefined);
@@ -513,8 +534,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 )}
               />
               <FormField
-                // react-hook-form이 'school' 필드를 인지하게 합니다.
-                // 실제 값은 useEffect를 통해 관리됩니다.
                 control={registerForm.control}
                 name="school"
                 render={() => (
@@ -523,7 +542,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                       학교<span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="flex items-center gap-2">
-                      {/* 학교 분류 선택 Select Box */}
                       <Select
                         onValueChange={setSchoolLevel}
                         value={schoolLevel}
@@ -545,24 +563,19 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                           ))}
                         </SelectContent>
                       </Select>
-
-                      {/* 학교 이름 입력 Input */}
                       <FormControl>
                         <Input
                           placeholder="학교 이름 (예: 선덕, 자운)"
                           value={schoolName}
                           onChange={(e) => setSchoolName(e.target.value)}
-                          // '분류'를 선택하지 않았거나 '해당없음'을 선택하면 비활성화
                           disabled={!schoolLevel || schoolLevel === "해당없음"}
                         />
                       </FormControl>
                     </div>
-                    {/* 유효성 검사 에러 메시지가 여기에 표시됩니다. */}
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={registerForm.control}
                 name="personalInfoConsent"
@@ -575,7 +588,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      {/* 👇 수정: 문구 변경 */}
                       <FormLabel>개인정보 수집 및 이용 동의 (선택)</FormLabel>
                       <FormDescription>
                         동의 시 맞춤형 서비스 제공에 활용될 수 있습니다.
@@ -607,22 +619,121 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       case "success":
         return (
           <div
-            className="flex flex-col items-center justify-center p-8 text-center"
+            className="flex flex-col items-center justify-center p-8 text-center relative overflow-hidden"
             key="success"
           >
-            <div className="text-6xl mb-4">🎉</div>
-            <DialogTitle className="text-2xl font-bold mb-2">
-              대여 완료!
-            </DialogTitle>
-            <DialogDescription className="text-lg">
-              '{item.name}' 신나게 즐기고 <br />
-              반납하는 거 잊지 말기! 😉
-            </DialogDescription>
-            <DialogFooter className="mt-8">
-              <Button onClick={handleSuccessConfirm} className="w-full">
-                확인
-              </Button>
-            </DialogFooter>
+            {/* 배경 애니메이션 효과 */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 animate-pulse" />
+
+            {/* 파티클 효과 */}
+            <div className="absolute top-0 left-1/4 text-4xl animate-bounce">
+              ✨
+            </div>
+            <div
+              className="absolute top-10 right-1/4 text-3xl animate-bounce"
+              style={{ animationDelay: "0.1s" }}
+            >
+              🎊
+            </div>
+            <div
+              className="absolute bottom-20 left-1/3 text-2xl animate-bounce"
+              style={{ animationDelay: "0.2s" }}
+            >
+              🎈
+            </div>
+
+            {/* 메인 컨텐츠 */}
+            <div className="relative z-10 space-y-6">
+              {/* 아이콘 영역 */}
+              <div className="relative inline-block">
+                <div className="text-8xl animate-bounce">🎉</div>
+                <div
+                  className="absolute -top-2 -right-2 text-3xl"
+                  style={{ animation: "spin 3s linear infinite" }}
+                >
+                  ⭐
+                </div>
+              </div>
+
+              {/* 제목 */}
+              <div className="space-y-2">
+                <DialogTitle className="text-3xl font-black bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+                  대여 완료!
+                </DialogTitle>
+                <div className="text-5xl font-bold text-gray-800">
+                  {item.name}
+                </div>
+              </div>
+
+              {/* 메시지 */}
+              <DialogDescription className="text-lg font-medium text-gray-700 leading-relaxed">
+                신나게 즐기고 <br />
+                <span className="text-pink-600 font-bold">정리정돈</span> 하는
+                거 잊지 말기! 
+              </DialogDescription>
+
+              {/* 카운트다운 원형 프로그레스 */}
+              <div className="relative w-24 h-24 mx-auto my-6">
+                <svg className="transform -rotate-90 w-24 h-24">
+                  <circle
+                    cx="48"
+                    cy="48"
+                    r="40"
+                    stroke="#e5e7eb"
+                    strokeWidth="6"
+                    fill="none"
+                  />
+                  <circle
+                    cx="48"
+                    cy="48"
+                    r="40"
+                    stroke="url(#gradient)"
+                    strokeWidth="6"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 40}`}
+                    strokeDashoffset={`${
+                      2 * Math.PI * 40 * (1 - countdown / 5)
+                    }`}
+                    style={{
+                      transition: "stroke-dashoffset 1s linear",
+                    }}
+                    strokeLinecap="round"
+                  />
+                  <defs>
+                    <linearGradient
+                      id="gradient"
+                      x1="0%"
+                      y1="0%"
+                      x2="100%"
+                      y2="100%"
+                    >
+                      <stop offset="0%" stopColor="#a855f7" />
+                      <stop offset="50%" stopColor="#ec4899" />
+                      <stop offset="100%" stopColor="#3b82f6" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-3xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    {countdown}
+                  </span>
+                </div>
+              </div>
+
+              {/* 버튼 */}
+              <DialogFooter className="mt-6">
+                <Button
+                  onClick={handleSuccessConfirm}
+                  className="w-full h-12 text-lg font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 hover:from-purple-700 hover:via-pink-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
+                  지금 확인하기 ✓
+                </Button>
+              </DialogFooter>
+
+              <p className="text-xs text-gray-400 mt-2">
+                {countdown}초 후 자동으로 닫힙니다
+              </p>
+            </div>
           </div>
         );
     }

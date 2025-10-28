@@ -619,24 +619,26 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       case "success":
         return (
           <div
-            className="flex flex-col items-center justify-center p-8 text-center relative overflow-hidden"
+            // 1. 패딩을 p-8에서 세로 패딩(py-12)과 가로 패딩(px-8)으로 분리하여 상하 여백 확보
+            className="flex flex-col items-center justify-center py-12 px-8 text-center relative overflow-hidden"
             key="success"
           >
             {/* 배경 애니메이션 효과 */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 animate-pulse" />
 
-            {/* 파티클 효과 */}
-            <div className="absolute top-0 left-1/4 text-4xl animate-bounce">
+            {/* 파티클 효과 (위치를 안쪽으로 조정) */}
+            <div className="absolute top-4 left-1/4 text-4xl animate-bounce">
               ✨
             </div>
             <div
-              className="absolute top-10 right-1/4 text-3xl animate-bounce"
+              className="absolute top-14 right-1/4 text-3xl animate-bounce"
               style={{ animationDelay: "0.1s" }}
             >
               🎊
             </div>
             <div
-              className="absolute bottom-20 left-1/3 text-2xl animate-bounce"
+              // 2. 바닥에 있던 파티클의 위치를 조금 더 위로 올림
+              className="absolute bottom-24 left-1/3 text-2xl animate-bounce"
               style={{ animationDelay: "0.2s" }}
             >
               🎈
@@ -669,7 +671,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               <DialogDescription className="text-lg font-medium text-gray-700 leading-relaxed">
                 신나게 즐기고 <br />
                 <span className="text-pink-600 font-bold">정리정돈</span> 하는
-                거 잊지 말기! 
+                거 잊지 말기!
               </DialogDescription>
 
               {/* 카운트다운 원형 프로그레스 */}

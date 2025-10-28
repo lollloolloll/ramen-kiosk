@@ -27,8 +27,8 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
 
   const filters = {
     username,
-    startDate: from ? new Date(from) : undefined,
-    endDate: to ? new Date(to) : undefined,
+    startDate: from,
+    endDate: to,
     category: category,
     page,
     per_page,
@@ -40,6 +40,10 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
     getRentalRecords(filters),
     getDistinctCategories(),
   ]);
+  if (!rentalResult || !categoryResult) {
+    // 이 경우는 거의 발생하지 않지만, 코드를 안정적으로 만들어줍니다.
+    return <p>Error: Could not retrieve data results.</p>;
+  }
 
   if (rentalResult.error || !rentalResult.data) {
     return <p>Error loading records.</p>;

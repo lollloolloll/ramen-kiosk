@@ -7,21 +7,25 @@ import { revalidatePath } from "next/cache";
 
 export async function rentItem(userId: number, itemId: number) {
   try {
-    await db.transaction(async (tx) => {
-      const itemToRent = await tx
-        .select()
-        .from(items)
-        .where(eq(items.id, itemId))
-        .get();
+    // 1. 트랜잭션을 사용하지 않고 직접 db 객체를 사용합니다.
+    // 먼저 대여할 아이템이 DB에 존재하는지 확인합니다.
+    const itemToRent = await db
+      .select({ id: items.id }) // 전체 데이터를 가져올 필요 없이 id만 확인해도 됩니다.
+      .from(items)
+      .where(eq(items.id, itemId))
+      .get();
 
-      if (!itemToRent) {
-        throw new Error("해당 아이템을 찾을 수 없습니다.");
-      }
+    if (!itemToRent) {
+      throw new Error("해당 아이템을 찾을 수 없습니다.");
+    }
 
-      await tx.insert(rentalRecords).values({
-        userId: userId,
-        itemsId: itemId,
-      });
+    // 아이템이 존재하면 rentalRecords 테이블에 새 기록을 삽입합니다.
+    await db.insert(rentalRecords).values({
+      userId: userId,
+      itemsId: itemId,
+      // 2. rentalDate를 초 단위 UNIX 타임스탬프로 직접 설정합니다.
+      // Date.now()는 밀리초이므로 1000으로 나눠 초 단위로 만듭니다.
+      rentalDate: Math.floor(Date.now() / 1000),
     });
 
     revalidatePath("/");
@@ -30,7 +34,7 @@ export async function rentItem(userId: number, itemId: number) {
 
     return { success: true };
   } catch (error) {
-    console.error("Rental Transaction Failed:", error);
+    console.error("Rental Failed:", error);
     return {
       error:
         error instanceof Error
@@ -39,11 +43,12 @@ export async function rentItem(userId: number, itemId: number) {
     };
   }
 }
+
 export async function getRentalRecords(
   filters: {
     username?: string;
-    startDate?: Date;
-    endDate?: Date;
+    startDate?: string;
+    endDate?: string;
     category?: string;
     page?: number;
     per_page?: number;
@@ -65,17 +70,18 @@ export async function getRentalRecords(
       whereConditions.push(like(generalUsers.name, `%${filters.username}%`));
     }
     if (filters.startDate) {
-      const startOfDay = new Date(filters.startDate);
-      startOfDay.setHours(0, 0, 0, 0);
+      const [year, month, day] = filters.startDate.split("-").map(Number);
+      const startOfDay = new Date(year, month - 1, day);
       whereConditions.push(
         gte(rentalRecords.rentalDate, Math.floor(startOfDay.getTime() / 1000))
       );
     }
     if (filters.endDate) {
-      const endOfDay = new Date(filters.endDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [year, month, day] = filters.endDate.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      date.setHours(23, 59, 59, 999);
       whereConditions.push(
-        lte(rentalRecords.rentalDate, Math.floor(endOfDay.getTime() / 1000))
+        lte(rentalRecords.rentalDate, Math.floor(date.getTime() / 1000))
       );
     }
     if (filters.category) {
@@ -122,11 +128,9 @@ export async function getRentalRecords(
 
     const [data, total] = await Promise.all([dataQuery, countQuery]);
 
-    // total 배열이 비어있을 경우를 대비한 안전장치
     const total_count = total[0]?.count || 0;
 
     return { success: true, data, total_count };
-    // ▼▼▼ 여기에 catch 블록 추가 ▼▼▼
   } catch (error) {
     console.error("Error fetching rental records:", error);
     return { error: "대여 기록을 불러오는 데 실패했습니다." };
@@ -154,7 +158,7 @@ export async function getRentalRecordsWithUserDetails() {
         userId: generalUsers.id,
         userName: generalUsers.name,
         userGender: generalUsers.gender,
-        userBirthDate: generalUsers.birthDate, // birthDate를 가져옵니다.
+        userBirthDate: generalUsers.birthDate,
         itemName: items.name,
       })
       .from(rentalRecords)
@@ -163,7 +167,7 @@ export async function getRentalRecordsWithUserDetails() {
 
     const data = records.map((record) => ({
       ...record,
-      userAge: calculateAge(record.userBirthDate), // 나이를 계산합니다.
+      userAge: calculateAge(record.userBirthDate),
     }));
 
     return { success: true, data };

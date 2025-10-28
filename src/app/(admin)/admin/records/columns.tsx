@@ -26,8 +26,14 @@ export const columns: ColumnDef<RentalRecord>[] = [
     accessorKey: "rentalDate",
     header: "Date",
     cell: ({ row }) => {
-      const date = row.getValue("rentalDate") as Date;
-      return <span>{date ? new Date(date).toLocaleString() : "N/A"}</span>;
+      const timestampInSeconds = row.getValue("rentalDate") as number;
+
+      if (!timestampInSeconds || typeof timestampInSeconds !== "number") {
+        return <span>-</span>;
+      }
+
+      const date = new Date(timestampInSeconds * 1000);
+      return <div>{date.toLocaleString("ko-KR")}</div>;
     },
   },
 ];

@@ -594,7 +594,7 @@
         "testStrategy": "Drizzle 마이그레이션을 실행하고 스키마 변경 사항이 데이터베이스에 올바르게 반영되었는지 확인합니다. 새로운 필드에 더미 데이터를 삽입하고 조회하여 정상 작동하는지 검증합니다.",
         "priority": "high",
         "dependencies": [1],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -605,7 +605,7 @@
         "testStrategy": "라면 대여 기능을 실행하여 대여가 성공적으로 처리될 때 확인 모달이 올바르게 표시되고, 7초 후 자동으로 사라지는지 확인합니다. 모달의 내용과 스타일이 예상대로인지 검증합니다.",
         "priority": "medium",
         "dependencies": [8, 13],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -616,7 +616,7 @@
         "testStrategy": "관리자 계정으로 로그인하여 새로운 '닌텐도 관리' 및 '활동 관리' 섹션에 접근하고, 각 섹션의 UI가 올바르게 렌더링되는지 확인합니다. 각 섹션의 CRUD 기능이 데이터베이스와 연동되어 정상 작동하는지 테스트합니다.",
         "priority": "medium",
         "dependencies": [5],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {

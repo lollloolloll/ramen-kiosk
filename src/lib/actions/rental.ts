@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { rentalRecords, items, generalUsers } from "@drizzle/schema";
 import { eq, and, gte, lte, sql, asc, desc, like } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { Workbook } from "exceljs";
 
 export async function rentItem(
   userId: number,
@@ -180,5 +181,57 @@ export async function getRentalRecordsWithUserDetails() {
     return { success: true, data };
   } catch (error) {
     return { error: "상세 대여 기록을 불러오는 데 실패했습니다." };
+  }
+}
+
+export async function exportRentalRecordsToExcel(
+  filters: {
+    username?: string;
+    startDate?: string;
+    endDate?: string;
+    itemName?: string;
+  } = {}
+) {
+  try {
+    // 페이지네이션 없이 필터링된 모든 대여 기록을 가져옵니다.
+    const { data, error } = await getRentalRecords({ ...filters, per_page: 999999 }); // 매우 큰 값으로 설정하여 모든 데이터를 가져옴
+
+    if (error || !data) {
+      throw new Error(error || "대여 기록을 가져오는 데 실패했습니다.");
+    }
+
+    const workbook = new Workbook();
+    const worksheet = workbook.addWorksheet("Rental Records");
+
+    // 헤더 설정
+    worksheet.columns = [
+      { header: "ID", key: "id", width: 10 },
+      { header: "대여 날짜", key: "rentalDate", width: 20 },
+      { header: "사용자 이름", key: "userName", width: 15 },
+      { header: "아이템 이름", key: "itemName", width: 20 },
+      { header: "아이템 카테고리", key: "itemCategory", width: 15 },
+      { header: "인원수", key: "peopleCount", width: 10 },
+    ];
+
+    // 데이터 추가
+    data.forEach((record) => {
+      worksheet.addRow({
+        id: record.id,
+        rentalDate: new Date(record.rentalDate * 1000).toLocaleString("ko-KR"), // UNIX 타임스탬프를 사람이 읽기 쉬운 형식으로 변환
+        userName: record.userName,
+        itemName: record.itemName,
+        itemCategory: record.itemCategory,
+        peopleCount: record.peopleCount,
+      });
+    });
+
+    // 엑셀 파일을 버퍼로 생성
+    const buffer = await (workbook.xlsx as any).writeBuffer();
+
+    // 클라이언트로 반환할 수 있도록 버퍼와 MIME 타입 반환
+    return { success: true, buffer: buffer.toString("base64"), mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
+  } catch (error) {
+    console.error("Error exporting rental records to Excel:", error);
+    return { error: error instanceof Error ? error.message : "엑셀 내보내기 중 오류가 발생했습니다." };
   }
 }

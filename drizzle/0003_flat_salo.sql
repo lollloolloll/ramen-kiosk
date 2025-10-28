@@ -1,0 +1,1 @@
+ALTER TABLE `rental_records` ADD `people_count` integer DEFAULT 1 NOT NULL;

@@ -56,4 +56,5 @@ export const rentalRecords = sqliteTable("rental_records", {
   rentalDate: integer("rental_date")
     .default(sql`(CURRENT_TIMESTAMP)`)
     .notNull(),
+  peopleCount: integer("people_count").default(1).notNull(),
 });

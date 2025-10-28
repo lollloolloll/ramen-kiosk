@@ -22,7 +22,8 @@ export function KioskPageClient({ items }: KioskPageClientProps) {
   return (
     // 배경 그라데이션에 실제 색상 값 적용
     <div className="min-h-screen bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] via-[oklch(0.7_0.18_350/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
-      <div className="container px-28 py-">
+      {/* py- 오타 수정: py-10으로 변경 */}
+      <div className="container px-28 py-10"> 
         <div className="mb-12 text-center">
           {/* 제목 텍스트 색상에 실제 색상 값 적용 */}
           <h1 className="text-5xl font-black text-[oklch(0.75_0.12_165)] mb-4">
@@ -39,13 +40,10 @@ export function KioskPageClient({ items }: KioskPageClientProps) {
             ))}
           </div>
         ) : (
-          // '상품 없음' 영역의 테두리 및 텍스트 색상에 실제 값 적용
-          // bg-card와 같은 기존 shadcn/ui 변수는 유지
           <div className="text-center mt-20 bg-card rounded-2xl p-12 shadow-lg border-2 border-[oklch(0.75_0.12_165/0.2)]">
             <p className="text-3xl font-bold text-[oklch(0.75_0.12_165)] mb-2">
               현재 대여가능한 상품이 없습니다.
             </p>
-            {/* text-muted-foreground는 기존 변수를 유지하거나, 필요시 text-[oklch(0.5_0.02_250)]로 변경 가능 */}
             <p className="text-lg text-muted-foreground">
               관리자에게 문의해주세요.
             </p>

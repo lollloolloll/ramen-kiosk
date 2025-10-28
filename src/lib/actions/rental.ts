@@ -49,7 +49,7 @@ export async function getRentalRecords(
     username?: string;
     startDate?: string;
     endDate?: string;
-    category?: string;
+    itemName?: string;
     page?: number;
     per_page?: number;
     sort?: string;
@@ -84,8 +84,8 @@ export async function getRentalRecords(
         lte(rentalRecords.rentalDate, Math.floor(date.getTime() / 1000))
       );
     }
-    if (filters.category) {
-      whereConditions.push(eq(items.category, filters.category));
+    if (filters.itemName) {
+      whereConditions.push(eq(items.name, filters.itemName));
     }
 
     const baseQuery = db

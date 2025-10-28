@@ -30,7 +30,6 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
     username,
     startDate: from,
     endDate: to,
-    category: category,
     itemName: item,
     page,
     per_page,

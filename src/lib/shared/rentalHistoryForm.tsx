@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getRentalRecords } from "@/lib/actions/rental";
+import { getRentalRecordsByUserId } from "@/lib/actions/rental";
 import { DataTable } from "@/components/ui/data-table";
 import { rentalRecords } from "@drizzle/schema";
 import { ColumnDef } from "@tanstack/react-table";
@@ -64,8 +64,7 @@ export function RentalHistoryForm({
   useEffect(() => {
     async function fetchRentalHistory() {
       setLoading(true);
-      const result = await getRentalRecords({
-        username,
+      const result = await getRentalRecordsByUserId(userId, {
         page,
         per_page: perPage,
       });

@@ -145,6 +145,98 @@ export async function getRentalRecords(
   }
 }
 
+export async function getRentalRecordsByUserId(
+  userId: number,
+  filters: {
+    startDate?: string;
+    endDate?: string;
+    itemName?: string;
+    page?: number;
+    per_page?: number;
+    sort?: string;
+    order?: string;
+  } = {}
+) {
+  try {
+    const {
+      page = 1,
+      per_page = 10,
+      sort = "rentalDate",
+      order = "desc",
+    } = filters;
+    const offset = (page - 1) * per_page;
+
+    const whereConditions = [eq(rentalRecords.userId, userId)];
+    if (filters.startDate) {
+      const startOfDay = new Date(filters.startDate);
+      whereConditions.push(
+        gte(rentalRecords.rentalDate, Math.floor(startOfDay.getTime() / 1000))
+      );
+    }
+    if (filters.endDate) {
+      const endOfDay = new Date(filters.endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      whereConditions.push(
+        lte(rentalRecords.rentalDate, Math.floor(endOfDay.getTime() / 1000))
+      );
+    }
+    if (filters.itemName) {
+      whereConditions.push(eq(items.name, filters.itemName));
+    }
+
+    // --- 데이터 조회 쿼리 ---
+    const sortColumnMap = {
+      rentalDate: rentalRecords.rentalDate,
+      username: generalUsers.name,
+      itemName: items.name,
+      peopleCount: rentalRecords.peopleCount,
+    };
+    const sortColumn =
+      sortColumnMap[sort as keyof typeof sortColumnMap] ||
+      rentalRecords.rentalDate;
+
+    // ✨✨✨ 핵심 수정: let으로 선언하여 재할당 가능하게 만듦 ✨✨✨
+    let dataQuery = db
+      .select({
+        id: rentalRecords.id,
+        rentalDate: rentalRecords.rentalDate,
+        userName: generalUsers.name,
+        itemName: items.name,
+        itemCategory: items.category,
+        peopleCount: rentalRecords.peopleCount,
+        imageUrl: items.imageUrl,
+      })
+      .from(rentalRecords)
+      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
+      .leftJoin(items, eq(rentalRecords.itemsId, items.id))
+      .where(and(...whereConditions))
+      .limit(per_page)
+      .offset(offset);
+
+    dataQuery = dataQuery.orderBy(
+      order === "asc" ? asc(sortColumn) : desc(sortColumn)
+    );
+
+    // --- 카운트 조회 쿼리 (중복이지만 불가피) ---
+    const countQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(rentalRecords)
+      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
+      .leftJoin(items, eq(rentalRecords.itemsId, items.id))
+      .where(and(...whereConditions));
+
+    // 병렬 실행
+    const [data, total] = await Promise.all([dataQuery, countQuery]);
+
+    const total_count = total[0]?.count || 0;
+
+    return { success: true, data, total_count };
+  } catch (error) {
+    console.error("Error fetching rental records by user ID:", error);
+    return { error: "사용자 대여 기록을 불러오는 데 실패했습니다." };
+  }
+}
+
 function calculateAge(birthDate: string | null): number | null {
   if (!birthDate) return null;
   const birth = new Date(birthDate);

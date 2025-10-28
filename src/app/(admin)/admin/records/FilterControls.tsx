@@ -110,8 +110,7 @@ export function FilterControls({
   };
 
   return (
-    <div className="flex items-end justify-between mb-6">
-      <div className="flex items-end space-x-4">
+      <div className="flex items-end space-x-4 mb-6">
         <div>
           <Label>Username</Label>
           <Input
@@ -145,32 +144,27 @@ export function FilterControls({
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      <div className="flex items-end space-x-2">
         <div>
           <Label>정렬</Label>
-          <Select onValueChange={handleSortChange} value={sort}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="정렬" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="rentalDate">대여일시</SelectItem>
-              <SelectItem value="username">사용자명</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className="invisible">Direction</Label>
-          <Button variant="outline" size="icon" onClick={handleDirectionChange}>
-            {order === "asc" ? (
-              <ArrowUp className="h-4 w-4" />
-            ) : (
-              <ArrowDown className="h-4 w-4" />
-            )}
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Select onValueChange={handleSortChange} value={sort}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="정렬" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rentalDate">대여일시</SelectItem>
+                <SelectItem value="username">사용자명</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon" onClick={handleDirectionChange}>
+              {order === "asc" ? (
+                <ArrowUp className="h-4 w-4" />
+              ) : (
+                <ArrowDown className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
   );
 }

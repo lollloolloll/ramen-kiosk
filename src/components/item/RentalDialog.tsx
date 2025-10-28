@@ -294,7 +294,9 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               className="space-y-4"
             >
               <DialogHeader>
-                <DialogTitle>아이템 대여</DialogTitle>
+                <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
+                  아이템 대여
+                </DialogTitle>
                 <DialogDescription>
                   '{item.name}'을(를) 대여하려면 이름과 휴대폰 번호를
                   입력하세요.
@@ -356,6 +358,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                   variant="outline"
                   onClick={() => setStep("register")}
                   disabled={isSubmitting}
+                  className="border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
                 >
                   신규 등록
                 </Button>
@@ -368,7 +371,11 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                   >
                     취소
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                  >
                     {isSubmitting ? "확인 중..." : "대여하기"}
                   </Button>
                 </div>
@@ -391,7 +398,9 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               className="space-y-4"
             >
               <DialogHeader>
-                <DialogTitle>사용자 등록</DialogTitle>
+                <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
+                  사용자 등록
+                </DialogTitle>
                 <DialogDescription>
                   새로운 사용자를 등록합니다. 정보를 입력해주세요.
                 </DialogDescription>
@@ -402,7 +411,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      이름<span className="text-red-500">*</span>
+                      이름<span className="text-[oklch(0.7_0.18_350)]">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input placeholder="홍길동" {...field} />
@@ -417,7 +426,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      휴대폰 번호<span className="text-red-500">*</span>
+                      휴대폰 번호
+                      <span className="text-[oklch(0.7_0.18_350)]">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -439,7 +449,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      성별<span className="text-red-500">*</span>
+                      성별<span className="text-[oklch(0.7_0.18_350)]">*</span>
                     </FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
@@ -450,6 +460,11 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                             field.onChange("남");
                             registerForm.trigger("gender");
                           }}
+                          className={
+                            field.value === "남"
+                              ? "bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                              : "border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
+                          }
                         >
                           남
                         </Button>
@@ -460,6 +475,11 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                             field.onChange("여");
                             registerForm.trigger("gender");
                           }}
+                          className={
+                            field.value === "여"
+                              ? "bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                              : "border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
+                          }
                         >
                           여
                         </Button>
@@ -475,7 +495,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      생년월일<span className="text-red-500">*</span>
+                      생년월일
+                      <span className="text-[oklch(0.7_0.18_350)]">*</span>
                     </FormLabel>
                     <div className="flex gap-2">
                       <Select
@@ -539,7 +560,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 render={() => (
                   <FormItem>
                     <FormLabel>
-                      학교<span className="text-red-500">*</span>
+                      학교<span className="text-[oklch(0.7_0.18_350)]">*</span>
                     </FormLabel>
                     <div className="flex items-center gap-2">
                       <Select
@@ -580,7 +601,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 control={registerForm.control}
                 name="personalInfoConsent"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[oklch(0.75_0.12_165/0.2)] p-4">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
@@ -609,6 +630,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 <Button
                   type="submit"
                   disabled={isSubmitting || isButtonDisabled}
+                  className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
                 >
                   {isSubmitting ? "등록 중..." : "등록 및 대여"}
                 </Button>
@@ -619,14 +641,13 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       case "success":
         return (
           <div
-            // 1. 패딩을 p-8에서 세로 패딩(py-12)과 가로 패딩(px-8)으로 분리하여 상하 여백 확보
             className="flex flex-col items-center justify-center py-12 px-8 text-center relative overflow-hidden"
             key="success"
           >
-            {/* 배경 애니메이션 효과 */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 animate-pulse" />
+            {/* 배경 애니메이션 효과 - 테마 색상 적용 */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)] animate-pulse" />
 
-            {/* 파티클 효과 (위치를 안쪽으로 조정) */}
+            {/* 파티클 효과 */}
             <div className="absolute top-4 left-1/4 text-4xl animate-bounce">
               ✨
             </div>
@@ -637,7 +658,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               🎊
             </div>
             <div
-              // 2. 바닥에 있던 파티클의 위치를 조금 더 위로 올림
               className="absolute bottom-24 left-1/3 text-2xl animate-bounce"
               style={{ animationDelay: "0.2s" }}
             >
@@ -659,19 +679,21 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
 
               {/* 제목 */}
               <div className="space-y-2">
-                <DialogTitle className="text-3xl font-black bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+                <DialogTitle className="text-3xl font-black bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
                   대여 완료!
                 </DialogTitle>
-                <div className="text-5xl font-bold text-gray-800">
+                <div className="text-5xl font-bold text-[oklch(0.75_0.12_165)]">
                   {item.name}
                 </div>
               </div>
 
               {/* 메시지 */}
-              <DialogDescription className="text-lg font-medium text-gray-700 leading-relaxed">
+              <DialogDescription className="text-lg font-medium text-foreground leading-relaxed">
                 신나게 즐기고 <br />
-                <span className="text-pink-600 font-bold">정리정돈</span> 하는
-                거 잊지 말기!
+                <span className="text-[oklch(0.7_0.18_350)] font-bold">
+                  정리정돈
+                </span>{" "}
+                하는 거 잊지 말기!
               </DialogDescription>
 
               {/* 카운트다운 원형 프로그레스 */}
@@ -709,14 +731,14 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                       x2="100%"
                       y2="100%"
                     >
-                      <stop offset="0%" stopColor="#a855f7" />
-                      <stop offset="50%" stopColor="#ec4899" />
-                      <stop offset="100%" stopColor="#3b82f6" />
+                      <stop offset="0%" stopColor="oklch(0.75 0.12 165)" />
+                      <stop offset="50%" stopColor="oklch(0.7 0.18 350)" />
+                      <stop offset="100%" stopColor="oklch(0.7 0.18 350)" />
                     </linearGradient>
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  <span className="text-3xl font-black bg-gradient-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
                     {countdown}
                   </span>
                 </div>
@@ -726,13 +748,13 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               <DialogFooter className="mt-6">
                 <Button
                   onClick={handleSuccessConfirm}
-                  className="w-full h-12 text-lg font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 hover:from-purple-700 hover:via-pink-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  className="w-full h-12 text-lg font-bold bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
                   지금 확인하기 ✓
                 </Button>
               </DialogFooter>
 
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 {countdown}초 후 자동으로 닫힙니다
               </p>
             </div>

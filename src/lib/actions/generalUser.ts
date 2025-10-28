@@ -195,3 +195,47 @@ export async function deleteAdminUser(id: number) {
     return { error: "관리자 삭제에 실패했습니다." };
   }
 }
+
+import ExcelJS from "exceljs";
+
+export async function exportGeneralUsersToExcel() {
+  try {
+    const allUsers = await db.select().from(generalUsers);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("쌍청문 쉬다 사용자 정보");
+
+    worksheet.columns = [
+      { header: "ID", key: "id", width: 10 },
+      { header: "이름", key: "name", width: 20 },
+      { header: "전화번호", key: "phoneNumber", width: 20 },
+      { header: "성별", key: "gender", width: 10 },
+      { header: "생년월일", key: "birthDate", width: 15 },
+      { header: "학교", key: "school", width: 20 },
+      { header: "개인정보동의", key: "personalInfoConsent", width: 15 },
+    ];
+
+    allUsers.forEach((user) => {
+      worksheet.addRow({
+        id: user.id,
+        name: user.name,
+        phoneNumber: user.phoneNumber,
+        gender: user.gender,
+        birthDate: user.birthDate,
+        school: user.school,
+        personalInfoConsent: user.personalInfoConsent ? "Y" : "N",
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return {
+      success: true,
+      buffer: Buffer.from(buffer).toString("base64"),
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    };
+  } catch (error) {
+    console.error("Error exporting general users to Excel:", error);
+    return { error: "사용자 정보를 엑셀로 내보내는 데 실패했습니다." };
+  }
+}

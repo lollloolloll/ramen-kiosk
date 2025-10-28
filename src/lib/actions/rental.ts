@@ -194,14 +194,17 @@ export async function exportRentalRecordsToExcel(
 ) {
   try {
     // 페이지네이션 없이 필터링된 모든 대여 기록을 가져옵니다.
-    const { data, error } = await getRentalRecords({ ...filters, per_page: 999999 }); // 매우 큰 값으로 설정하여 모든 데이터를 가져옴
+    const { data, error } = await getRentalRecords({
+      ...filters,
+      per_page: 999999,
+    }); // 매우 큰 값으로 설정하여 모든 데이터를 가져옴
 
     if (error || !data) {
       throw new Error(error || "대여 기록을 가져오는 데 실패했습니다.");
     }
 
     const workbook = new Workbook();
-    const worksheet = workbook.addWorksheet("Rental Records");
+    const worksheet = workbook.addWorksheet("쌍청문 쉬다 대여 기록");
 
     // 헤더 설정
     worksheet.columns = [
@@ -229,9 +232,19 @@ export async function exportRentalRecordsToExcel(
     const buffer = await (workbook.xlsx as any).writeBuffer();
 
     // 클라이언트로 반환할 수 있도록 버퍼와 MIME 타입 반환
-    return { success: true, buffer: buffer.toString("base64"), mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
+    return {
+      success: true,
+      buffer: buffer.toString("base64"),
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    };
   } catch (error) {
     console.error("Error exporting rental records to Excel:", error);
-    return { error: error instanceof Error ? error.message : "엑셀 내보내기 중 오류가 발생했습니다." };
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "엑셀 내보내기 중 오류가 발생했습니다.",
+    };
   }
 }

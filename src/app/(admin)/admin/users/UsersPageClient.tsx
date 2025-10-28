@@ -21,10 +21,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown, FileDown } from "lucide-react";
 import { Pagination } from "@/lib/shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "@/lib/shared/use-debounce";
+import { exportGeneralUsersToExcel } from "@/lib/actions/generalUser";
 
 type GeneralUser = typeof generalUsers.$inferSelect;
 
@@ -127,6 +128,25 @@ export function UsersPageClient({
                 <AddUserForm />
               </DialogContent>
             </Dialog>
+            <Button
+              onClick={async () => {
+                const result = await exportGeneralUsersToExcel();
+                if (result.success && result.buffer && result.mimeType) {
+                  const link = document.createElement("a");
+                  link.href = `data:${result.mimeType};base64,${result.buffer}`;
+                  link.download = `general_users_${new Date().toISOString()}.xlsx`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                } else {
+                  alert(result.error || "엑셀 내보내기 실패");
+                }
+              }}
+              className="flex items-center space-x-2"
+            >
+              <FileDown className="h-4 w-4" />
+              <span>엑셀 내보내기</span>
+            </Button>
           </div>
         </div>
 

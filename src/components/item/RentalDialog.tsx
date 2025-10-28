@@ -750,7 +750,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                   onClick={handleSuccessConfirm}
                   className="w-full h-12 text-lg font-bold bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
-                  지금 확인하기 ✓
+                  확인 ✓
                 </Button>
               </DialogFooter>
 

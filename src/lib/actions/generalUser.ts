@@ -80,17 +80,12 @@ export async function getAllGeneralUsers({
   try {
     const offset = (page - 1) * per_page;
 
-    // 검색 조건 추가
+    // 이름으로만 검색
     let whereClause;
     if (search) {
-      const normalizedSearch = search.replace(/-/g, "");
-      whereClause = or(
-        like(generalUsers.name, `%${normalizedSearch}%`),
-        like(generalUsers.phoneNumber, `%${normalizedSearch}%`)
-      );
+      whereClause = like(generalUsers.name, `%${search}%`);
     }
 
-    // total count with search
     const [total] = await db
       .select({ value: count() })
       .from(generalUsers)

@@ -106,7 +106,7 @@ export function UsersPageClient({
               )}
             </Button>
             <Input
-              placeholder="이름 또는 전화번호 검색..."
+              placeholder="이름 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-[250px] mr-2"

@@ -75,6 +75,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [peopleCount, setPeopleCount] = useState(1);
 
   // 생년월일 상태
   const [birthYear, setBirthYear] = useState<string>();
@@ -155,7 +156,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         values.phoneNumber
       );
       if (user) {
-        await handleRental(user.id);
+        await handleRental(user.id, peopleCount);
       } else {
         toast.info("등록된 사용자가 아닙니다. 신규 등록을 진행해주세요.");
         setStep("register");
@@ -178,7 +179,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       }
       if (result.user) {
         toast.success("사용자 등록이 완료되었습니다.");
-        await handleRental(result.user.id);
+        await handleRental(result.user.id, peopleCount);
       }
     } catch (error) {
       toast.error(
@@ -189,14 +190,14 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
   };
 
-  const handleRental = async (userId: number) => {
+  const handleRental = async (userId: number, peopleCount: number) => {
     if (!item) {
       toast.error("아이템 정보가 없습니다.");
       return;
     }
     setIsSubmitting(true);
     try {
-      const result = await rentItem(userId, item.id);
+      const result = await rentItem(userId, item.id, peopleCount);
       if (result.error) {
         throw new Error(result.error);
       }
@@ -227,6 +228,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     setSchoolLevel("");
     setSchoolName("");
     setYearSelectOpen(false);
+    setPeopleCount(1);
   };
 
   const years = useMemo(() => {
@@ -306,6 +308,21 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                   </FormItem>
                 )}
               />
+              <FormItem>
+                <FormLabel>대여 인원</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={peopleCount}
+                    onChange={(e) =>
+                      setPeopleCount(
+                        Math.max(1, parseInt(e.target.value, 10) || 1)
+                      )
+                    }
+                  />
+                </FormControl>
+              </FormItem>
               <DialogFooter className="gap-2 sm:justify-between">
                 <Button
                   type="button"

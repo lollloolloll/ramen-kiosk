@@ -7,6 +7,7 @@ export type RentalRecord = {
   rentalDate: Date | null;
   userName: string | null;
   itemName: string | null;
+  peopleCount: number | null;
 };
 
 export const columns: ColumnDef<RentalRecord>[] = [
@@ -21,6 +22,10 @@ export const columns: ColumnDef<RentalRecord>[] = [
   {
     accessorKey: "itemName",
     header: "Item",
+  },
+  {
+    accessorKey: "peopleCount",
+    header: "대여인원",
   },
   {
     accessorKey: "rentalDate",

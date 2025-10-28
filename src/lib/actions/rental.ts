@@ -5,7 +5,11 @@ import { rentalRecords, items, generalUsers } from "@drizzle/schema";
 import { eq, and, gte, lte, sql, asc, desc, like } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function rentItem(userId: number, itemId: number) {
+export async function rentItem(
+  userId: number,
+  itemId: number,
+  peopleCount: number
+) {
   try {
     // 1. 트랜잭션을 사용하지 않고 직접 db 객체를 사용합니다.
     // 먼저 대여할 아이템이 DB에 존재하는지 확인합니다.
@@ -26,6 +30,7 @@ export async function rentItem(userId: number, itemId: number) {
       // 2. rentalDate를 초 단위 UNIX 타임스탬프로 직접 설정합니다.
       // Date.now()는 밀리초이므로 1000으로 나눠 초 단위로 만듭니다.
       rentalDate: Math.floor(Date.now() / 1000),
+      peopleCount: peopleCount,
     });
 
     revalidatePath("/");
@@ -95,6 +100,7 @@ export async function getRentalRecords(
         userName: generalUsers.name,
         itemName: items.name,
         itemCategory: items.category,
+        peopleCount: rentalRecords.peopleCount,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
@@ -112,6 +118,7 @@ export async function getRentalRecords(
         rentalDate: rentalRecords.rentalDate,
         username: generalUsers.name,
         itemName: items.name,
+        peopleCount: rentalRecords.peopleCount,
       };
       const sortColumn =
         sortColumnMap[sort as keyof typeof sortColumnMap] ||

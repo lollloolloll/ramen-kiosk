@@ -3,7 +3,6 @@
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Home } from "lucide-react";
 interface HeaderProps {
   onMenuClick: () => void;
@@ -25,7 +24,13 @@ export function Header({ onMenuClick }: HeaderProps) {
         variant="ghost"
         className="text-lg font-semibold cursor-pointer underline"
       >
-        관리자메뉴얼
+        <a
+          href="https://github.com/lollloolloll/ramen-kiosk"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          관리자메뉴얼
+        </a>
       </Button>
       <div className="flex items-center gap-4 ml-auto">
         <Button variant="ghost">마이페이지</Button>

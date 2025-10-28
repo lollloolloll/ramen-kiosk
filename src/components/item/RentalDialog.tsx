@@ -75,7 +75,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [peopleCount, setPeopleCount] = useState(1);
+  const [peopleCount, setPeopleCount] = useState("1");
 
   // 생년월일 상태
   const [birthYear, setBirthYear] = useState<string>();
@@ -156,7 +156,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         values.phoneNumber
       );
       if (user) {
-        await handleRental(user.id, peopleCount);
+        const count = Math.max(1, parseInt(peopleCount, 10) || 1);
+        await handleRental(user.id, count);
       } else {
         toast.info("등록된 사용자가 아닙니다. 신규 등록을 진행해주세요.");
         setStep("register");
@@ -178,8 +179,9 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         throw new Error(result.error);
       }
       if (result.user) {
+        const count = Math.max(1, parseInt(peopleCount, 10) || 1);
         toast.success("사용자 등록이 완료되었습니다.");
-        await handleRental(result.user.id, peopleCount);
+        await handleRental(result.user.id, count);
       }
     } catch (error) {
       toast.error(
@@ -228,7 +230,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     setSchoolLevel("");
     setSchoolName("");
     setYearSelectOpen(false);
-    setPeopleCount(1);
+    setPeopleCount("1");
   };
 
   const years = useMemo(() => {
@@ -315,11 +317,13 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                     type="number"
                     min="1"
                     value={peopleCount}
-                    onChange={(e) =>
-                      setPeopleCount(
-                        Math.max(1, parseInt(e.target.value, 10) || 1)
-                      )
-                    }
+                    onChange={(e) => setPeopleCount(e.target.value)}
+                    onBlur={(e) => {
+                      const num = parseInt(e.target.value, 10);
+                      if (isNaN(num) || num < 1) {
+                        setPeopleCount("1");
+                      }
+                    }}
                   />
                 </FormControl>
               </FormItem>

@@ -149,7 +149,7 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
       <div>
         <Label>물품명</Label>
         <Select onValueChange={setItem} value={item}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[120px]">
             <SelectValue placeholder="모두" />
           </SelectTrigger>
           <SelectContent>

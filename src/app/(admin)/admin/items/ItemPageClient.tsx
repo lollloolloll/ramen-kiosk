@@ -20,7 +20,7 @@ export function ItemPageClient({ initialItems }: ItemPageClientProps) {
   return (
     <div className="container px-16 py-10">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">아이템 재고 관리</h1>
+        <h1 className="text-3xl font-bold">아이템 관리</h1>
         <Dialog>
           <DialogTrigger asChild>
             <Button>아이템 추가</Button>

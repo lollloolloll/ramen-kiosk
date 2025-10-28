@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { generalUsers } from "@drizzle/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { generalUserColumns } from "./columns";
@@ -52,17 +52,22 @@ export function UsersPageClient({
 
   const [searchTerm, setSearchTerm] = useState(search);
   const debouncedSearch = useDebounce(searchTerm, 500);
-
+  const prevSearchRef = useRef(search);
   useEffect(() => {
-    const params = new URLSearchParams(searchParams);
-    if (debouncedSearch) {
-      params.set("search", debouncedSearch);
-    } else {
-      params.delete("search");
+    // 검색어가 실제로 변경되었을 때만 실행
+    if (debouncedSearch !== prevSearchRef.current) {
+      prevSearchRef.current = debouncedSearch;
+
+      const params = new URLSearchParams(searchParams);
+      if (debouncedSearch) {
+        params.set("search", debouncedSearch);
+      } else {
+        params.delete("search");
+      }
+      params.set("page", "1");
+      router.push(`?${params.toString()}`);
     }
-    params.set("page", "1");
-    router.push(`?${params.toString()}`);
-  }, [debouncedSearch, router, searchParams]);
+  }, [debouncedSearch, router]);
 
   const handleSortChange = (newSortOrder: string) => {
     const params = new URLSearchParams(searchParams);

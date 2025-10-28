@@ -65,16 +65,18 @@ export async function getRentalRecords(
       whereConditions.push(like(generalUsers.name, `%${filters.username}%`));
     }
     if (filters.startDate) {
-      // 2. .getTime()을 다시 추가하여 Date를 숫자로 변환합니다. (DB 컬럼이 INTEGER 타입이므로)
+      const startOfDay = new Date(filters.startDate);
+      startOfDay.setHours(0, 0, 0, 0);
       whereConditions.push(
-        gte(rentalRecords.rentalDate, filters.startDate.getTime())
+        gte(rentalRecords.rentalDate, Math.floor(startOfDay.getTime() / 1000))
       );
     }
     if (filters.endDate) {
       const endOfDay = new Date(filters.endDate);
       endOfDay.setHours(23, 59, 59, 999);
-      // 2. .getTime()을 다시 추가하여 Date를 숫자로 변환합니다.
-      whereConditions.push(lte(rentalRecords.rentalDate, endOfDay.getTime()));
+      whereConditions.push(
+        lte(rentalRecords.rentalDate, Math.floor(endOfDay.getTime() / 1000))
+      );
     }
     if (filters.category) {
       whereConditions.push(eq(items.category, filters.category));
@@ -118,13 +120,13 @@ export async function getRentalRecords(
       .leftJoin(items, eq(rentalRecords.itemsId, items.id))
       .where(and(...whereConditions));
 
-    // Drizzle v0.29.0 이상에서는 dataQuery가 Promise가 아니므로 .execute()가 필요할 수 있습니다.
-    // 하지만 현재 구조에서는 Promise.all이 잘 동작할 것입니다.
     const [data, total] = await Promise.all([dataQuery, countQuery]);
 
-    const total_count = total[0].count;
+    // total 배열이 비어있을 경우를 대비한 안전장치
+    const total_count = total[0]?.count || 0;
 
     return { success: true, data, total_count };
+    // ▼▼▼ 여기에 catch 블록 추가 ▼▼▼
   } catch (error) {
     console.error("Error fetching rental records:", error);
     return { error: "대여 기록을 불러오는 데 실패했습니다." };

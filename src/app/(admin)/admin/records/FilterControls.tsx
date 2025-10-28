@@ -35,50 +35,47 @@ export function FilterControls({ categories }: FilterControlsProps) {
     searchParams.get("category") || "all"
   );
 
-  // URL을 업데이트하는 로직을 useEffect로 분리
+  const isInitialRender = React.useRef(true);
+
   React.useEffect(() => {
-    // 디바운싱: 사용자가 타이핑을 멈춘 후 500ms 뒤에 필터링을 적용합니다.
+    // ▼▼▼ 2. 초기 렌더링일 경우, 아무것도 하지 않고 종료 ▼▼▼
+    // ref 값을 false로 바꿔서 다음 렌더링부터는 이 로직이 실행되도록 합니다.
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    // 이제 이 코드는 사용자가 필터 값을 '직접' 변경했을 때만 실행됩니다.
     const handler = setTimeout(() => {
-      const params = new URLSearchParams(searchParams); // 기존 파라미터 유지
+      // 정렬(sort)과 순서(order) 파라미터는 유지하기 위해 현재 URL에서 가져옵니다.
+      const currentParams = new URLSearchParams(searchParams.toString());
+      const sort = currentParams.get("sort");
+      const order = currentParams.get("order");
 
-      // 값이 있으면 설정, 없으면 파라미터에서 제거
-      if (username) {
-        params.set("username", username);
-      } else {
-        params.delete("username");
-      }
+      // 새로운 URL 파라미터를 처음부터 만듭니다.
+      const newParams = new URLSearchParams();
 
-      if (fromDate) {
-        params.set("from", fromDate.toISOString().split("T")[0]); // YYYY-MM-DD 형식
-      } else {
-        params.delete("from");
-      }
+      // 필터 상태값들을 newParams에 추가합니다.
+      if (username) newParams.set("username", username);
+      if (fromDate) newParams.set("from", fromDate.toISOString().split("T")[0]);
+      if (toDate) newParams.set("to", toDate.toISOString().split("T")[0]);
+      if (category && category !== "all") newParams.set("category", category);
 
-      if (toDate) {
-        params.set("to", toDate.toISOString().split("T")[0]);
-      } else {
-        params.delete("to");
-      }
+      // 유지해야 할 정렬/순서 파라미터를 추가합니다.
+      if (sort) newParams.set("sort", sort);
+      if (order) newParams.set("order", order);
 
-      if (category && category !== "all") {
-        params.set("category", category);
-      } else {
-        params.delete("category");
-      }
+      // 필터가 변경되었으므로 페이지는 항상 1로 리셋합니다.
+      newParams.set("page", "1");
 
-      // 필터 변경 시 항상 첫 페이지로 이동
-      params.set("page", "1");
+      router.push(`/admin/records?${newParams.toString()}`);
+    }, 500);
 
-      // router.push는 클라이언트 사이드 네비게이션을 트리거합니다.
-      // 페이지 전체가 아닌, 이 페이지 컴포넌트만 다시 렌더링됩니다.
-      router.push(`/admin/records?${params.toString()}`);
-    }, 500); // 500ms 딜레이
-
-    // 컴포넌트가 언마운트되거나 의존성 배열의 값이 바뀌기 전에 타이머를 클리어합니다.
     return () => {
       clearTimeout(handler);
     };
-  }, [username, fromDate, toDate, category, router, searchParams]); // 의존성 배열에 router와 searchParams 추가
+    // ▼▼▼ 3. 의존성 배열에는 필터 상태값만 포함시킵니다. ▼▼▼
+  }, [username, fromDate, toDate, category, router]);
 
   return (
     <div className="flex items-end space-x-4 mb-6">

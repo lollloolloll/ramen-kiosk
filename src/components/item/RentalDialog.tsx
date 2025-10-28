@@ -477,8 +477,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                           }}
                           className={
                             field.value === "여"
-                              ? "bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
-                              : "border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
+                              ? "bg-[oklch(0.7_0.18_350)] hover:bg-[oklch(0.68_0.18_350)] text-white"
+                              : "border-[oklch(0.7_0.18_350/0.3)] hover:bg-[oklch(0.7_0.18_350/0.1)]"
                           }
                         >
                           여

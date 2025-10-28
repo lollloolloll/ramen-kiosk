@@ -12,12 +12,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { ArrowUp, ArrowDown } from "lucide-react";
 
 interface FilterControlsProps {
   categories: string[];
+  sort: string;
+  order: string;
 }
 
-export function FilterControls({ categories }: FilterControlsProps) {
+export function FilterControls({
+  categories,
+  sort,
+  order,
+}: FilterControlsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -34,7 +42,6 @@ export function FilterControls({ categories }: FilterControlsProps) {
     searchParams.get("category") || "all"
   );
 
-  // 이전 필터 값들을 추적
   const prevFiltersRef = React.useRef({
     username: searchParams.get("username") || "",
     fromDate: searchParams.get("from") || "",
@@ -50,7 +57,6 @@ export function FilterControls({ categories }: FilterControlsProps) {
       category,
     };
 
-    // 필터가 실제로 변경되었는지 확인
     const filtersChanged =
       currentFilters.username !== prevFiltersRef.current.username ||
       currentFilters.fromDate !== prevFiltersRef.current.fromDate ||
@@ -58,10 +64,9 @@ export function FilterControls({ categories }: FilterControlsProps) {
       currentFilters.category !== prevFiltersRef.current.category;
 
     if (!filtersChanged) {
-      return; // 필터가 변경되지 않았으면 아무것도 하지 않음
+      return;
     }
 
-    // 필터가 변경되었으므로 ref 업데이트
     prevFiltersRef.current = currentFilters;
 
     const handler = setTimeout(() => {
@@ -89,40 +94,82 @@ export function FilterControls({ categories }: FilterControlsProps) {
     };
   }, [username, fromDate, toDate, category, router, searchParams]);
 
+  const handleSortChange = (newSortOrder: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("sort", newSortOrder);
+    params.set("page", "1");
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleDirectionChange = () => {
+    const params = new URLSearchParams(searchParams);
+    const currentOrder = params.get("order") || "desc";
+    params.set("order", currentOrder === "asc" ? "desc" : "asc");
+    params.set("page", "1");
+    router.push(`?${params.toString()}`);
+  };
+
   return (
-    <div className="flex items-end space-x-4 mb-6">
-      <div>
-        <Label>Username</Label>
-        <Input
-          placeholder="Filter by username..."
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="max-w-sm"
-        />
+    <div className="flex items-end justify-between mb-6">
+      <div className="flex items-end space-x-4">
+        <div>
+          <Label>Username</Label>
+          <Input
+            placeholder="Filter by username..."
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+        <div>
+          <Label>From</Label>
+          <DatePicker date={fromDate} setDate={setFromDate} />
+        </div>
+        <div>
+          <Label>To</Label>
+          <DatePicker date={toDate} setDate={setToDate} />
+        </div>
+        <div>
+          <Label>카테고리</Label>
+          <Select onValueChange={setCategory} value={category}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="모두" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">모두</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <div>
-        <Label>From</Label>
-        <DatePicker date={fromDate} setDate={setFromDate} />
-      </div>
-      <div>
-        <Label>To</Label>
-        <DatePicker date={toDate} setDate={setToDate} />
-      </div>
-      <div>
-        <Label>카테고리</Label>
-        <Select onValueChange={setCategory} value={category}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="모두" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">모두</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+      <div className="flex items-end space-x-2">
+        <div>
+          <Label>정렬</Label>
+          <Select onValueChange={handleSortChange} value={sort}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="정렬" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="rentalDate">대여일시</SelectItem>
+              <SelectItem value="username">사용자명</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="invisible">Direction</Label>
+          <Button variant="outline" size="icon" onClick={handleDirectionChange}>
+            {order === "asc" ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : (
+              <ArrowDown className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

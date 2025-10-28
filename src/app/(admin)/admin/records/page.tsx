@@ -5,7 +5,7 @@ import { RecordsPageClient } from "./RecordsPageClient";
 import { FilterControls } from "./FilterControls";
 
 interface RecordsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     username?: string;
     from?: string;
     to?: string;
@@ -14,7 +14,7 @@ interface RecordsPageProps {
     per_page?: string;
     sort?: string;
     order?: string;
-  };
+  }>;
 }
 
 export default async function RecordsPage({ searchParams }: RecordsPageProps) {
@@ -40,8 +40,8 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
     getRentalRecords(filters),
     getDistinctCategories(),
   ]);
+
   if (!rentalResult || !categoryResult) {
-    // 이 경우는 거의 발생하지 않지만, 코드를 안정적으로 만들어줍니다.
     return <p>Error: Could not retrieve data results.</p>;
   }
 
@@ -60,7 +60,7 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">대여 기록</h1>
-      <FilterControls categories={categories} />
+      <FilterControls categories={categories} sort={sort} order={order} />
       <Suspense fallback={<div>Loading records...</div>}>
         <RecordsPageClient
           records={records}

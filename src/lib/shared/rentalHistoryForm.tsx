@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { getRentalRecordsByUserId } from "@/lib/actions/rental";
 import { DataTable } from "@/components/ui/data-table";
-import { rentalRecords } from "@drizzle/schema";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   DialogContent,
@@ -12,15 +11,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-// getRentalRecords의 반환 타입과 호환된다고 가정합니다.
+// ✅ Updated type to match the actual return from getRentalRecordsByUserId
 type RentalRecord = {
   id: number;
-  userId: number;
   rentalDate: number;
   userName: string | null;
   itemName: string | null;
   itemCategory: string | null;
   peopleCount: number;
+  imageUrl: string | null; // Added imageUrl
+  // Removed userId as it's not returned by the query
 };
 
 interface RentalHistoryFormProps {
@@ -73,7 +73,8 @@ export function RentalHistoryForm({
         setRecords([]);
         setTotalCount(0);
       } else {
-        setRecords(result.data as RentalRecord[]);
+        // ✅ No type casting needed now - types match perfectly
+        setRecords(result.data);
         setTotalCount(result.total_count || 0);
         setError(null);
       }
@@ -83,7 +84,7 @@ export function RentalHistoryForm({
     if (username) {
       fetchRentalHistory();
     }
-  }, [username, page, perPage]);
+  }, [userId, username, page, perPage]); // ✅ Added userId to dependencies
 
   const totalPages = Math.ceil(totalCount / perPage);
 

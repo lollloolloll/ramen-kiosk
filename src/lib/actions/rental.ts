@@ -144,7 +144,6 @@ export async function getRentalRecords(
     return { error: "대여 기록을 불러오는 데 실패했습니다." };
   }
 }
-
 export async function getRentalRecordsByUserId(
   userId: number,
   filters: {
@@ -195,8 +194,8 @@ export async function getRentalRecordsByUserId(
       sortColumnMap[sort as keyof typeof sortColumnMap] ||
       rentalRecords.rentalDate;
 
-    // ✨✨✨ 핵심 수정: let으로 선언하여 재할당 가능하게 만듦 ✨✨✨
-    let dataQuery = db
+    // ✅ Solution: Build the complete query in one chain instead of reassigning
+    const dataQuery = db
       .select({
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
@@ -211,13 +210,10 @@ export async function getRentalRecordsByUserId(
       .leftJoin(items, eq(rentalRecords.itemsId, items.id))
       .where(and(...whereConditions))
       .limit(per_page)
-      .offset(offset);
+      .offset(offset)
+      .orderBy(order === "asc" ? asc(sortColumn) : desc(sortColumn));
 
-    dataQuery = dataQuery.orderBy(
-      order === "asc" ? asc(sortColumn) : desc(sortColumn)
-    );
-
-    // --- 카운트 조회 쿼리 (중복이지만 불가피) ---
+    // --- 카운트 조회 쿼리 ---
     const countQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(rentalRecords)
@@ -236,7 +232,6 @@ export async function getRentalRecordsByUserId(
     return { error: "사용자 대여 기록을 불러오는 데 실패했습니다." };
   }
 }
-
 function calculateAge(birthDate: string | null): number | null {
   if (!birthDate) return null;
   const birth = new Date(birthDate);

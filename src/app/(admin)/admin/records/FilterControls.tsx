@@ -44,10 +44,17 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
   });
 
   React.useEffect(() => {
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
     const currentFilters = {
       username,
-      fromDate: fromDate?.toISOString().split("T")[0] || "",
-      toDate: toDate?.toISOString().split("T")[0] || "",
+      fromDate: fromDate ? formatDate(fromDate) : "",
+      toDate: toDate ? formatDate(toDate) : "",
       item,
     };
 
@@ -71,8 +78,8 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
       const newParams = new URLSearchParams();
 
       if (username) newParams.set("username", username);
-      if (fromDate) newParams.set("from", fromDate.toISOString().split("T")[0]);
-      if (toDate) newParams.set("to", toDate.toISOString().split("T")[0]);
+      if (fromDate) newParams.set("from", formatDate(fromDate));
+      if (toDate) newParams.set("to", formatDate(toDate));
       if (item && item !== "all") newParams.set("item", item);
 
       if (sort) newParams.set("sort", sort);

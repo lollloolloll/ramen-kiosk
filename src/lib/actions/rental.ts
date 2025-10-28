@@ -71,15 +71,15 @@ export async function getRentalRecords(
     }
     if (filters.startDate) {
       const [year, month, day] = filters.startDate.split("-").map(Number);
-      const startOfDay = new Date(year, month - 1, day);
+      const startOfDay = new Date(Date.UTC(year, month - 1, day));
       whereConditions.push(
         gte(rentalRecords.rentalDate, Math.floor(startOfDay.getTime() / 1000))
       );
     }
     if (filters.endDate) {
       const [year, month, day] = filters.endDate.split("-").map(Number);
-      const date = new Date(year, month - 1, day);
-      date.setHours(23, 59, 59, 999);
+      const date = new Date(Date.UTC(year, month - 1, day));
+      date.setUTCHours(23, 59, 59, 999);
       whereConditions.push(
         lte(rentalRecords.rentalDate, Math.floor(date.getTime() / 1000))
       );

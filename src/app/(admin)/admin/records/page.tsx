@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { getRentalRecords } from "@/lib/actions/rental";
-import { getDistinctCategories } from "@/lib/actions/item";
 import { RecordsPageClient } from "./RecordsPageClient";
 import { FilterControls } from "./FilterControls";
+import { getDistinctItemNames } from "@/lib/actions/item";
 
 interface RecordsPageProps {
   searchParams: Promise<{
@@ -10,6 +10,7 @@ interface RecordsPageProps {
     from?: string;
     to?: string;
     category?: string;
+    item?: string;
     page?: string;
     per_page?: string;
     sort?: string;
@@ -19,7 +20,7 @@ interface RecordsPageProps {
 
 export default async function RecordsPage({ searchParams }: RecordsPageProps) {
   const params = await searchParams;
-  const { username, from, to, category } = params;
+  const { username, from, to, category, item } = params;
   const page = Number(params.page) || 1;
   const per_page = Number(params.per_page) || 10;
   const sort = params.sort || "rentalDate";
@@ -30,18 +31,19 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
     startDate: from,
     endDate: to,
     category: category,
+    itemName: item,
     page,
     per_page,
     sort,
     order,
   };
 
-  const [rentalResult, categoryResult] = await Promise.all([
+  const [rentalResult, itemNamesResult] = await Promise.all([
     getRentalRecords(filters),
-    getDistinctCategories(),
+    getDistinctItemNames(),
   ]);
 
-  if (!rentalResult || !categoryResult) {
+  if (!rentalResult || !itemNamesResult) {
     return <p>Error: Could not retrieve data results.</p>;
   }
 
@@ -49,20 +51,19 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
     return <p>Error loading records.</p>;
   }
 
-  if (categoryResult.error || !categoryResult.data) {
-    return <p>Error loading categories.</p>;
+  if (itemNamesResult.error || !itemNamesResult.data) {
+    return <p>Error loading items.</p>;
   }
 
   const records = rentalResult.data as any;
   const total_count = rentalResult.total_count || 0;
-  const categories = categoryResult.data;
+  const itemNames = itemNamesResult.data;
 
+  console.log("records===", records);
   return (
     <div className="py-10 px-16">
-      {" "}
-      {/* Removed container mx-auto and added padding */}
       <h1 className="text-3xl font-bold mb-6">대여 기록</h1>
-      <FilterControls items={categories} sort={sort} order={order} />
+      <FilterControls items={itemNames} sort={sort} order={order} />
       <Suspense fallback={<div>Loading records...</div>}>
         <RecordsPageClient
           records={records}

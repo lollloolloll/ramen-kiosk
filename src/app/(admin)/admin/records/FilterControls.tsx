@@ -21,11 +21,7 @@ interface FilterControlsProps {
   order: string;
 }
 
-export function FilterControls({
-  items,
-  sort,
-  order,
-}: FilterControlsProps) {
+export function FilterControls({ items, sort, order }: FilterControlsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -38,9 +34,7 @@ export function FilterControls({
   const [toDate, setToDate] = React.useState<Date | undefined>(
     searchParams.get("to") ? new Date(searchParams.get("to")!) : undefined
   );
-  const [item, setItem] = React.useState(
-    searchParams.get("item") || "all"
-  );
+  const [item, setItem] = React.useState(searchParams.get("item") || "all");
 
   const prevFiltersRef = React.useRef({
     username: searchParams.get("username") || "",
@@ -110,61 +104,61 @@ export function FilterControls({
   };
 
   return (
-      <div className="flex items-end space-x-4 mb-6 w-full">
-        <div>
-          <Label>Username</Label>
-          <Input
-            placeholder="Filter by username..."
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
-        <div>
-          <Label>From</Label>
-          <DatePicker date={fromDate} setDate={setFromDate} />
-        </div>
-        <div>
-          <Label>To</Label>
-          <DatePicker date={toDate} setDate={setToDate} />
-        </div>
-        <div>
-          <Label>카테고리</Label>
-          <Select onValueChange={setItem} value={item}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="모두" />
+    <div className="flex items-end space-x-4 mb-6 w-full">
+      <div>
+        <Label>Username</Label>
+        <Input
+          placeholder="Filter by username..."
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+      <div>
+        <Label>From</Label>
+        <DatePicker date={fromDate} setDate={setFromDate} />
+      </div>
+      <div>
+        <Label>To</Label>
+        <DatePicker date={toDate} setDate={setToDate} />
+      </div>
+      <div>
+        <Label>물품명</Label>
+        <Select onValueChange={setItem} value={item}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="모두" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">모두</SelectItem>
+            {items.map((itemName) => (
+              <SelectItem key={itemName} value={itemName}>
+                {itemName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>정렬</Label>
+        <div className="flex items-center space-x-2">
+          <Select onValueChange={handleSortChange} value={sort}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="정렬" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">모두</SelectItem>
-              {items.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
+              <SelectItem value="rentalDate">대여일시</SelectItem>
+              <SelectItem value="username">사용자명</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div>
-          <Label>정렬</Label>
-          <div className="flex items-center space-x-2">
-            <Select onValueChange={handleSortChange} value={sort}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="정렬" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rentalDate">대여일시</SelectItem>
-                <SelectItem value="username">사용자명</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="icon" onClick={handleDirectionChange}>
-              {order === "asc" ? (
-                <ArrowUp className="h-4 w-4" />
-              ) : (
-                <ArrowDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <Button variant="outline" size="icon" onClick={handleDirectionChange}>
+            {order === "asc" ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : (
+              <ArrowDown className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </div>
+    </div>
   );
 }

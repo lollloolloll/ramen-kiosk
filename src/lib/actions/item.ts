@@ -143,9 +143,20 @@ export async function deleteItem(id: number) {
 
 export async function getDistinctCategories() {
   try {
-    const categories = await db.selectDistinct({ category: items.category }).from(items);
-    return { success: true, data: categories.map(c => c.category) };
+    const categories = await db
+      .selectDistinct({ category: items.category })
+      .from(items);
+    return { success: true, data: categories.map((c) => c.category) };
   } catch (error) {
     return { error: "카테고리를 불러오는 데 실패했습니다." };
+  }
+}
+
+export async function getDistinctItemNames() {
+  try {
+    const itemNames = await db.selectDistinct({ name: items.name }).from(items);
+    return { success: true, data: itemNames.map((c) => c.name) };
+  } catch (error) {
+    return { error: "아이템 이름을 불러오는 데 실패했습니다." };
   }
 }

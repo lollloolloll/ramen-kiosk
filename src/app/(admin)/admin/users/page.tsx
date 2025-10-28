@@ -7,6 +7,7 @@ interface AdminUsersPageProps {
     per_page?: string;
     sort?: string;
     order?: string;
+    search?: string;
   };
 }
 
@@ -18,12 +19,14 @@ export default async function AdminUsersPage({
   const per_page = Number(params.per_page) || 10;
   const sort = params.sort || "name"; // Default sort to 'name'
   const order = params.order || "asc"; // Default order to 'asc'
+  const search = params.search || "";
 
   const generalUsersResult = await getAllGeneralUsers({
     page,
     per_page,
     sort,
     order,
+    search,
   });
 
   const generalUsers = generalUsersResult.data || [];
@@ -39,6 +42,7 @@ export default async function AdminUsersPage({
         total_count={total_count}
         sort={sort}
         order={order}
+        search={search}
       />
     </div>
   );

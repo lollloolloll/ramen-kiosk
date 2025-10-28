@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { generalUsers } from "@drizzle/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { generalUserColumns } from "./columns";
@@ -23,7 +23,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { Pagination } from "@/lib/shared/pagination";
-import { useRouter, useSearchParams } from "next/navigation"; // Import these
+import { useRouter, useSearchParams } from "next/navigation";
+import { useDebounce } from "@/lib/shared/use-debounce";
 
 type GeneralUser = typeof generalUsers.$inferSelect;
 
@@ -32,8 +33,9 @@ interface UsersPageClientProps {
   page: number;
   per_page: number;
   total_count: number;
-  sort: string; // Add sort prop
-  order: string; // Add order prop
+  sort: string;
+  order: string;
+  search: string;
 }
 
 export function UsersPageClient({
@@ -41,21 +43,31 @@ export function UsersPageClient({
   page,
   per_page,
   total_count,
-  sort, // Destructure sort from props
-  order, // Destructure order from props
+  sort,
+  order,
+  search,
 }: UsersPageClientProps) {
-  const router = useRouter(); // Initialize useRouter
-  const searchParams = useSearchParams(); // Initialize useSearchParams
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [searchTerm, setSearchTerm] = useState("");
-  // Remove sortOrder and sortDirection states, use props instead
-  // const [sortOrder, setSortOrder] = useState("name");
-  // const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [searchTerm, setSearchTerm] = useState(search);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (debouncedSearch) {
+      params.set("search", debouncedSearch);
+    } else {
+      params.delete("search");
+    }
+    params.set("page", "1");
+    router.push(`?${params.toString()}`);
+  }, [debouncedSearch, router, searchParams]);
 
   const handleSortChange = (newSortOrder: string) => {
     const params = new URLSearchParams(searchParams);
     params.set("sort", newSortOrder);
-    params.set("page", "1"); // Reset page to 1 when sorting changes
+    params.set("page", "1");
     router.push(`?${params.toString()}`);
   };
 
@@ -63,37 +75,16 @@ export function UsersPageClient({
     const params = new URLSearchParams(searchParams);
     const currentOrder = params.get("order") || "asc";
     params.set("order", currentOrder === "asc" ? "desc" : "asc");
-    params.set("page", "1"); // Reset page to 1 when sorting changes
+    params.set("page", "1");
     router.push(`?${params.toString()}`);
   };
-
-  const filteredUsers = useMemo(() => { // Renamed from filteredAndSortedUsers
-    let filtered = [...generalUsers];
-
-    if (searchTerm) {
-      const normalizedSearch = searchTerm.replace(/-/g, "").toLowerCase();
-
-      filtered = filtered.filter((user) => {
-        const nameMatch = user.name.toLowerCase().includes(normalizedSearch);
-        const phoneMatch = user.phoneNumber
-          ? user.phoneNumber
-              .replace(/-/g, "")
-              .toLowerCase()
-              .includes(normalizedSearch)
-          : false;
-        return nameMatch || phoneMatch;
-      });
-    }
-    // Remove client-side sorting logic, as it's now handled by the server
-    return filtered;
-  }, [generalUsers, searchTerm]); // Remove sortOrder and sortDirection from dependencies
 
   return (
     <div>
       <div className="mb-8">
         <div className="flex justify-end items-center mb-4 gap-2">
           <div className="flex items-center gap-2">
-            <Select onValueChange={handleSortChange} defaultValue={sort}> {/* Use handleSortChange and sort prop */}
+            <Select onValueChange={handleSortChange} value={sort}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="정렬" />
               </SelectTrigger>
@@ -106,9 +97,9 @@ export function UsersPageClient({
             <Button
               variant="outline"
               size="icon"
-              onClick={handleDirectionChange} // Use handleDirectionChange
+              onClick={handleDirectionChange}
             >
-              {order === "asc" ? ( // Use order prop
+              {order === "asc" ? (
                 <ArrowUp className="h-4 w-4" />
               ) : (
                 <ArrowDown className="h-4 w-4" />
@@ -134,7 +125,7 @@ export function UsersPageClient({
           </div>
         </div>
 
-        <DataTable columns={generalUserColumns} data={filteredUsers} /> {/* Use filteredUsers */}
+        <DataTable columns={generalUserColumns} data={generalUsers} />
       </div>
       <Pagination page={page} per_page={per_page} total_count={total_count} />
     </div>

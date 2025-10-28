@@ -16,13 +16,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown } from "lucide-react";
 
 interface FilterControlsProps {
-  categories: string[];
+  items: string[];
   sort: string;
   order: string;
 }
 
 export function FilterControls({
-  categories,
+  items,
   sort,
   order,
 }: FilterControlsProps) {
@@ -38,15 +38,15 @@ export function FilterControls({
   const [toDate, setToDate] = React.useState<Date | undefined>(
     searchParams.get("to") ? new Date(searchParams.get("to")!) : undefined
   );
-  const [category, setCategory] = React.useState(
-    searchParams.get("category") || "all"
+  const [item, setItem] = React.useState(
+    searchParams.get("item") || "all"
   );
 
   const prevFiltersRef = React.useRef({
     username: searchParams.get("username") || "",
     fromDate: searchParams.get("from") || "",
     toDate: searchParams.get("to") || "",
-    category: searchParams.get("category") || "all",
+    item: searchParams.get("item") || "all",
   });
 
   React.useEffect(() => {
@@ -54,14 +54,14 @@ export function FilterControls({
       username,
       fromDate: fromDate?.toISOString().split("T")[0] || "",
       toDate: toDate?.toISOString().split("T")[0] || "",
-      category,
+      item,
     };
 
     const filtersChanged =
       currentFilters.username !== prevFiltersRef.current.username ||
       currentFilters.fromDate !== prevFiltersRef.current.fromDate ||
       currentFilters.toDate !== prevFiltersRef.current.toDate ||
-      currentFilters.category !== prevFiltersRef.current.category;
+      currentFilters.item !== prevFiltersRef.current.item;
 
     if (!filtersChanged) {
       return;
@@ -79,7 +79,7 @@ export function FilterControls({
       if (username) newParams.set("username", username);
       if (fromDate) newParams.set("from", fromDate.toISOString().split("T")[0]);
       if (toDate) newParams.set("to", toDate.toISOString().split("T")[0]);
-      if (category && category !== "all") newParams.set("category", category);
+      if (item && item !== "all") newParams.set("item", item);
 
       if (sort) newParams.set("sort", sort);
       if (order) newParams.set("order", order);
@@ -92,7 +92,7 @@ export function FilterControls({
     return () => {
       clearTimeout(handler);
     };
-  }, [username, fromDate, toDate, category, router, searchParams]);
+  }, [username, fromDate, toDate, item, router, searchParams]);
 
   const handleSortChange = (newSortOrder: string) => {
     const params = new URLSearchParams(searchParams);
@@ -130,13 +130,13 @@ export function FilterControls({
         </div>
         <div>
           <Label>카테고리</Label>
-          <Select onValueChange={setCategory} value={category}>
+          <Select onValueChange={setItem} value={item}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="모두" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">모두</SelectItem>
-              {categories.map((c) => (
+              {items.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}
                 </SelectItem>

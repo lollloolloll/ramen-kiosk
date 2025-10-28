@@ -62,7 +62,7 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
       {" "}
       {/* Removed container mx-auto and added padding */}
       <h1 className="text-3xl font-bold mb-6">대여 기록</h1>
-      <FilterControls categories={categories} sort={sort} order={order} />
+      <FilterControls items={categories} sort={sort} order={order} />
       <Suspense fallback={<div>Loading records...</div>}>
         <RecordsPageClient
           records={records}

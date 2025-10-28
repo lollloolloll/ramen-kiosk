@@ -42,13 +42,14 @@ export default function Home() {
           >
             🍜
           </div>
-          <h1 className="text-7xl font-black text-[oklch(0.75_0.12_165)] tracking-tight">
-            쉬다 대여
+          <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight">
+            학교 끝나고 뭐할래?
+            <br />
+            <span className="text-[oklch(0.75_0.12_165)]">
+              <span style={{ color: "oklch(0.75 0.25 350)" }}>쌍청문</span>에서
+              놀자! 🎉
+            </span>
           </h1>
-          <div className="h-2 w-40 mx-auto bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] rounded-full" />
-          <p className="text-2xl font-medium text-muted-foreground mt-6">
-            원하는 물건을 편하게 대여하세요
-          </p>
         </div>
 
         {/* 메인 버튼 */}
@@ -58,7 +59,7 @@ export default function Home() {
             size="lg"
             className="h-20 px-16 text-2xl font-bold bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-110 shadow-2xl rounded-2xl"
           >
-            <Link href="/kiosk">🚀 대여 시작하기</Link>
+            <Link href="/kiosk">😎 놀 준비 완료!</Link>
           </Button>
         </div>
 

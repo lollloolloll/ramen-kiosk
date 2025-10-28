@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown, FileDown } from "lucide-react";
+import { exportRentalRecordsToExcel } from "@/lib/actions/rental";
 
 interface FilterControlsProps {
   items: string[];
@@ -42,6 +43,22 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
     toDate: searchParams.get("to") || "",
     item: searchParams.get("item") || "all",
   });
+
+  const currentFilters = React.useMemo(() => {
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    return {
+      username,
+      startDate: fromDate ? formatDate(fromDate) : undefined,
+      endDate: toDate ? formatDate(toDate) : undefined,
+      itemName: item && item !== "all" ? item : undefined,
+    };
+  }, [username, fromDate, toDate, item]);
 
   React.useEffect(() => {
     const formatDate = (date: Date) => {
@@ -93,7 +110,7 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
     return () => {
       clearTimeout(handler);
     };
-  }, [username, fromDate, toDate, item, router, searchParams]);
+  }, [username, fromDate, toDate, item, router, searchParams, currentFilters]);
 
   const handleSortChange = (newSortOrder: string) => {
     const params = new URLSearchParams(searchParams);
@@ -166,6 +183,27 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
             )}
           </Button>
         </div>
+      </div>
+      <div>
+        <Button
+          onClick={async () => {
+            const result = await exportRentalRecordsToExcel(currentFilters);
+            if (result.success && result.buffer && result.mimeType) {
+              const link = document.createElement("a");
+              link.href = `data:${result.mimeType};base64,${result.buffer}`;
+              link.download = `rental_records_${new Date().toISOString()}.xlsx`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            } else {
+              alert(result.error || "엑셀 내보내기 실패");
+            }
+          }}
+          className="flex items-center space-x-2"
+        >
+          <FileDown className="h-4 w-4" />
+          <span>엑셀 내보내기</span>
+        </Button>
       </div>
     </div>
   );

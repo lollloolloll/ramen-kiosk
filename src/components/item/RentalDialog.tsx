@@ -47,7 +47,7 @@ interface RentalDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Step = "identification" | "register";
+type Step = "identification" | "register" | "success";
 
 const identificationSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요."),
@@ -180,7 +180,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       }
       if (result.user) {
         const count = Math.max(1, parseInt(peopleCount, 10) || 1);
-        toast.success("사용자 등록이 완료되었습니다.");
         await handleRental(result.user.id, count);
       }
     } catch (error) {
@@ -203,10 +202,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       if (result.error) {
         throw new Error(result.error);
       }
-      toast.success(`'${item.name}' 대여가 완료되었습니다.`);
-      resetDialog(); // 폼 초기화
-      closeDialog();
-      router.refresh();
+      setStep("success");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "대여에 실패했습니다."
@@ -218,6 +214,12 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
 
   const closeDialog = () => {
     onOpenChange(false);
+  };
+
+  const handleSuccessConfirm = () => {
+    resetDialog();
+    closeDialog();
+    router.refresh();
   };
 
   const resetDialog = () => {
@@ -601,6 +603,27 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               </DialogFooter>
             </form>
           </Form>
+        );
+      case "success":
+        return (
+          <div
+            className="flex flex-col items-center justify-center p-8 text-center"
+            key="success"
+          >
+            <div className="text-6xl mb-4">🎉</div>
+            <DialogTitle className="text-2xl font-bold mb-2">
+              대여 완료!
+            </DialogTitle>
+            <DialogDescription className="text-lg">
+              '{item.name}' 신나게 즐기고 <br />
+              반납하는 거 잊지 말기! 😉
+            </DialogDescription>
+            <DialogFooter className="mt-8">
+              <Button onClick={handleSuccessConfirm} className="w-full">
+                확인
+              </Button>
+            </DialogFooter>
+          </div>
         );
     }
   };

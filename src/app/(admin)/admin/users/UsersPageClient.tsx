@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { RentalHistoryForm } from "@/lib/shared/rentalHistoryForm";
 import { ArrowUp, ArrowDown, FileDown } from "lucide-react";
 import { Pagination } from "@/lib/shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -54,6 +55,18 @@ export function UsersPageClient({
   const [searchTerm, setSearchTerm] = useState(search);
   const debouncedSearch = useDebounce(searchTerm, 500);
   const prevSearchRef = useRef(search);
+
+  const [isRentalHistoryDialogOpen, setIsRentalHistoryDialogOpen] =
+    useState(false);
+  const [selectedUserForHistory, setSelectedUserForHistory] = useState<{
+    userId: number;
+    username: string;
+  } | null>(null);
+
+  const handleRowClick = (user: GeneralUser) => {
+    setSelectedUserForHistory({ userId: user.id, username: user.name });
+    setIsRentalHistoryDialogOpen(true);
+  };
   useEffect(() => {
     // 검색어가 실제로 변경되었을 때만 실행
     if (debouncedSearch !== prevSearchRef.current) {
@@ -150,9 +163,25 @@ export function UsersPageClient({
           </div>
         </div>
 
-        <DataTable columns={generalUserColumns} data={generalUsers} />
+        <DataTable
+          columns={generalUserColumns}
+          data={generalUsers}
+          onRowClick={handleRowClick}
+        />
       </div>
       <Pagination page={page} per_page={per_page} total_count={total_count} />
+
+      {selectedUserForHistory && (
+        <Dialog
+          open={isRentalHistoryDialogOpen}
+          onOpenChange={setIsRentalHistoryDialogOpen}
+        >
+          <RentalHistoryForm
+            userId={selectedUserForHistory.userId}
+            username={selectedUserForHistory.username}
+          />
+        </Dialog>
+      )}
     </div>
   );
 }

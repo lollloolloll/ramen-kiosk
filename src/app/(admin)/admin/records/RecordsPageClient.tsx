@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import { columns, RentalRecord } from "./columns";
 import { Pagination } from "@/lib/shared/pagination";
+import { Dialog } from "@/components/ui/dialog";
+import { RentalHistoryForm } from "@/lib/shared/rentalHistoryForm";
 
 interface RecordsPageClientProps {
   records: RentalRecord[];
@@ -21,13 +24,42 @@ export function RecordsPageClient({
   sort,
   order,
 }: RecordsPageClientProps) {
+  const [isRentalHistoryDialogOpen, setIsRentalHistoryDialogOpen] =
+    useState(false);
+  const [selectedUserForHistory, setSelectedUserForHistory] = useState<{
+    userId: number;
+    username: string;
+  } | null>(null);
+
+  const handleRowClick = (record: RentalRecord) => {
+    if (record.userId && record.userName) {
+      setSelectedUserForHistory({
+        userId: record.userId,
+        username: record.userName,
+      });
+      setIsRentalHistoryDialogOpen(true);
+    }
+  };
+
   return (
     <div>
       <div className="mb-8">
-        <DataTable columns={columns} data={records} />
+        <DataTable columns={columns} data={records} onRowClick={handleRowClick} />
       </div>
 
       <Pagination page={page} per_page={per_page} total_count={total_count} />
+
+      {selectedUserForHistory && (
+        <Dialog
+          open={isRentalHistoryDialogOpen}
+          onOpenChange={setIsRentalHistoryDialogOpen}
+        >
+          <RentalHistoryForm
+            userId={selectedUserForHistory.userId}
+            username={selectedUserForHistory.username}
+          />
+        </Dialog>
+      )}
     </div>
   );
 }

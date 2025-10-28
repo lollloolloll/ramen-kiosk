@@ -21,7 +21,6 @@ export function FilterControls({ categories }: FilterControlsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // URL 파라미터로 초기 상태 설정
   const [username, setUsername] = React.useState(
     searchParams.get("username") || ""
   );
@@ -35,37 +34,51 @@ export function FilterControls({ categories }: FilterControlsProps) {
     searchParams.get("category") || "all"
   );
 
-  const isInitialRender = React.useRef(true);
+  // 이전 필터 값들을 추적
+  const prevFiltersRef = React.useRef({
+    username: searchParams.get("username") || "",
+    fromDate: searchParams.get("from") || "",
+    toDate: searchParams.get("to") || "",
+    category: searchParams.get("category") || "all",
+  });
 
   React.useEffect(() => {
-    // ▼▼▼ 2. 초기 렌더링일 경우, 아무것도 하지 않고 종료 ▼▼▼
-    // ref 값을 false로 바꿔서 다음 렌더링부터는 이 로직이 실행되도록 합니다.
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      return;
+    const currentFilters = {
+      username,
+      fromDate: fromDate?.toISOString().split("T")[0] || "",
+      toDate: toDate?.toISOString().split("T")[0] || "",
+      category,
+    };
+
+    // 필터가 실제로 변경되었는지 확인
+    const filtersChanged =
+      currentFilters.username !== prevFiltersRef.current.username ||
+      currentFilters.fromDate !== prevFiltersRef.current.fromDate ||
+      currentFilters.toDate !== prevFiltersRef.current.toDate ||
+      currentFilters.category !== prevFiltersRef.current.category;
+
+    if (!filtersChanged) {
+      return; // 필터가 변경되지 않았으면 아무것도 하지 않음
     }
 
-    // 이제 이 코드는 사용자가 필터 값을 '직접' 변경했을 때만 실행됩니다.
+    // 필터가 변경되었으므로 ref 업데이트
+    prevFiltersRef.current = currentFilters;
+
     const handler = setTimeout(() => {
-      // 정렬(sort)과 순서(order) 파라미터는 유지하기 위해 현재 URL에서 가져옵니다.
       const currentParams = new URLSearchParams(searchParams.toString());
       const sort = currentParams.get("sort");
       const order = currentParams.get("order");
 
-      // 새로운 URL 파라미터를 처음부터 만듭니다.
       const newParams = new URLSearchParams();
 
-      // 필터 상태값들을 newParams에 추가합니다.
       if (username) newParams.set("username", username);
       if (fromDate) newParams.set("from", fromDate.toISOString().split("T")[0]);
       if (toDate) newParams.set("to", toDate.toISOString().split("T")[0]);
       if (category && category !== "all") newParams.set("category", category);
 
-      // 유지해야 할 정렬/순서 파라미터를 추가합니다.
       if (sort) newParams.set("sort", sort);
       if (order) newParams.set("order", order);
 
-      // 필터가 변경되었으므로 페이지는 항상 1로 리셋합니다.
       newParams.set("page", "1");
 
       router.push(`/admin/records?${newParams.toString()}`);
@@ -74,8 +87,7 @@ export function FilterControls({ categories }: FilterControlsProps) {
     return () => {
       clearTimeout(handler);
     };
-    // ▼▼▼ 3. 의존성 배열에는 필터 상태값만 포함시킵니다. ▼▼▼
-  }, [username, fromDate, toDate, category, router]);
+  }, [username, fromDate, toDate, category, router, searchParams]);
 
   return (
     <div className="flex items-end space-x-4 mb-6">
@@ -98,10 +110,7 @@ export function FilterControls({ categories }: FilterControlsProps) {
       </div>
       <div>
         <Label>카테고리</Label>
-        <Select
-          onValueChange={setCategory}
-          value={category} // defaultValue 대신 value 사용
-        >
+        <Select onValueChange={setCategory} value={category}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="모두" />
           </SelectTrigger>
@@ -115,7 +124,6 @@ export function FilterControls({ categories }: FilterControlsProps) {
           </SelectContent>
         </Select>
       </div>
-      {/* Filter 버튼은 이제 필요 없으므로 제거합니다. */}
     </div>
   );
 }

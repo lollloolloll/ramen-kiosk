@@ -25,6 +25,7 @@ export const columns: ColumnDef<RentalRecord>[] = [
   {
     accessorKey: "rentalDate",
     header: "Date",
+    size: 180, // Adjust this value as needed
     cell: ({ row }) => {
       const timestampInSeconds = row.getValue("rentalDate") as number;
 

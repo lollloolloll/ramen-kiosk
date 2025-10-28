@@ -110,7 +110,7 @@ export function FilterControls({
   };
 
   return (
-      <div className="flex items-end space-x-4 mb-6">
+      <div className="flex items-end space-x-4 mb-6 w-full">
         <div>
           <Label>Username</Label>
           <Input

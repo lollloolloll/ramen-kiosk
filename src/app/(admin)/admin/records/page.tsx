@@ -58,7 +58,7 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
   const categories = categoryResult.data;
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="py-10 px-4"> {/* Removed container mx-auto and added padding */}
       <h1 className="text-3xl font-bold mb-6">대여 기록</h1>
       <FilterControls categories={categories} sort={sort} order={order} />
       <Suspense fallback={<div>Loading records...</div>}>

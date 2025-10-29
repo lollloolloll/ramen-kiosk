@@ -27,6 +27,7 @@ import { Pagination } from "@/lib/shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "@/lib/shared/use-debounce";
 import { exportGeneralUsersToExcel } from "@/lib/actions/generalUser";
+import { getAllItemNames } from "@/lib/actions/rental";
 
 type GeneralUser = typeof generalUsers.$inferSelect;
 
@@ -62,6 +63,7 @@ export function UsersPageClient({
     userId: number;
     username: string;
   } | null>(null);
+  const [availableItems, setAvailableItems] = useState<string[]>([]);
 
   const handleRowClick = (user: GeneralUser) => {
     setSelectedUserForHistory({ userId: user.id, username: user.name });
@@ -81,7 +83,19 @@ export function UsersPageClient({
       params.set("page", "1");
       router.push(`?${params.toString()}`);
     }
-  }, [debouncedSearch, router]);
+  }, [debouncedSearch, router, searchParams]); // Added searchParams to dependency array
+
+  useEffect(() => {
+    async function fetchItemNames() {
+      const result = await getAllItemNames();
+      if (result.success && result.data) {
+        setAvailableItems(result.data);
+      } else {
+        console.error("Failed to fetch item names:", result.error);
+      }
+    }
+    fetchItemNames();
+  }, []);
 
   const handleSortChange = (newSortOrder: string) => {
     const params = new URLSearchParams(searchParams);
@@ -179,6 +193,7 @@ export function UsersPageClient({
           <RentalHistoryForm
             userId={selectedUserForHistory.userId}
             username={selectedUserForHistory.username}
+            availableItems={availableItems}
           />
         </Dialog>
       )}

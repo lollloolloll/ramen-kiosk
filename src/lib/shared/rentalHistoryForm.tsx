@@ -140,14 +140,20 @@ export function RentalHistoryForm({
   // 필터 상태
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
-  const [itemName, setItemName] = useState<string>("all");
+  const [itemName, setItemName] = useState<string | undefined>(undefined);
   const [sort, setSort] = useState<string>("rentalDate");
   const [order, setOrder] = useState<string>("desc");
 
-  const prevFiltersRef = useRef({
+  const prevFiltersRef = useRef<{
+    fromDate: string;
+    toDate: string;
+    itemName: string | undefined;
+    sort: string;
+    order: string;
+  }>({
     fromDate: "",
     toDate: "",
-    itemName: "all",
+    itemName: undefined, // Initialize with undefined to match the state
     sort: "rentalDate",
     order: "desc",
   });
@@ -259,7 +265,10 @@ export function RentalHistoryForm({
         </div>
         <div>
           <Label className="text-xs">물품명</Label>
-          <Select onValueChange={setItemName} value={itemName}>
+          <Select
+            onValueChange={(value) => setItemName(value === "all" ? undefined : value)}
+            value={itemName || "all"}
+          >
             <SelectTrigger>
               <SelectValue placeholder="모두" />
             </SelectTrigger>

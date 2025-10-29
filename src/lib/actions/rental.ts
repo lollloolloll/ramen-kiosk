@@ -50,6 +50,20 @@ export async function rentItem(
   }
 }
 
+export async function getAllItemNames() {
+  try {
+    const itemNames = await db
+      .selectDistinct({ name: items.name })
+      .from(items)
+      .where(sql`${items.name} IS NOT NULL`); // Ensure only items with names are returned
+
+    return { success: true, data: itemNames.map((item) => item.name) };
+  } catch (error) {
+    console.error("Error fetching all item names:", error);
+    return { error: "물품명을 불러오는 데 실패했습니다." };
+  }
+}
+
 export async function getRentalRecords(
   filters: {
     username?: string;

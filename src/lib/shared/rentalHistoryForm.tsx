@@ -176,18 +176,9 @@ export function RentalHistoryForm({
       currentFilters.sort !== prevFiltersRef.current.sort ||
       currentFilters.order !== prevFiltersRef.current.order;
 
-    if (
-      !filtersChanged &&
-      page === 1 &&
-      records.length > 0 &&
-      !isInitialMount.current
-    ) {
-      return;
-    }
+    const doFetch = () => {
+      prevFiltersRef.current = currentFilters;
 
-    prevFiltersRef.current = currentFilters;
-
-    const handler = setTimeout(() => {
       async function fetchRentalHistory() {
         const isFilterAction = filtersChanged;
         if (isInitialMount.current || isFilterAction) {
@@ -222,11 +213,12 @@ export function RentalHistoryForm({
       if (username) {
         fetchRentalHistory();
       }
-    }, 300);
-
-    return () => {
-      clearTimeout(handler);
     };
+
+    const debounceMs = filtersChanged ? 300 : 0;
+    const handler = setTimeout(doFetch, debounceMs);
+
+    return () => clearTimeout(handler);
   }, [
     userId,
     username,

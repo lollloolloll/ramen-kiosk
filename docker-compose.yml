@@ -10,5 +10,3 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      - DATABASE_URL=file:./sqlite.db
-      # Add other necessary environment variables here

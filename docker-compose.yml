@@ -6,7 +6,6 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
-    environment:
+      - ./local.db:/app/local.db
+    env_file:
+      - .env

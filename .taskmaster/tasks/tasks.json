@@ -660,49 +660,49 @@
       },
       {
         "id": 18,
-        "title": "관리자 대시보드 통계 기능 개선",
-        "description": "관리자 대시보드 페이지에 일별, 주별, 월별 데이터 조회 탭을 추가하고, 사용자 정보(연령, 성별) 및 아이템 정보를 활용한 라면 소비 통계를 시각화하는 기능을 구현합니다.",
+        "title": "복지시설 이용 현황 대시보드 기능 개발",
+        "description": "복지시설 관리자가 키오스크 이용 현황을 직관적으로 파악하고, 데이터에 기반한 운영 결정을 내릴 수 있도록 통계 대시보드를 개발합니다. 특히 '아동, 청소년, 성인' 연령 그룹별 분석 기능을 핵심으로 제공합니다.",
         "status": "pending",
         "dependencies": [9],
-        "priority": "medium",
-        "details": "이 과제는 'drizzle/schema.ts'에 정의된 `rentalRecords` 테이블 스키마 변경에 대응하여, `users` 및 `items` 테이블과의 조인을 통해 사용자 정보(연령, 성별) 및 아이템 정보(이름)를 포함한 통계 데이터를 집계하도록 서버 액션 함수를 수정하는 것을 목표로 합니다.\n\n**수정 대상 파일:**\n- `lib/actions/rental-actions.ts`: 실제 데이터 집계 로직이 포함된 파일입니다.\n\n**참조 파일:**\n- `drizzle/schema.ts`: 변경된 최신 스키마 구조 및 테이블 간의 관계를 파악하기 위해 필요합니다. `rentalRecords`, `users`, `items` 테이블 간의 관계를 중점적으로 분석해야 합니다.\n- `src/app/(admin)/admin/RentalAnalyticsClient.tsx`: 수정된 함수가 반환해야 할 최종 데이터 구조(`AnalyticsData` 타입)를 확인하기 위해 필요합니다.\n\n**수행 지침:**\n1.  `drizzle/schema.ts` 파일을 분석하여 `rentalRecords` 테이블과 `users`, `items` 테이블이 어떤 필드(예: `userId`, `itemId`)를 통해 연결되는지 파악하세요.\n2.  `lib/actions/rental-actions.ts` 파일 내에서 대여 통계 데이터를 생성하는 함수(예: `getRentalAnalyticsData`)를 찾으세요.\n3.  식별된 함수의 Drizzle ORM 쿼리를 수정하세요. `db.select().from(rentalRecords)`와 같은 단순 쿼리를 `db.select().from(rentalRecords).leftJoin(...)` 또는 `with(...)` 구문을 사용하여 `users`와 `items` 테이블을 조인하는 쿼리로 변경해야 합니다.\n4.  조인된 데이터를 바탕으로 `src/app/(admin)/admin/RentalAnalyticsClient.tsx`가 요구하는 `AnalyticsData` 타입 형태(연령대별, 성별, 인기 아이템 TOP 5 등)에 맞게 데이터를 가공하고 집계하는 로직을 구현하세요.\n5.  수정된 함수의 최종 반환값이 `AnalyticsData` 타입과 완벽하게 일치하는지 확인하세요.\n\n**완료 조건:**\n- 수정된 함수는 에러 없이 실행되어야 합니다.\n- 함수는 `rentalRecords`, `users`, `items` 테이블을 올바르게 조인하여 데이터를 집계해야 합니다.\n- 함수의 반환값은 `AnalyticsData` 인터페이스의 모든 필드(예: `ageGroupData`, `genderData`, `popularItems`)를 포함하고 있어야 합니다.",
-        "testStrategy": "업데이트된 통계 집계 로직이 `users` 및 `items` 테이블과의 조인을 올바르게 수행하는지, 그리고 `AnalyticsData` 타입에 맞춰 연령대별, 성별, 인기 아이템 TOP 5 등의 통계 데이터가 정확하게 집계되는지 검증합니다. 더미 데이터를 사용하여 다양한 시나리오(데이터 없음, 특정 기간, 다양한 사용자 연령/성별, 여러 아이템)에 대해 예상되는 통계 결과가 올바르게 나오는지 테스트합니다.",
+        "priority": "high",
+        "details": "이 과제는 변경된 `drizzle/schema.ts` 스키마를 기반으로, 대여 기록(`rentalRecords`)과 사용자(`users`), 아이템(`items`) 정보를 결합하여 실질적인 운영 인사이트를 제공하는 것을 목표로 합니다.\n\n**핵심 목표:**\n- **운영 효율성 증대:** 비인기 품목을 파악하여 재고 및 예산 낭비를 줄입니다.\n- **이용자 만족도 향상:** 연령 그룹별 선호도를 분석하여 모든 이용자를 위한 품목 구성을 지원합니다.\n- **간편한 보고:** 대시보드 데이터를 통해 시설 운영 보고서 작성을 용이하게 합니다.\n\n**수정 대상 파일:**\n- `lib/actions/rental-actions.ts`: 데이터 집계 로직을 포함하는 서버 액션 파일.\n\n**참조 파일:**\n- `drizzle/schema.ts`: `rentalRecords`, `users`, `items` 테이블 간의 관계 확인.\n- `src/app/(admin)/admin/RentalAnalyticsClient.tsx`: 최종 데이터 구조(`AnalyticsData`) 및 UI 구현 참조.",
+        "testStrategy": "서버 액션 함수가 '아동, 청소년, 성인' 그룹을 정확히 구분하여 데이터를 집계하는지 검증합니다. 더미 데이터를 활용하여 각 연령 그룹의 이용 기록이 있을 때와 없을 때, 특정 기간에 데이터가 집중될 때 등 다양한 시나리오에서 대시보드(인기/비인기 품목, 시간대별 이용 현황 등)가 예상대로 동작하는지 종합적으로 테스트합니다.",
         "subtasks": [
           {
             "id": 1,
-            "title": "통계 데이터 집계 로직 및 DB 쿼리 설계",
-            "description": "일별, 주별, 월별, 연령대별, 성별, 인기 아이템별 라면 소비 통계를 위한 데이터베이스 쿼리 및 집계 로직을 `lib/actions/rental-actions.ts`에 설계하고 Drizzle ORM을 활용하여 구현합니다. `drizzle/schema.ts`에 정의된 `users` 및 `items` 테이블과의 조인이 포함됩니다.",
+            "title": "연령 그룹 기반 통계 집계 로직 구현",
+            "description": "`rental-actions.ts`에 `users` 테이블의 `birthDate`를 기준으로 '아동'(~12세), '청소년'(13-18세), '성인'(19세~)으로 구분하여 데이터를 집계하는 Drizzle ORM 쿼리를 작성합니다.",
             "dependencies": [],
-            "details": "기존 `rentalRecords` 테이블 외에, `drizzle/schema.ts`를 분석하여 `rentalRecords` 테이블과 `users` 테이블 (userId 필드 연결) 및 `items` 테이블 (itemId 필드 연결)을 조인하는 Drizzle ORM 쿼리를 정의합니다. 이를 통해 사용자 연령, 성별, 아이템 이름 등의 정보를 가져와 기간별(일, 주, 월), 연령대별, 성별 필터링 및 그룹화 로직을 포함합니다. 특히 `src/app/(admin)/admin/RentalAnalyticsClient.tsx`에 정의된 `AnalyticsData` 타입 (ageGroupData, genderData, popularItems 등)에 맞춰 데이터를 가공하고 집계하는 로직을 `lib/actions/rental-actions.ts` 내의 통계 함수에 구현합니다.",
+            "details": "`rentalRecords`와 `users`, `items` 테이블을 조인합니다. `users.birthDate` 필드를 사용하여 SQL의 `CASE`문과 유사한 로직으로 각 이용자를 '아동', '청소년', '성인' 그룹으로 분류합니다. 이 분류를 기반으로 기간별, 연령 그룹별, 성별 이용 통계를 집계하는 서버 액션 함수(`getRentalAnalyticsData`)를 수정 또는 생성합니다. 반환 데이터는 `AnalyticsData` 타입과 호환되어야 합니다.",
             "status": "pending",
-            "testStrategy": "설계된 쿼리를 직접 데이터베이스에서 실행하여 `users` 및 `items` 테이블이 올바르게 조인되고, `AnalyticsData` 타입의 구조에 맞춰 연령대별, 성별, 인기 아이템 TOP 5 통계가 예상대로 집계되는지 검증합니다. 더미 데이터를 사용하여 다양한 시나리오(데이터 없음, 특정 기간, 다양한 사용자 연령/성별, 여러 아이템)를 테스트합니다."
+            "testStrategy": "다양한 `birthDate`를 가진 더미 사용자를 생성하고, 통계 함수 호출 시 각 사용자가 정확한 연령 그룹('아동', '청소년', '성인')으로 분류되어 집계되는지 단위 테스트를 통해 검증합니다."
           },
           {
             "id": 2,
-            "title": "통계 데이터 조회 API 엔드포인트 개발",
-            "description": "프론트엔드에서 일별, 주별, 월별, 연령대별, 성별, 인기 아이템별 라면 소비 통계 데이터를 조회할 수 있는 서버 액션(API 엔드포인트)을 구현합니다. 이 엔드포인트는 Subtask 1에서 구현된 집계 로직의 `AnalyticsData` 구조를 반환해야 합니다.",
-            "dependencies": [1],
-            "details": "`/api/admin/statistics`와 같은 엔드포인트를 `lib/actions/rental-actions.ts` 파일 내에 구현합니다. 쿼리 파라미터(예: `period=daily|weekly|monthly`, `ageGroup=20s|30s`, `gender=M|F`)에 따라 Subtask 1에서 구현된 업데이트된 집계 로직을 호출하여 `src/app/(admin)/admin/RentalAnalyticsClient.tsx`의 `AnalyticsData` 타입 형식으로 데이터를 JSON으로 반환합니다. 인증 및 에러 처리 로직을 포함합니다.",
+            "title": "대시보드 필터 및 핵심 지표(KPI) UI 개발",
+            "description": "`RentalAnalyticsClient.tsx`에 shadcn/ui를 사용하여 전체 통계에 적용될 통합 필터(기간 선택, 연령 그룹 필터)와 핵심 운영 지표를 표시하는 카드 섹션을 개발합니다.",
+            "dependencies": [],
+            "details": "페이지 상단에 ①기간을 선택할 수 있는 `DatePickerWithRange` 또는 `Tabs` 컴포넌트와 ②'전체', '아동', '청소년', '성인'을 선택할 수 있는 `Select` 또는 `Tabs` 컴포넌트를 배치합니다. 그 아래에는 `Card` 컴포넌트를 사용하여 [총 이용 건수], [순 이용자 수], [가장 바쁜 요일/시간] 등 핵심 지표를 표시하는 영역을 구현합니다. 필터 상태는 부모 컴포넌트에서 관리합니다.",
             "status": "pending",
-            "testStrategy": "Postman 또는 curl을 사용하여 다양한 쿼리 파라미터로 엔드포인트를 호출하고, 반환되는 `AnalyticsData` 구조의 정확성과 형식(JSON)을 검증합니다. 특히 연령대, 성별, 인기 아이템 데이터가 올바르게 포함되는지 확인합니다. 에러 케이스(잘못된 파라미터 등)도 테스트합니다."
+            "testStrategy": "UI 컴포넌트가 시각적으로 올바르게 렌더링되는지 확인합니다. 기간과 연령 그룹 필터를 변경했을 때, 해당 상태값이 올바르게 부모 컴포넌트로 전달되는지 React DevTools를 사용해 확인합니다."
           },
           {
             "id": 3,
-            "title": "관리자 대시보드 통계 UI (탭, 필터) 개발",
-            "description": "관리자 대여 기록 페이지에 통계 데이터를 시각화하기 위한 탭(일별, 주별, 월별) 및 필터(연령대, 성별) UI 컴포넌트를 shadcn/ui를 활용하여 구현합니다. `RentalAnalyticsClient.tsx` 파일을 참조합니다.",
-            "dependencies": [],
-            "details": "`src/app/(admin)/admin/RentalAnalyticsClient.tsx` 페이지 내 또는 새로운 페이지에 `Tabs` 컴포넌트를 사용하여 기간별 보기를 구현합니다. `Select` 또는 `RadioGroup` 컴포넌트를 사용하여 연령대 및 성별 필터를 추가합니다. 필터 선택에 따라 데이터 로딩 상태를 표시하는 로딩 스피너 등의 UI를 포함합니다. 인기 아이템 목록을 표시하기 위한 UI 컴포넌트도 고려합니다.",
+            "title": "인기/비인기 품목 분석 테이블 구현",
+            "description": "운영 효율성 개선을 위해, 선택된 필터 조건에 따라 가장 많이 이용된 '인기 품목 TOP 5'와 가장 적게 이용된 '비인기 품목 BOTTOM 5'를 보여주는 테이블을 구현합니다.",
+            "dependencies": [1, 2],
+            "details": "`Table` 컴포넌트를 사용하여 두 개의 테이블을 나란히 또는 위아래로 배치합니다. 서버 액션에서 받은 데이터를 기반으로 인기 순위와 비인기 순위 목록을 각각 표시합니다. 관리자가 재고 관리 및 품목 교체를 결정하는 데 직접적인 도움을 주는 것을 목표로 합니다.",
             "status": "pending",
-            "testStrategy": "브라우저에서 페이지를 렌더링하여 탭 전환, 필터 선택(연령대, 성별) 등의 UI 요소가 올바르게 작동하고 시각적으로 일관성을 유지하는지 확인합니다. 콘솔에서 UI 컴포넌트의 상태 변경을 확인하고, 인기 아이템 목록이 올바르게 렌더링되는지 확인합니다."
+            "testStrategy": "기간 및 연령 그룹 필터를 변경할 때마다 인기/비인기 품목 목록이 API 응답에 맞춰 정확하게 업데이트되는지 확인합니다. 데이터가 5개 미만일 경우에도 테이블이 깨지지 않고 정상적으로 표시되는지 엣지 케이스를 테스트합니다."
           },
           {
             "id": 4,
-            "title": "통계 데이터 차트 시각화 및 API 연동",
-            "description": "구현된 통계 API 엔드포인트와 연동하여 집계된 라면 소비 데이터를 연령대별, 성별, 인기 아이템 순위별로 막대 차트, 파이 차트 등으로 시각화하는 기능을 개발합니다. `RentalAnalyticsClient.tsx` 파일 내에서 구현합니다.",
-            "dependencies": [2, 3],
-            "details": "Recharts나 Chart.js와 같은 차트 라이브러리를 선정하여 설치하고, Subtask 3에서 구현된 UI에 연령대별, 성별, 인기 아이템에 대한 차트 및 목록을 통합합니다. 필터 및 탭 선택에 따라 Subtask 2의 API를 호출하여 `AnalyticsData` 타입의 데이터를 가져오고, 차트를 동적으로 업데이트하도록 구현합니다. 적절한 축 레이블, 툴팁, 범례를 포함하며, 인기 아이템은 리스트 형태로 표시할 수 있습니다. 구현은 `src/app/(admin)/admin/RentalAnalyticsClient.tsx` 파일에서 이루어집니다.",
+            "title": "시간대별/요일별 이용 현황 차트 시각화 및 API 연동",
+            "description": "Recharts를 사용하여 선택된 필터 조건에 따른 '시간대별 이용 현황'(라인 차트)과 '요일별 이용 현황'(막대 차트)을 시각화하고, 필터 변경 시 동적으로 데이터를 연동합니다.",
+            "dependencies": [1, 2],
+            "details": "`RentalAnalyticsClient.tsx` 내에서 필터 상태가 변경될 때마다 `getRentalAnalyticsData` 서버 액션을 호출합니다. 반환된 데이터 중 `hourData`와 `dayOfWeekData`를 사용하여 각각 `LineChart`와 `BarChart`를 렌더링합니다. 이를 통해 관리자는 언제 시설이 가장 붐비는지 직관적으로 파악할 수 있습니다.",
             "status": "pending",
-            "testStrategy": "다양한 필터 및 탭 조합을 통해 연령대별, 성별 차트 데이터 및 인기 아이템 목록이 API 응답과 일치하는지, 차트가 올바르게 렌더링되는지 시각적으로 확인합니다. 데이터가 없을 때의 차트/목록 상태(예: '데이터 없음' 메시지)도 테스트합니다."
+            "testStrategy": "'아동' 필터 선택 시 주중 오후 시간대 이용량이 높은지, '성인' 필터 선택 시 저녁 시간대 이용량이 높은지 등, 예상 시나리오에 따라 차트가 의미 있는 형태로 그려지는지 시각적으로 검증합니다. 데이터가 없는 경우 '데이터 없음' 메시지가 표시되는지 확인합니다."
           }
         ]
       },

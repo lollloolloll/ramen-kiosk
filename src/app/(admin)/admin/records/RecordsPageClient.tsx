@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import { columns, RentalRecord } from "./columns";
 import { Pagination } from "@/lib/shared/pagination";
 import { Dialog } from "@/components/ui/dialog";
 import { RentalHistoryForm } from "@/lib/shared/rentalHistoryForm";
+import { getAllItemNames } from "@/lib/actions/rental";
 
 interface RecordsPageClientProps {
   records: RentalRecord[];
@@ -30,6 +31,19 @@ export function RecordsPageClient({
     userId: number;
     username: string;
   } | null>(null);
+  const [availableItems, setAvailableItems] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function fetchItemNames() {
+      const result = await getAllItemNames();
+      if (result.success && result.data) {
+        setAvailableItems(result.data);
+      } else {
+        console.error("Failed to fetch item names:", result.error);
+      }
+    }
+    fetchItemNames();
+  }, []);
 
   const handleRowClick = (record: RentalRecord) => {
     if (record.userId && record.userName) {
@@ -57,6 +71,7 @@ export function RecordsPageClient({
           <RentalHistoryForm
             userId={selectedUserForHistory.userId}
             username={selectedUserForHistory.username}
+            availableItems={availableItems}
           />
         </Dialog>
       )}

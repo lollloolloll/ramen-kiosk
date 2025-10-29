@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-const MemoizedBarChart = ({ data }) => (
+const MemoizedBarChart = ({ data }: { data: Array<{ name: string; count: number; uniqueUsers: number; percentage: number; }> }) => (
     <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />

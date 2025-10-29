@@ -231,6 +231,13 @@ export function RentalHistoryForm({
     order,
   ]);
 
+  // 필터가 변경되면 페이지를 1로 리셋합니다.
+  useEffect(() => {
+    if (!isInitialMount.current) {
+      setPage(1);
+    }
+  }, [fromDate, toDate, itemName, sort, order, perPage]);
+
   const handlePerPageChange = (newPerPage: number) => {
     setPerPage(newPerPage);
     setPage(1);

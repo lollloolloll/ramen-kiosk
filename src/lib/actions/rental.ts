@@ -548,8 +548,6 @@ async function getOverallKPIs(
     lte(rentalRecords.rentalDate, Math.floor(endDate.getTime() / 1000))
   );
 
-  const baseQuery = db.from(rentalRecords).leftJoin(items, eq(rentalRecords.itemsId, items.id)).leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id)).where(dateFilter);
-
   // This is not ideal, but we'll filter in JS for ageGroup
   const records = await db.select().from(rentalRecords).leftJoin(items, eq(rentalRecords.itemsId, items.id)).leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id)).where(dateFilter);
 

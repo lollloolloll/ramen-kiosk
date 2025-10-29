@@ -112,6 +112,7 @@ export async function getRentalRecords(
       .select({
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
+        userId: generalUsers.id,
         userName: generalUsers.name,
         itemName: items.name,
         itemCategory: items.category,

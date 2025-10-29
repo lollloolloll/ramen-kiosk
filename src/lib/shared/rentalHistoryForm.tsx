@@ -140,20 +140,14 @@ export function RentalHistoryForm({
   // 필터 상태
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
-  const [itemName, setItemName] = useState<string | undefined>(undefined);
+  const [itemName, setItemName] = useState<string>("all");
   const [sort, setSort] = useState<string>("rentalDate");
   const [order, setOrder] = useState<string>("desc");
 
-  const prevFiltersRef = useRef<{
-    fromDate: string;
-    toDate: string;
-    itemName: string | undefined;
-    sort: string;
-    order: string;
-  }>({
+  const prevFiltersRef = useRef({
     fromDate: "",
     toDate: "",
-    itemName: undefined, // Initialize with undefined to match the state
+    itemName: "all",
     sort: "rentalDate",
     order: "desc",
   });
@@ -254,7 +248,7 @@ export function RentalHistoryForm({
       </DialogHeader>
 
       {/* 필터 컨트롤 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="flex flex-wrap items-end gap-4 mb-4">
         <div>
           <Label className="text-xs">시작일</Label>
           <DatePicker date={fromDate} setDate={setFromDate} />
@@ -265,11 +259,8 @@ export function RentalHistoryForm({
         </div>
         <div>
           <Label className="text-xs">물품명</Label>
-          <Select
-            onValueChange={(value) => setItemName(value === "all" ? undefined : value)}
-            value={itemName || "all"}
-          >
-            <SelectTrigger>
+          <Select onValueChange={setItemName} value={itemName}>
+            <SelectTrigger className="w-[120px]">
               <SelectValue placeholder="모두" />
             </SelectTrigger>
             <SelectContent>

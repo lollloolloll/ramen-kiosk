@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { getRentalAnalytics, getAllItemNames } from "@/lib/actions/rental";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RentalAnalyticsClient } from "./RentalAnalyticsClient";
-import { items } from "@drizzle/schema";
+import { items, rentalRecords } from "@drizzle/schema";
 import { sql } from "drizzle-orm";
 
 export default async function AdminDashboardPage() {
@@ -22,7 +22,7 @@ export default async function AdminDashboardPage() {
 
   const allItems = await db.query.items.findMany();
   const allUsers = await db.query.generalUsers.findMany();
-  const totalRentalsResult = await db.select({ count: sql<number>`count(*)` }).from('rental_records');
+  const totalRentalsResult = await db.select({ count: sql<number>`count(*)` }).from(rentalRecords);
 
   const itemTypesCount = allItems.length;
   const totalRentals = totalRentalsResult[0].count;

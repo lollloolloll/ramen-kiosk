@@ -2,9 +2,10 @@
 
 import { db } from "@/lib/db";
 import { rentalRecords, items, generalUsers } from "@drizzle/schema";
-import { eq, and, gte, lte, sql, asc, desc, like } from "drizzle-orm";
+import { eq, and, gte, lte, sql, asc, desc, like, count, countDistinct } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { Workbook } from "exceljs";
+import { AnalyticsData } from "@/lib/types/analytics";
 
 export async function rentItem(
   userId: number,
@@ -347,6 +348,431 @@ export async function exportRentalRecordsToExcel(
         error instanceof Error
           ? error.message
           : "엑셀 내보내기 중 오류가 발생했습니다.",
+    };
+  }
+}
+
+const getAgeGroup = (birthDate: string) => {
+  const age = calculateAge(birthDate);
+  if (age === null) return null;
+  if (age <= 12) return 'child';
+  if (age <= 18) return 'teen';
+  return 'adult';
+};
+
+async function getAgeGroupStats(
+  filters: { year: string; month: string | 'all'; ageGroup?: string; category?: string }
+) {
+  const { year, month } = filters;
+
+  const startDate = new Date(Date.UTC(parseInt(year), month === 'all' ? 0 : parseInt(month) - 1, 1));
+  const endDate = new Date(startDate);
+  if (month === 'all') {
+    endDate.setUTCFullYear(startDate.getUTCFullYear() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  } else {
+    endDate.setUTCMonth(startDate.getUTCMonth() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  }
+  
+  const records = await db
+    .select({
+      birthDate: generalUsers.birthDate,
+      userId: rentalRecords.userId,
+    })
+    .from(rentalRecords)
+    .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
+    .where(
+      and(
+        gte(rentalRecords.rentalDate, Math.floor(startDate.getTime() / 1000)),
+        lte(rentalRecords.rentalDate, Math.floor(endDate.getTime() / 1000))
+      )
+    );
+
+  const ageGroups = {
+    child: { count: 0, uniqueUsers: new Set<number>() },
+    teen: { count: 0, uniqueUsers: new Set<number>() },
+    adult: { count: 0, uniqueUsers: new Set<number>() },
+  };
+
+  records.forEach(record => {
+    if (record.birthDate) {
+      const age = calculateAge(record.birthDate);
+      if (age !== null) {
+        if (age <= 12) {
+          ageGroups.child.count++;
+          if(record.userId) ageGroups.child.uniqueUsers.add(record.userId);
+        } else if (age <= 18) {
+          ageGroups.teen.count++;
+          if(record.userId) ageGroups.teen.uniqueUsers.add(record.userId);
+        } else {
+          ageGroups.adult.count++;
+          if(record.userId) ageGroups.adult.uniqueUsers.add(record.userId);
+        }
+      }
+    }
+  });
+
+  const totalRentals = records.length;
+
+  return {
+    child: {
+      count: ageGroups.child.count,
+      uniqueUsers: ageGroups.child.uniqueUsers.size,
+      percentage: totalRentals > 0 ? (ageGroups.child.count / totalRentals) * 100 : 0,
+    },
+    teen: {
+      count: ageGroups.teen.count,
+      uniqueUsers: ageGroups.teen.uniqueUsers.size,
+      percentage: totalRentals > 0 ? (ageGroups.teen.count / totalRentals) * 100 : 0,
+    },
+    adult: {
+      count: ageGroups.adult.count,
+      uniqueUsers: ageGroups.adult.uniqueUsers.size,
+      percentage: totalRentals > 0 ? (ageGroups.adult.count / totalRentals) * 100 : 0,
+    },
+  };
+}
+
+async function getCategoryStats(
+  filters: { year: string; month: string | 'all'; category?: string; ageGroup?: string }
+) {
+  const { year, month, category, ageGroup } = filters;
+
+  const startDate = new Date(Date.UTC(parseInt(year), month === 'all' ? 0 : parseInt(month) - 1, 1));
+  const endDate = new Date(startDate);
+  if (month === 'all') {
+    endDate.setUTCFullYear(startDate.getUTCFullYear() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  } else {
+    endDate.setUTCMonth(startDate.getUTCMonth() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  }
+
+  let query = db
+    .select({
+      category: items.category,
+      itemId: items.id,
+      itemName: items.name,
+      birthDate: generalUsers.birthDate,
+    })
+    .from(rentalRecords)
+    .leftJoin(items, eq(rentalRecords.itemsId, items.id))
+    .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
+    .where(
+      and(
+        gte(rentalRecords.rentalDate, Math.floor(startDate.getTime() / 1000)),
+        lte(rentalRecords.rentalDate, Math.floor(endDate.getTime() / 1000))
+      )
+    );
+
+  if (category) {
+    // This is tricky with the current query structure. Let's adjust.
+  }
+
+  const records = await query;
+  
+  let filteredRecords = records;
+  if (ageGroup) {
+    filteredRecords = records.filter(r => {
+      if (!r.birthDate) return false;
+      const userAge = calculateAge(r.birthDate);
+      if (userAge === null) return false;
+      const group = userAge <= 12 ? 'child' : userAge <= 18 ? 'teen' : 'adult';
+      return group === ageGroup;
+    });
+  }
+  
+  if (category) {
+      filteredRecords = filteredRecords.filter(r => r.category === category);
+  }
+
+
+  const categoryMap = new Map<string, { totalRentals: number; items: Map<number, { name: string; rentals: number }> }>();
+
+  filteredRecords.forEach(record => {
+    if (record.category) {
+      if (!categoryMap.has(record.category)) {
+        categoryMap.set(record.category, { totalRentals: 0, items: new Map() });
+      }
+      const catData = categoryMap.get(record.category)!;
+      catData.totalRentals++;
+      if (record.itemId && record.itemName) {
+        if (!catData.items.has(record.itemId)) {
+          catData.items.set(record.itemId, { name: record.itemName, rentals: 0 });
+        }
+        catData.items.get(record.itemId)!.rentals++;
+      }
+    }
+  });
+
+  const totalRentals = filteredRecords.length;
+  const result = Array.from(categoryMap.entries()).map(([category, data]) => {
+    const topItems = Array.from(data.items.entries())
+      .sort((a, b) => b[1].rentals - a[1].rentals)
+      .slice(0, 3)
+      .map(([itemId, itemData]) => ({
+        itemId,
+        itemName: itemData.name,
+        rentals: itemData.rentals,
+      }));
+
+    return {
+      category,
+      totalRentals: data.totalRentals,
+      percentage: totalRentals > 0 ? (data.totalRentals / totalRentals) * 100 : 0,
+      topItems,
+    };
+  });
+
+  return result.sort((a, b) => b.totalRentals - a.totalRentals);
+}
+
+async function getOverallKPIs(
+  filters: { year: string; month: string | 'all'; ageGroup?: string; category?: string }
+) {
+    const { year, month, category, ageGroup } = filters;
+
+  const startDate = new Date(Date.UTC(parseInt(year), month === 'all' ? 0 : parseInt(month) - 1, 1));
+  const endDate = new Date(startDate);
+  if (month === 'all') {
+    endDate.setUTCFullYear(startDate.getUTCFullYear() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  } else {
+    endDate.setUTCMonth(startDate.getUTCMonth() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  }
+
+  const dateFilter = and(
+    gte(rentalRecords.rentalDate, Math.floor(startDate.getTime() / 1000)),
+    lte(rentalRecords.rentalDate, Math.floor(endDate.getTime() / 1000))
+  );
+
+  const baseQuery = db.from(rentalRecords).leftJoin(items, eq(rentalRecords.itemsId, items.id)).leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id)).where(dateFilter);
+
+  // This is not ideal, but we'll filter in JS for ageGroup
+  const records = await db.select().from(rentalRecords).leftJoin(items, eq(rentalRecords.itemsId, items.id)).leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id)).where(dateFilter);
+
+  let filteredRecords = records;
+  if (ageGroup) {
+      filteredRecords = records.filter(r => {
+          if (!r.general_users?.birthDate) return false;
+          const userAge = calculateAge(r.general_users.birthDate);
+          if (userAge === null) return false;
+          const group = userAge <= 12 ? 'child' : userAge <= 18 ? 'teen' : 'adult';
+          return group === ageGroup;
+      });
+  }
+  if (category) {
+      filteredRecords = filteredRecords.filter(r => r.items?.category === category);
+  }
+
+  const totalRentals = filteredRecords.length;
+  const uniqueUsers = new Set(filteredRecords.map(r => r.rental_records.userId)).size;
+
+  const itemRentals = new Map<number, { id: number, name: string, rentals: number }>();
+  filteredRecords.forEach(r => {
+      if (r.items) {
+          if (!itemRentals.has(r.items.id)) {
+              itemRentals.set(r.items.id, { id: r.items.id, name: r.items.name, rentals: 0 });
+          }
+          itemRentals.get(r.items.id)!.rentals++;
+      }
+  });
+  const mostPopularItem = Array.from(itemRentals.values()).sort((a, b) => b.rentals - a.rentals)[0] || null;
+
+  const categoryRentals = new Map<string, { name: string, rentals: number }>();
+    filteredRecords.forEach(r => {
+        if (r.items?.category) {
+            if (!categoryRentals.has(r.items.category)) {
+                categoryRentals.set(r.items.category, { name: r.items.category, rentals: 0 });
+            }
+            categoryRentals.get(r.items.category)!.rentals++;
+        }
+    });
+    const mostPopularCategory = Array.from(categoryRentals.values()).sort((a, b) => b.rentals - a.rentals)[0] || null;
+
+
+  return {
+    totalRentals,
+    uniqueUsers,
+    mostPopularItem,
+    mostPopularCategory,
+  };
+}
+
+async function getItemStats(
+  filters: { year: string; month: string | 'all'; ageGroup?: string; category?: string }
+) {
+  const { year, month, category, ageGroup } = filters;
+
+  const startDate = new Date(Date.UTC(parseInt(year), month === 'all' ? 0 : parseInt(month) - 1, 1));
+  const endDate = new Date(startDate);
+  if (month === 'all') {
+    endDate.setUTCFullYear(startDate.getUTCFullYear() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  } else {
+    endDate.setUTCMonth(startDate.getUTCMonth() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  }
+
+  const dateFilter = and(
+    gte(rentalRecords.rentalDate, Math.floor(startDate.getTime() / 1000)),
+    lte(rentalRecords.rentalDate, Math.floor(endDate.getTime() / 1000))
+  );
+
+  const records = await db.select().from(rentalRecords).leftJoin(items, eq(rentalRecords.itemsId, items.id)).leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id)).where(dateFilter);
+  
+  let filteredRecords = records;
+    if (ageGroup) {
+        filteredRecords = records.filter(r => {
+            if (!r.general_users?.birthDate) return false;
+            const userAge = calculateAge(r.general_users.birthDate);
+            if (userAge === null) return false;
+            const group = userAge <= 12 ? 'child' : userAge <= 18 ? 'teen' : 'adult';
+            return group === ageGroup;
+        });
+    }
+    if (category) {
+        filteredRecords = filteredRecords.filter(r => r.items?.category === category);
+    }
+
+  const itemRentals = new Map<number, { id: number, name: string, category: string, rentals: number }>();
+  filteredRecords.forEach(r => {
+    if (r.items) {
+      if (!itemRentals.has(r.items.id)) {
+        itemRentals.set(r.items.id, { id: r.items.id, name: r.items.name, category: r.items.category, rentals: 0 });
+      }
+      itemRentals.get(r.items.id)!.rentals++;
+    }
+  });
+
+  const allItems = await db.select().from(items);
+  allItems.forEach(item => {
+      if (!itemRentals.has(item.id)) {
+          itemRentals.set(item.id, { id: item.id, name: item.name, category: item.category, rentals: 0 });
+      }
+  });
+
+  const sortedItems = Array.from(itemRentals.values()).sort((a, b) => b.rentals - a.rentals);
+  
+  const topItems = sortedItems.slice(0, 10);
+  const unpopularItems = sortedItems.filter(item => item.rentals <= 5).reverse();
+
+  return {
+    topItems,
+    unpopularItems,
+  };
+}
+
+async function getTimePatternStats(
+  filters: { year: string; month: string | 'all'; ageGroup?: string; category?: string }
+) {
+    const { year, month, category, ageGroup } = filters;
+
+  const startDate = new Date(Date.UTC(parseInt(year), month === 'all' ? 0 : parseInt(month) - 1, 1));
+  const endDate = new Date(startDate);
+  if (month === 'all') {
+    endDate.setUTCFullYear(startDate.getUTCFullYear() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  } else {
+    endDate.setUTCMonth(startDate.getUTCMonth() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  }
+
+  const dateFilter = and(
+    gte(rentalRecords.rentalDate, Math.floor(startDate.getTime() / 1000)),
+    lte(rentalRecords.rentalDate, Math.floor(endDate.getTime() / 1000))
+  );
+
+  const records = await db.select().from(rentalRecords).leftJoin(items, eq(rentalRecords.itemsId, items.id)).leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id)).where(dateFilter);
+
+  let filteredRecords = records;
+    if (ageGroup) {
+        filteredRecords = records.filter(r => {
+            if (!r.general_users?.birthDate) return false;
+            const userAge = calculateAge(r.general_users.birthDate);
+            if (userAge === null) return false;
+            const group = userAge <= 12 ? 'child' : userAge <= 18 ? 'teen' : 'adult';
+            return group === ageGroup;
+        });
+    }
+    if (category) {
+        filteredRecords = filteredRecords.filter(r => r.items?.category === category);
+    }
+
+  const byHour = new Array(24).fill(0).map((_, i) => ({ hour: i, rentals: 0 }));
+  const byDayOfWeek = [
+      { day: 'Sun', rentals: 0 }, { day: 'Mon', rentals: 0 }, { day: 'Tue', rentals: 0 },
+      { day: 'Wed', rentals: 0 }, { day: 'Thu', rentals: 0 }, { day: 'Fri', rentals: 0 },
+      { day: 'Sat', rentals: 0 }
+  ];
+
+  filteredRecords.forEach(r => {
+    const date = new Date(r.rental_records.rentalDate * 1000);
+    byHour[date.getUTCHours()].rentals++;
+    byDayOfWeek[date.getUTCDay()].rentals++;
+  });
+
+  return {
+    byHour,
+    byDayOfWeek,
+  };
+}
+
+
+export async function getRentalAnalytics(filters: {
+  year: string;
+  month: string | "all";
+  ageGroup?: string;
+  category?: string;
+}): Promise<AnalyticsData> {
+  try {
+    const [
+      ageGroupStats,
+      categoryStats,
+      kpis,
+      itemStats,
+      timePatternStats,
+    ] = await Promise.all([
+      getAgeGroupStats(filters),
+      getCategoryStats(filters),
+      getOverallKPIs(filters),
+      getItemStats(filters),
+      getTimePatternStats(filters),
+    ]);
+
+    return {
+      ageGroupStats,
+      categoryStats,
+      kpis,
+      itemStats,
+      timePatternStats,
+    };
+  } catch (error) {
+    console.error("Error fetching rental analytics:", error);
+    // Return a default structure in case of an error
+    return {
+      kpis: {
+        totalRentals: 0,
+        uniqueUsers: 0,
+        mostPopularItem: null,
+        mostPopularCategory: null,
+      },
+      ageGroupStats: {
+        child: { count: 0, uniqueUsers: 0, percentage: 0 },
+        teen: { count: 0, uniqueUsers: 0, percentage: 0 },
+        adult: { count: 0, uniqueUsers: 0, percentage: 0 },
+      },
+      categoryStats: [],
+      itemStats: {
+        topItems: [],
+        unpopularItems: [],
+      },
+      timePatternStats: {
+        byHour: [],
+        byDayOfWeek: [],
+      },
     };
   }
 }

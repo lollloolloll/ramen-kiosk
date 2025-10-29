@@ -625,7 +625,7 @@
         "description": "관리자 대여 기록 페이지(`/admin/records`)에서 현재 필터링된 대여 기록을 Excel 파일로 내보내는 기능을 구현합니다.",
         "details": "",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [9],
         "priority": "medium",
         "subtasks": [
@@ -635,7 +635,7 @@
             "description": "관리자 대여 기록 페이지(`/admin/records`)에 'Excel 내보내기' 버튼 UI 요소를 추가하고, 이 버튼 클릭 시 서버의 Excel 내보내기 API 엔드포인트를 호출하도록 클라이언트 측 로직을 구현합니다.",
             "dependencies": [],
             "details": "`admin/records` 페이지 컴포넌트에 shadcn/ui의 Button 컴포넌트를 활용하여 Excel 내보내기 버튼을 추가합니다. 버튼 클릭 시 `/api/admin/records/export`와 같은 서버 액션 또는 API 엔드포인트를 호출하는 클라이언트 측 함수를 작성합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "관리자 대여 기록 페이지에 접속하여 Excel 내보내기 버튼이 올바르게 렌더링되고 시각적으로 문제가 없는지 확인합니다. 개발자 도구를 통해 버튼 클릭 시 API 호출이 정상적으로 시작되는지 검증합니다."
           },
           {
@@ -644,7 +644,7 @@
             "description": "서버 측에 `/api/admin/records/export` 엔드포인트를 구현하여 현재 필터링된 대여 기록 데이터를 조회하고, 조회된 데이터를 기반으로 Excel 파일을 생성하는 로직을 개발합니다.",
             "dependencies": [],
             "details": "Drizzle ORM을 사용하여 데이터베이스에서 필터링 조건(쿼리 파라미터로 전달된)에 맞는 대여 기록을 조회합니다. `exceljs` 또는 유사한 라이브러리를 활용하여 조회된 데이터를 Excel 워크북 형태로 변환하고, 적절한 헤더와 셀 서식을 적용합니다. 생성된 Excel 파일을 버퍼 형태로 HTTP 응답 본문에 담아 클라이언트에 전송할 준비를 합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Postman이나 Insomnia와 같은 API 테스트 도구를 사용하여 `/api/admin/records/export` 엔드포인트에 필터링 파라미터와 함께 요청을 보냅니다. 응답으로 유효한 Excel 파일이 다운로드되는지 확인하고, 파일 내용을 열어 데이터의 정확성과 형식이 올바른지 검증합니다."
           },
           {
@@ -653,7 +653,7 @@
             "description": "서버에서 생성된 Excel 파일 응답을 성공적으로 수신하여 사용자의 웹 브라우저에서 해당 파일을 다운로드하도록 처리하는 클라이언트 측 로직을 구현합니다.",
             "dependencies": [1, 2],
             "details": "서버 액션으로부터 `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` 및 `Content-Disposition` 헤더와 함께 전송되는 Excel 파일 데이터(BLOB)를 처리합니다. JavaScript의 `Blob` 객체와 `URL.createObjectURL`을 사용하여 임시 URL을 생성하고, 가상의 `<a>` 태그를 생성하여 `download` 속성과 `href` 속성을 설정한 후 클릭 이벤트로 파일 다운로드를 시작합니다. 다운로드 완료 후 `URL.revokeObjectURL`을 호출하여 임시 URL을 해제합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "관리자 페이지에서 Excel 내보내기 버튼을 클릭하여 Excel 파일이 정상적으로 다운로드되는지 확인합니다. 다운로드된 파일의 이름이 올바른지, 파일이 손상되지 않고 문제없이 열리는지 확인합니다."
           }
         ]
@@ -661,48 +661,48 @@
       {
         "id": 18,
         "title": "관리자 대시보드 통계 기능 개선",
-        "description": "관리자 대여 기록 페이지에 일별, 주별, 월별 데이터 조회 탭을 추가하고, 학교 및 성별에 따른 라면 소비 통계를 시각화하는 기능을 구현합니다.",
-        "details": "",
-        "testStrategy": "",
+        "description": "관리자 대시보드 페이지에 일별, 주별, 월별 데이터 조회 탭을 추가하고, 사용자 정보(연령, 성별) 및 아이템 정보를 활용한 라면 소비 통계를 시각화하는 기능을 구현합니다.",
         "status": "pending",
         "dependencies": [9],
         "priority": "medium",
+        "details": "이 과제는 'drizzle/schema.ts'에 정의된 `rentalRecords` 테이블 스키마 변경에 대응하여, `users` 및 `items` 테이블과의 조인을 통해 사용자 정보(연령, 성별) 및 아이템 정보(이름)를 포함한 통계 데이터를 집계하도록 서버 액션 함수를 수정하는 것을 목표로 합니다.\n\n**수정 대상 파일:**\n- `lib/actions/rental-actions.ts`: 실제 데이터 집계 로직이 포함된 파일입니다.\n\n**참조 파일:**\n- `drizzle/schema.ts`: 변경된 최신 스키마 구조 및 테이블 간의 관계를 파악하기 위해 필요합니다. `rentalRecords`, `users`, `items` 테이블 간의 관계를 중점적으로 분석해야 합니다.\n- `src/app/(admin)/admin/RentalAnalyticsClient.tsx`: 수정된 함수가 반환해야 할 최종 데이터 구조(`AnalyticsData` 타입)를 확인하기 위해 필요합니다.\n\n**수행 지침:**\n1.  `drizzle/schema.ts` 파일을 분석하여 `rentalRecords` 테이블과 `users`, `items` 테이블이 어떤 필드(예: `userId`, `itemId`)를 통해 연결되는지 파악하세요.\n2.  `lib/actions/rental-actions.ts` 파일 내에서 대여 통계 데이터를 생성하는 함수(예: `getRentalAnalyticsData`)를 찾으세요.\n3.  식별된 함수의 Drizzle ORM 쿼리를 수정하세요. `db.select().from(rentalRecords)`와 같은 단순 쿼리를 `db.select().from(rentalRecords).leftJoin(...)` 또는 `with(...)` 구문을 사용하여 `users`와 `items` 테이블을 조인하는 쿼리로 변경해야 합니다.\n4.  조인된 데이터를 바탕으로 `src/app/(admin)/admin/RentalAnalyticsClient.tsx`가 요구하는 `AnalyticsData` 타입 형태(연령대별, 성별, 인기 아이템 TOP 5 등)에 맞게 데이터를 가공하고 집계하는 로직을 구현하세요.\n5.  수정된 함수의 최종 반환값이 `AnalyticsData` 타입과 완벽하게 일치하는지 확인하세요.\n\n**완료 조건:**\n- 수정된 함수는 에러 없이 실행되어야 합니다.\n- 함수는 `rentalRecords`, `users`, `items` 테이블을 올바르게 조인하여 데이터를 집계해야 합니다.\n- 함수의 반환값은 `AnalyticsData` 인터페이스의 모든 필드(예: `ageGroupData`, `genderData`, `popularItems`)를 포함하고 있어야 합니다.",
+        "testStrategy": "업데이트된 통계 집계 로직이 `users` 및 `items` 테이블과의 조인을 올바르게 수행하는지, 그리고 `AnalyticsData` 타입에 맞춰 연령대별, 성별, 인기 아이템 TOP 5 등의 통계 데이터가 정확하게 집계되는지 검증합니다. 더미 데이터를 사용하여 다양한 시나리오(데이터 없음, 특정 기간, 다양한 사용자 연령/성별, 여러 아이템)에 대해 예상되는 통계 결과가 올바르게 나오는지 테스트합니다.",
         "subtasks": [
           {
             "id": 1,
             "title": "통계 데이터 집계 로직 및 DB 쿼리 설계",
-            "description": "일별, 주별, 월별, 학교별, 성별 라면 소비 통계를 위한 데이터베이스 쿼리 및 집계 로직을 설계하고 Drizzle ORM을 활용하여 구현합니다.",
+            "description": "일별, 주별, 월별, 연령대별, 성별, 인기 아이템별 라면 소비 통계를 위한 데이터베이스 쿼리 및 집계 로직을 `lib/actions/rental-actions.ts`에 설계하고 Drizzle ORM을 활용하여 구현합니다. `drizzle/schema.ts`에 정의된 `users` 및 `items` 테이블과의 조인이 포함됩니다.",
             "dependencies": [],
-            "details": "`rentalRecords` 테이블과 `users` 테이블 (성별, 학교 정보 포함 가정)을 조인하여 필요한 통계 데이터를 추출하는 SQL 쿼리 또는 Drizzle ORM 표현식을 정의합니다. 기간별(일, 주, 월), 학교별, 성별 필터링 및 그룹화 로직을 포함합니다.",
+            "details": "기존 `rentalRecords` 테이블 외에, `drizzle/schema.ts`를 분석하여 `rentalRecords` 테이블과 `users` 테이블 (userId 필드 연결) 및 `items` 테이블 (itemId 필드 연결)을 조인하는 Drizzle ORM 쿼리를 정의합니다. 이를 통해 사용자 연령, 성별, 아이템 이름 등의 정보를 가져와 기간별(일, 주, 월), 연령대별, 성별 필터링 및 그룹화 로직을 포함합니다. 특히 `src/app/(admin)/admin/RentalAnalyticsClient.tsx`에 정의된 `AnalyticsData` 타입 (ageGroupData, genderData, popularItems 등)에 맞춰 데이터를 가공하고 집계하는 로직을 `lib/actions/rental-actions.ts` 내의 통계 함수에 구현합니다.",
             "status": "pending",
-            "testStrategy": "설계된 쿼리를 직접 데이터베이스에서 실행하여 예상되는 통계 결과가 올바르게 나오는지 검증합니다. 더미 데이터를 사용하여 다양한 시나리오(데이터 없음, 특정 기간 데이터)를 테스트합니다."
+            "testStrategy": "설계된 쿼리를 직접 데이터베이스에서 실행하여 `users` 및 `items` 테이블이 올바르게 조인되고, `AnalyticsData` 타입의 구조에 맞춰 연령대별, 성별, 인기 아이템 TOP 5 통계가 예상대로 집계되는지 검증합니다. 더미 데이터를 사용하여 다양한 시나리오(데이터 없음, 특정 기간, 다양한 사용자 연령/성별, 여러 아이템)를 테스트합니다."
           },
           {
             "id": 2,
             "title": "통계 데이터 조회 API 엔드포인트 개발",
-            "description": "프론트엔드에서 일별, 주별, 월별, 학교별, 성별 라면 소비 통계 데이터를 조회할 수 있는 서버 액션(API 엔드포인트)을 구현합니다.",
+            "description": "프론트엔드에서 일별, 주별, 월별, 연령대별, 성별, 인기 아이템별 라면 소비 통계 데이터를 조회할 수 있는 서버 액션(API 엔드포인트)을 구현합니다. 이 엔드포인트는 Subtask 1에서 구현된 집계 로직의 `AnalyticsData` 구조를 반환해야 합니다.",
             "dependencies": [1],
-            "details": "`/api/admin/statistics`와 같은 엔드포인트를 생성하고, 쿼리 파라미터(예: `period=daily|weekly|monthly`, `school=A|B`, `gender=M|F`)에 따라 Subtask 1에서 구현된 집계 로직을 호출하여 데이터를 JSON 형식으로 반환합니다. 인증 및 에러 처리 로직을 포함합니다.",
+            "details": "`/api/admin/statistics`와 같은 엔드포인트를 `lib/actions/rental-actions.ts` 파일 내에 구현합니다. 쿼리 파라미터(예: `period=daily|weekly|monthly`, `ageGroup=20s|30s`, `gender=M|F`)에 따라 Subtask 1에서 구현된 업데이트된 집계 로직을 호출하여 `src/app/(admin)/admin/RentalAnalyticsClient.tsx`의 `AnalyticsData` 타입 형식으로 데이터를 JSON으로 반환합니다. 인증 및 에러 처리 로직을 포함합니다.",
             "status": "pending",
-            "testStrategy": "Postman 또는 curl을 사용하여 다양한 쿼리 파라미터로 엔드포인트를 호출하고, 반환되는 데이터의 정확성과 형식(JSON)을 검증합니다. 에러 케이스(잘못된 파라미터 등)도 테스트합니다."
+            "testStrategy": "Postman 또는 curl을 사용하여 다양한 쿼리 파라미터로 엔드포인트를 호출하고, 반환되는 `AnalyticsData` 구조의 정확성과 형식(JSON)을 검증합니다. 특히 연령대, 성별, 인기 아이템 데이터가 올바르게 포함되는지 확인합니다. 에러 케이스(잘못된 파라미터 등)도 테스트합니다."
           },
           {
             "id": 3,
             "title": "관리자 대시보드 통계 UI (탭, 필터) 개발",
-            "description": "관리자 대여 기록 페이지에 통계 데이터를 시각화하기 위한 탭(일별, 주별, 월별) 및 필터(학교, 성별) UI 컴포넌트를 shadcn/ui를 활용하여 구현합니다.",
+            "description": "관리자 대여 기록 페이지에 통계 데이터를 시각화하기 위한 탭(일별, 주별, 월별) 및 필터(연령대, 성별) UI 컴포넌트를 shadcn/ui를 활용하여 구현합니다. `RentalAnalyticsClient.tsx` 파일을 참조합니다.",
             "dependencies": [],
-            "details": "`admin/records` 페이지 내 또는 새로운 페이지에 `Tabs` 컴포넌트를 사용하여 기간별 보기를 구현합니다. `Select` 또는 `RadioGroup` 컴포넌트를 사용하여 학교 및 성별 필터를 추가합니다. 필터 선택에 따라 데이터 로딩 상태를 표시하는 로딩 스피너 등의 UI를 포함합니다.",
+            "details": "`src/app/(admin)/admin/RentalAnalyticsClient.tsx` 페이지 내 또는 새로운 페이지에 `Tabs` 컴포넌트를 사용하여 기간별 보기를 구현합니다. `Select` 또는 `RadioGroup` 컴포넌트를 사용하여 연령대 및 성별 필터를 추가합니다. 필터 선택에 따라 데이터 로딩 상태를 표시하는 로딩 스피너 등의 UI를 포함합니다. 인기 아이템 목록을 표시하기 위한 UI 컴포넌트도 고려합니다.",
             "status": "pending",
-            "testStrategy": "브라우저에서 페이지를 렌더링하여 탭 전환, 필터 선택 등의 UI 요소가 올바르게 작동하고 시각적으로 일관성을 유지하는지 확인합니다. 콘솔에서 UI 컴포넌트의 상태 변경을 확인합니다."
+            "testStrategy": "브라우저에서 페이지를 렌더링하여 탭 전환, 필터 선택(연령대, 성별) 등의 UI 요소가 올바르게 작동하고 시각적으로 일관성을 유지하는지 확인합니다. 콘솔에서 UI 컴포넌트의 상태 변경을 확인하고, 인기 아이템 목록이 올바르게 렌더링되는지 확인합니다."
           },
           {
             "id": 4,
             "title": "통계 데이터 차트 시각화 및 API 연동",
-            "description": "구현된 통계 API 엔드포인트와 연동하여 집계된 라면 소비 데이터를 막대 차트, 선 차트 등으로 시각화하는 기능을 개발합니다.",
+            "description": "구현된 통계 API 엔드포인트와 연동하여 집계된 라면 소비 데이터를 연령대별, 성별, 인기 아이템 순위별로 막대 차트, 파이 차트 등으로 시각화하는 기능을 개발합니다. `RentalAnalyticsClient.tsx` 파일 내에서 구현합니다.",
             "dependencies": [2, 3],
-            "details": "Recharts나 Chart.js와 같은 차트 라이브러리를 선정하여 설치하고, Subtask 3에서 구현된 UI에 차트를 통합합니다. 필터 및 탭 선택에 따라 Subtask 2의 API를 호출하여 데이터를 가져오고, 차트를 동적으로 업데이트하도록 구현합니다. 적절한 축 레이블, 툴팁, 범례를 포함합니다.",
+            "details": "Recharts나 Chart.js와 같은 차트 라이브러리를 선정하여 설치하고, Subtask 3에서 구현된 UI에 연령대별, 성별, 인기 아이템에 대한 차트 및 목록을 통합합니다. 필터 및 탭 선택에 따라 Subtask 2의 API를 호출하여 `AnalyticsData` 타입의 데이터를 가져오고, 차트를 동적으로 업데이트하도록 구현합니다. 적절한 축 레이블, 툴팁, 범례를 포함하며, 인기 아이템은 리스트 형태로 표시할 수 있습니다. 구현은 `src/app/(admin)/admin/RentalAnalyticsClient.tsx` 파일에서 이루어집니다.",
             "status": "pending",
-            "testStrategy": "다양한 필터 및 탭 조합을 통해 차트 데이터가 API 응답과 일치하는지, 차트가 올바르게 렌더링되는지 시각적으로 확인합니다. 데이터가 없을 때의 차트 상태(예: '데이터 없음' 메시지)도 테스트합니다."
+            "testStrategy": "다양한 필터 및 탭 조합을 통해 연령대별, 성별 차트 데이터 및 인기 아이템 목록이 API 응답과 일치하는지, 차트가 올바르게 렌더링되는지 시각적으로 확인합니다. 데이터가 없을 때의 차트/목록 상태(예: '데이터 없음' 메시지)도 테스트합니다."
           }
         ]
       },

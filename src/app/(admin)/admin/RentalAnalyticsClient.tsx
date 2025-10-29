@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+
 import { getRentalAnalytics } from "@/lib/actions/rental";
 import { AnalyticsData } from "@/lib/types/analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,23 +38,20 @@ import {
 import { useDebounce } from "@/lib/shared/use-debounce";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF"];
+
+// --- 재사용 가능한 차트 컴포넌트들 ---
 
 const MemoizedAgeBarChart = ({
   data,
 }: {
-  data: Array<{
-    name: string;
-    count: number;
-    uniqueUsers: number;
-    percentage: number;
-  }>;
+  data: Array<{ name: string; count: number; uniqueUsers: number }>;
 }) => (
   <ResponsiveContainer width="100%" height={300}>
     <BarChart data={data}>
       <CartesianGrid strokeDasharray="3 3" />
       <XAxis dataKey="name" />
-      <YAxis />
+      <YAxis allowDecimals={false} />
       <Tooltip />
       <Legend />
       <Bar dataKey="count" fill="#8884d8" name="대여 건수" />
@@ -85,7 +83,36 @@ const MemoizedCategoryPieChart = ({ data }: { data: any[] }) => (
   </ResponsiveContainer>
 );
 
-// ✨ 새로 추가된 요일별 차트
+// ✨ 성별 분포를 위한 새로운 Pie Chart 컴포넌트
+const MemoizedGenderPieChart = ({
+  data,
+}: {
+  data: { name: string; value: number }[];
+}) => (
+  <ResponsiveContainer width="100%" height={300}>
+    <PieChart>
+      <Pie
+        data={data}
+        dataKey="value"
+        nameKey="name"
+        cx="50%"
+        cy="50%"
+        outerRadius={100}
+        fill="#8884d8"
+        label={({ name, percent }) =>
+          `${name} ${((percent as number) * 100).toFixed(0)}%`
+        }
+      >
+        {data.map((entry, index) => (
+          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+        ))}
+      </Pie>
+      <Tooltip formatter={(value) => `${value}건`} />
+      <Legend />
+    </PieChart>
+  </ResponsiveContainer>
+);
+
 const MemoizedDayOfWeekChart = ({
   data,
 }: {
@@ -102,7 +129,6 @@ const MemoizedDayOfWeekChart = ({
   </ResponsiveContainer>
 );
 
-// ✨ 새로 추가된 시간대별 차트
 const MemoizedHourlyChart = ({
   data,
 }: {
@@ -151,7 +177,6 @@ export function RentalAnalyticsClient({
   const debouncedFilters = useDebounce(filters, 500);
 
   useEffect(() => {
-    // initialData는 서버에서 처음 렌더링할 때만 사용하고, 이후 필터 변경 시에는 다시 fetch
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -165,16 +190,16 @@ export function RentalAnalyticsClient({
       setLoading(false);
     };
 
-    // 초기 렌더링이 아닌 경우에만 데이터 fetch
-    if (
-      JSON.stringify(debouncedFilters) !==
-      JSON.stringify({
-        year: new Date().getFullYear().toString(),
-        month: "all",
-        ageGroup: "all",
-        category: "all",
-      })
-    ) {
+    // 초기 렌더링 시에는 서버에서 받은 initialData를 사용하고,
+    // 필터 값이 바뀔 때만 데이터를 새로 fetch 합니다.
+    const initialFilters = {
+      year: new Date().getFullYear().toString(),
+      month: "all",
+      ageGroup: "all",
+      category: "all",
+    };
+
+    if (JSON.stringify(debouncedFilters) !== JSON.stringify(initialFilters)) {
       fetchData();
     }
   }, [debouncedFilters]);
@@ -211,7 +236,7 @@ export function RentalAnalyticsClient({
           onValueChange={(value) => handleFilterChange("year", value)}
         >
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue placeholder="연도 선택" />
           </SelectTrigger>
           <SelectContent>
             {years.map((y) => (
@@ -226,7 +251,7 @@ export function RentalAnalyticsClient({
           onValueChange={(value) => handleFilterChange("month", value)}
         >
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue placeholder="월 선택" />
           </SelectTrigger>
           <SelectContent>
             {[
@@ -244,7 +269,7 @@ export function RentalAnalyticsClient({
           onValueChange={(value) => handleFilterChange("ageGroup", value)}
         >
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue placeholder="연령대 선택" />
           </SelectTrigger>
           <SelectContent>
             {Object.entries(ageGroupMap).map(([key, value]) => (
@@ -259,7 +284,7 @@ export function RentalAnalyticsClient({
           onValueChange={(value) => handleFilterChange("category", value)}
         >
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue placeholder="카테고리 선택" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체 카테고리</SelectItem>
@@ -372,7 +397,7 @@ export function RentalAnalyticsClient({
         </Card>
       </div>
 
-      {/* ✨ --- 새로 추가된 차트 섹션 2 --- ✨ */}
+      {/* --- 차트 섹션 2 --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -382,14 +407,7 @@ export function RentalAnalyticsClient({
             {loading ? (
               <Skeleton className="h-[300px]" />
             ) : (
-              <MemoizedDayOfWeekChart
-                data={
-                  analyticsData.timePatternStats?.byDayOfWeek?.map((d) => ({
-                    name: d.day,
-                    count: d.rentals,
-                  })) || []
-                }
-              />
+              <MemoizedDayOfWeekChart data={analyticsData.dayOfWeekStats} />
             )}
           </CardContent>
         </Card>
@@ -401,20 +419,13 @@ export function RentalAnalyticsClient({
             {loading ? (
               <Skeleton className="h-[300px]" />
             ) : (
-              <MemoizedHourlyChart
-                data={
-                  analyticsData.timePatternStats?.byHour?.map((h) => ({
-                    name: h.hour.toString(),
-                    count: h.rentals,
-                  })) || []
-                }
-              />
+              <MemoizedHourlyChart data={analyticsData.hourStats} />
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* --- 테이블 섹션 --- */}
+      {/* ✨ --- 테이블 & 성별 차트 섹션 (비인기 품목 대체) --- ✨ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="lg:col-span-1">
           <CardHeader>
@@ -422,7 +433,7 @@ export function RentalAnalyticsClient({
           </CardHeader>
           <CardContent>
             {loading ? (
-              <Skeleton className="h-80" />
+              <Skeleton className="h-[300px]" />
             ) : (
               <Table>
                 <TableHeader>
@@ -449,32 +460,13 @@ export function RentalAnalyticsClient({
         </Card>
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>비인기 품목 (대여 5회 이하)</CardTitle>
+            <CardTitle>성별 대여 분포</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <Skeleton className="h-80" />
+              <Skeleton className="h-[300px]" />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>품목명</TableHead>
-                    <TableHead>카테고리</TableHead>
-                    <TableHead className="text-right">대여 횟수</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {analyticsData.itemStats.unpopularItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell>{item.category}</TableCell>
-                      <TableCell className="text-right">
-                        {item.rentals}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <MemoizedGenderPieChart data={analyticsData.genderStats} />
             )}
           </CardContent>
         </Card>

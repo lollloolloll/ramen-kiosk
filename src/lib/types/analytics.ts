@@ -57,4 +57,7 @@ export interface AnalyticsData {
     byHour: { hour: number; rentals: number }[];
     byDayOfWeek: { day: string; rentals: number }[];
   };
+  dayOfWeekStats: { name: string; count: number }[];
+  hourStats: { name: string; count: number }[];
+  genderStats: { name: string; value: number }[];
 }

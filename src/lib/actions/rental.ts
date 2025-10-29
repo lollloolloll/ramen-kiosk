@@ -718,6 +718,68 @@ async function getTimePatternStats(
   };
 }
 
+async function getGenderStats(
+  filters: { year: string; month: string | 'all'; ageGroup?: string; category?: string }
+) {
+  const { year, month, category, ageGroup } = filters;
+
+  const startDate = new Date(Date.UTC(parseInt(year), month === 'all' ? 0 : parseInt(month) - 1, 1));
+  const endDate = new Date(startDate);
+  if (month === 'all') {
+    endDate.setUTCFullYear(startDate.getUTCFullYear() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  } else {
+    endDate.setUTCMonth(startDate.getUTCMonth() + 1);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+  }
+
+  const dateFilter = and(
+    gte(rentalRecords.rentalDate, Math.floor(startDate.getTime() / 1000)),
+    lte(rentalRecords.rentalDate, Math.floor(endDate.getTime() / 1000))
+  );
+
+  const records = await db.select().from(rentalRecords).leftJoin(items, eq(rentalRecords.itemsId, items.id)).leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id)).where(dateFilter);
+
+  let filteredRecords = records;
+  if (ageGroup) {
+      filteredRecords = records.filter(r => {
+          if (!r.general_users?.birthDate) return false;
+          const userAge = calculateAge(r.general_users.birthDate);
+          if (userAge === null) return false;
+          const group = userAge <= 12 ? 'child' : userAge <= 18 ? 'teen' : 'adult';
+          return group === ageGroup;
+      });
+  }
+  if (category) {
+      filteredRecords = filteredRecords.filter(r => r.items?.category === category);
+  }
+
+  const genderCounts = {
+    male: 0,
+    female: 0,
+    other: 0,
+  };
+
+  filteredRecords.forEach(r => {
+    if (r.general_users?.gender) {
+      const gender = r.general_users.gender.toLowerCase();
+      if (gender === 'male') {
+        genderCounts.male++;
+      } else if (gender === 'female') {
+        genderCounts.female++;
+      } else {
+        genderCounts.other++;
+      }
+    }
+  });
+
+  return [
+    { name: '남성', value: genderCounts.male },
+    { name: '여성', value: genderCounts.female },
+    { name: '기타', value: genderCounts.other },
+  ];
+}
+
 
 export async function getRentalAnalytics(filters: {
   year: string;
@@ -732,12 +794,14 @@ export async function getRentalAnalytics(filters: {
       kpis,
       itemStats,
       timePatternStats,
+      genderStats,
     ] = await Promise.all([
       getAgeGroupStats(filters),
       getCategoryStats(filters),
       getOverallKPIs(filters),
       getItemStats(filters),
       getTimePatternStats(filters),
+      getGenderStats(filters),
     ]);
 
     return {
@@ -746,6 +810,9 @@ export async function getRentalAnalytics(filters: {
       kpis,
       itemStats,
       timePatternStats,
+      dayOfWeekStats: timePatternStats.byDayOfWeek.map(d => ({ name: d.day, count: d.rentals })),
+      hourStats: timePatternStats.byHour.map(h => ({ name: h.hour.toString(), count: h.rentals })),
+      genderStats,
     };
   } catch (error) {
     console.error("Error fetching rental analytics:", error);
@@ -771,6 +838,9 @@ export async function getRentalAnalytics(filters: {
         byHour: [],
         byDayOfWeek: [],
       },
+      dayOfWeekStats: [],
+      hourStats: [],
+      genderStats: [],
     };
   }
 }

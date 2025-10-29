@@ -151,6 +151,7 @@ export function RentalHistoryForm({
     sort: "rentalDate",
     order: "desc",
   });
+  const isInitialMount = useRef(true);
 
   const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -175,7 +176,12 @@ export function RentalHistoryForm({
       currentFilters.sort !== prevFiltersRef.current.sort ||
       currentFilters.order !== prevFiltersRef.current.order;
 
-    if (!filtersChanged && page === 1 && records.length > 0) {
+    if (
+      !filtersChanged &&
+      page === 1 &&
+      records.length > 0 &&
+      !isInitialMount.current
+    ) {
       return;
     }
 
@@ -183,7 +189,11 @@ export function RentalHistoryForm({
 
     const handler = setTimeout(() => {
       async function fetchRentalHistory() {
-        setLoading(true);
+        const isFilterAction = filtersChanged;
+        if (isInitialMount.current || isFilterAction) {
+          setLoading(true);
+        }
+
         const result = await getRentalRecordsByUserId(userId, {
           page,
           per_page: perPage,
@@ -204,6 +214,9 @@ export function RentalHistoryForm({
           setError(null);
         }
         setLoading(false);
+        if (isInitialMount.current) {
+          isInitialMount.current = false;
+        }
       }
 
       if (username) {

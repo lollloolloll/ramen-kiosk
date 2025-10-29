@@ -352,12 +352,13 @@ export async function getRentalAnalytics(filters: {
         acc[r.itemId] = acc[r.itemId] || {
           id: r.itemId,
           name: r.itemName,
+          category: r.itemCategory || "Unknown", // Add category here
           rentals: 0,
         };
         acc[r.itemId].rentals++;
       }
       return acc;
-    }, {} as Record<number, { id: number; name: string | null; rentals: number }>);
+    }, {} as Record<number, { id: number; name: string | null; category: string; rentals: number }>);
 
     const mostPopularItem =
       Object.values(itemCounts).sort((a, b) => b.rentals - a.rentals)[0] ||
@@ -404,10 +405,29 @@ export async function getRentalAnalytics(filters: {
 
     // Category Stats
     const categoryStats = Object.entries(categoryCounts)
-      .map(([name, data]) => ({
-        category: name,
-        totalRentals: data.rentals,
-      }))
+      .map(([name, data]) => {
+        const itemsInCategory = records.filter((r) => r.itemCategory === name);
+        const topItemsInCategory = Object.values(
+          itemsInCategory.reduce((acc, r) => {
+            if (r.itemId) {
+              acc[r.itemId] = acc[r.itemId] || {
+                itemId: r.itemId,
+                itemName: r.itemName || "Unknown",
+                rentals: 0,
+              };
+              acc[r.itemId].rentals++;
+            }
+            return acc;
+          }, {} as Record<number, { itemId: number; itemName: string; rentals: number }>)
+        ).sort((a, b) => b.rentals - a.rentals);
+
+        return {
+          category: name,
+          totalRentals: data.rentals,
+          percentage: totalRentals > 0 ? (data.rentals / totalRentals) * 100 : 0,
+          topItems: topItemsInCategory.slice(0, 5), // Top 5 items in this category
+        };
+      })
       .sort((a, b) => b.totalRentals - a.totalRentals);
 
     // Item Stats

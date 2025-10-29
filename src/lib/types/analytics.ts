@@ -4,7 +4,7 @@ export interface AnalyticsData {
     uniqueUsers: number;
     mostPopularItem: {
       id: number;
-      name: string;
+      name: string | null;
       rentals: number;
     } | null;
     mostPopularCategory: {
@@ -42,13 +42,13 @@ export interface AnalyticsData {
   itemStats: {
     topItems: {
       id: number;
-      name: string;
+      name: string | null;
       category: string;
       rentals: number;
     }[];
     unpopularItems: {
       id: number;
-      name: string;
+      name: string | null;
       category: string;
       rentals: number;
     }[];

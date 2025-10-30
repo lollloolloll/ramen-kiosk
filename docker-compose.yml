@@ -6,8 +6,9 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./local.db:/app/local.db
+      - "./data:/app/data"
       - ./uploads:/app/public/uploads
     env_file:
       - .env
+    user: root
     restart: always

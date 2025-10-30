@@ -190,18 +190,7 @@ export function RentalAnalyticsClient({
       setLoading(false);
     };
 
-    // 초기 렌더링 시에는 서버에서 받은 initialData를 사용하고,
-    // 필터 값이 바뀔 때만 데이터를 새로 fetch 합니다.
-    const initialFilters = {
-      year: new Date().getFullYear().toString(),
-      month: "all",
-      ageGroup: "all",
-      category: "all",
-    };
-
-    if (JSON.stringify(debouncedFilters) !== JSON.stringify(initialFilters)) {
-      fetchData();
-    }
+    fetchData(); // 필터가 바뀔 때마다 항상 데이터 fetch
   }, [debouncedFilters]);
 
   const handleFilterChange = (filterName: string, value: string) => {

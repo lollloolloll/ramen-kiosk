@@ -471,6 +471,79 @@ export function RentalAnalyticsClient({
           </CardContent>
         </Card>
       </div>
+
+      {/* --- 학교별 순위 차트/테이블 --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>학교별 대여 순위</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-[300px]" />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>순위</TableHead>
+                    <TableHead>학교명</TableHead>
+                    <TableHead>대여수</TableHead>
+                    <TableHead>이용자</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {analyticsData.schoolRankings?.map((row, idx) => (
+                    <TableRow key={row.school}>
+                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell>{row.school}</TableCell>
+                      <TableCell>{row.totalRentals}</TableCell>
+                      <TableCell>{row.uniqueUsers}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* --- 인원수별 품목 인기 통계 --- */}
+      <div className="grid grid-cols-1 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>인원수별 인기 품목</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-[300px]" />
+            ) : (
+              analyticsData.peopleCountItemStats?.map((stat) => (
+                <div key={stat.peopleCount} className="mb-6">
+                  <div className="font-semibold">{stat.peopleCount}인 대여</div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>순위</TableHead>
+                        <TableHead>품목명</TableHead>
+                        <TableHead>대여수</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stat.items.slice(0, 5).map((item, idx) => (
+                        <TableRow key={item.itemId}>
+                          <TableCell>{idx + 1}</TableCell>
+                          <TableCell>{item.itemName}</TableCell>
+                          <TableCell>{item.rentals}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

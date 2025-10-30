@@ -317,9 +317,11 @@ export async function getRentalAnalytics(filters: {
         userId: rentalRecords.userId,
         birthDate: generalUsers.birthDate,
         gender: generalUsers.gender,
+        school: generalUsers.school,
         itemName: items.name,
         itemId: items.id,
         itemCategory: items.category,
+        peopleCount: rentalRecords.peopleCount,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
@@ -327,6 +329,12 @@ export async function getRentalAnalytics(filters: {
       .where(and(...whereConditions));
 
     let records = await baseQuery;
+    // undefined/null 값 타입 안전 가공 (school, peopleCount 등의 타입 보정)
+    records = records.map((r) => ({
+      ...r,
+      school: r.school ?? "기타",
+      peopleCount: r.peopleCount ?? 1,
+    }));
 
     // 연령대 필터가 있으면 JS에서 추가 필터링
     if (ageGroup && ageGroup !== "all") {
@@ -424,7 +432,8 @@ export async function getRentalAnalytics(filters: {
         return {
           category: name,
           totalRentals: data.rentals,
-          percentage: totalRentals > 0 ? (data.rentals / totalRentals) * 100 : 0,
+          percentage:
+            totalRentals > 0 ? (data.rentals / totalRentals) * 100 : 0,
           topItems: topItemsInCategory.slice(0, 5), // Top 5 items in this category
         };
       })
@@ -472,6 +481,62 @@ export async function getRentalAnalytics(filters: {
       { name: "기타", value: genderCounts.other },
     ].filter((g) => g.value > 0);
 
+    // --- 학교별 대여 순위 집계 ---
+    const schoolCounts: {
+      [school: string]: {
+        school: string;
+        totalRentals: number;
+        users: Set<number>;
+      };
+    } = {};
+    records.forEach((r) => {
+      if (r.userId && r.school) {
+        if (!schoolCounts[r.school]) {
+          schoolCounts[r.school] = {
+            school: r.school,
+            totalRentals: 0,
+            users: new Set(),
+          };
+        }
+        schoolCounts[r.school].totalRentals += 1;
+        schoolCounts[r.school].users.add(r.userId);
+      }
+    });
+    const schoolRankings = Object.values(schoolCounts)
+      .map((item) => ({
+        school: item.school,
+        totalRentals: item.totalRentals,
+        uniqueUsers: item.users.size,
+      }))
+      .sort((a, b) => b.totalRentals - a.totalRentals);
+
+    // --- 인원수별 품목 집계 ---
+    const peopleItemStats: {
+      [key: number]: {
+        [itemId: number]: { itemId: number; itemName: string; rentals: number };
+      };
+    } = {};
+    records.forEach((r) => {
+      const p = r.peopleCount || 1;
+      if (!peopleItemStats[p]) peopleItemStats[p] = {};
+      if (r.itemId && typeof r.itemId === "number" && r.itemName) {
+        if (!peopleItemStats[p][r.itemId]) {
+          peopleItemStats[p][r.itemId] = {
+            itemId: r.itemId,
+            itemName: r.itemName,
+            rentals: 0,
+          };
+        }
+        peopleItemStats[p][r.itemId].rentals++;
+      }
+    });
+    const peopleCountItemStats = Object.keys(peopleItemStats).map((count) => ({
+      peopleCount: Number(count),
+      items: Object.values(peopleItemStats[Number(count)]).sort(
+        (a, b) => b.rentals - a.rentals
+      ) as { itemId: number; itemName: string; rentals: number }[],
+    }));
+
     // 3. 최종 데이터 구조로 반환
     return {
       kpis: { totalRentals, uniqueUsers, mostPopularItem, mostPopularCategory },
@@ -506,6 +571,8 @@ export async function getRentalAnalytics(filters: {
       dayOfWeekStats,
       hourStats,
       genderStats,
+      schoolRankings,
+      peopleCountItemStats,
     };
   } catch (error) {
     console.error("Error fetching rental analytics:", error);
@@ -527,6 +594,8 @@ export async function getRentalAnalytics(filters: {
       dayOfWeekStats: [],
       hourStats: [],
       genderStats: [],
+      schoolRankings: [],
+      peopleCountItemStats: [],
     };
   }
 }

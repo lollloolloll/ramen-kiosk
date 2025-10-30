@@ -18,25 +18,18 @@ export async function addItem(formData: FormData) {
   const category = formData.get("category") as string;
   const imageFile = formData.get("image") as File;
 
-  // Basic validation for required fields
-  if (!name || !category) {
-    return { error: "필수 필드를 모두 입력해주세요." };
-  }
+  if (!name || !category) return { error: "필수 필드를 모두 입력해주세요." };
 
   let imageUrl: string | undefined;
 
   if (imageFile && imageFile.size > 0) {
-    // Create uploads directory if it doesn't exist
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (error) {
-      console.error("Failed to create uploads directory:", error);
-      return { error: "이미지 업로드 디렉토리 생성에 실패했습니다." };
-    }
+    await mkdir(uploadsDir, { recursive: true });
 
-    const filename = imageFile.name;
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const filename = `${uniqueSuffix}-${imageFile.name}`;
     const filePath = path.join(uploadsDir, filename);
+
     const bytes = await imageFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -49,12 +42,7 @@ export async function addItem(formData: FormData) {
     }
   }
 
-  const data = {
-    name,
-    category,
-    imageUrl,
-  };
-
+  const data = { name, category, imageUrl };
   const validatedData = itemSchema.safeParse(data);
   if (!validatedData.success) {
     console.error("Validation error:", validatedData.error);
@@ -62,10 +50,8 @@ export async function addItem(formData: FormData) {
   }
 
   try {
-    await db.insert(items).values({
-      ...validatedData.data,
-    });
-    revalidatePath("/admin/items");
+    await db.insert(items).values(validatedData.data); // <- 여기 insert
+    revalidatePath("/admin/items"); // ISR 업데이트
     return { success: true };
   } catch (error) {
     console.error("Failed to add item:", error);

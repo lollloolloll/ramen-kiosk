@@ -35,8 +35,7 @@ export async function addItem(formData: FormData) {
       return { error: "이미지 업로드 디렉토리 생성에 실패했습니다." };
     }
 
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const filename = `${uniqueSuffix}-${imageFile.name}`;
+    const filename = imageFile.name;
     const filePath = path.join(uploadsDir, filename);
     const bytes = await imageFile.arrayBuffer();
     const buffer = Buffer.from(bytes);

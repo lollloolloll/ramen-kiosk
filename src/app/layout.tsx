@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { NextAuthProvider } from "@/components/NextAuthProvider";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Item Kiosk",
   description: "A self-service item ordering kiosk.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -35,6 +37,7 @@ export default function RootLayout({
       >
         <NextAuthProvider>{children}</NextAuthProvider>
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

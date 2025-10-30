@@ -36,7 +36,15 @@ const formSchema = z.object({
       message: "Category must be at least 2 characters.",
     })
     .transform((val) => val.replace(/\s/g, "")),
-  imageUrl: z.any().optional(),
+  imageUrl: z.any().optional().transform((val) => {
+    if (val instanceof File) {
+      // If it's a File object, we don't modify the file name directly here.
+      // The file name will be handled when uploading.
+      return val;
+    }
+    // If it's a string (e.g., from defaultValues or if it's a URL string), remove spaces.
+    return typeof val === 'string' ? val.replace(/\s/g, "") : val;
+  }),
 });
 
 export function AddItemForm() {
@@ -54,8 +62,14 @@ export function AddItemForm() {
     const formData = new FormData();
     formData.append("name", values.name);
     formData.append("category", values.category);
-    if (values.imageUrl) {
-      formData.append("image", values.imageUrl);
+    if (values.imageUrl instanceof File) {
+      const file = values.imageUrl;
+      const fileNameWithoutSpaces = file.name.replace(/\s/g, "");
+      const newFile = new File([file], fileNameWithoutSpaces, { type: file.type });
+      formData.append("image", newFile);
+    } else if (typeof values.imageUrl === 'string' && values.imageUrl) {
+      // If imageUrl is a string (e.g., a URL), append it directly after removing spaces
+      formData.append("imageUrl", values.imageUrl.replace(/\s/g, ""));
     }
 
     const result = await addItem(formData);

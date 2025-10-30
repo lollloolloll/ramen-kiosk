@@ -79,7 +79,7 @@ export function AddItemForm() {
             <FormItem>
               <FormLabel>이름</FormLabel>
               <FormControl>
-                <Input placeholder="ex)신라면" {...field} />
+                <Input placeholder="ex)라면" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -92,7 +92,7 @@ export function AddItemForm() {
             <FormItem>
               <FormLabel>카테고리</FormLabel>
               <FormControl>
-                <Input placeholder="ex)농심" {...field} />
+                <Input placeholder="ex)스포츠" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

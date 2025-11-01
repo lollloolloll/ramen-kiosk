@@ -15,15 +15,19 @@ RUN \
 
 # 2️⃣ Builder stage
 FROM node:22-alpine AS builder
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ sqlite
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npm rebuild better-sqlite3
-RUN npm run build
+ENV DATABASE_URL=/app/data/local.db
 
+# Create an empty database for the build process
+RUN mkdir -p /app/data && sqlite3 /app/data/local.db "VACUUM;"
+
+# Build the Next.js application
+RUN npm run build
 
 # 3️⃣ Runner stage
 FROM node:22-alpine AS runner
@@ -31,8 +35,19 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Install sqlite for migrations
+RUN apk add --no-cache sqlite
+
 RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
+
+# Copy necessary files for migrations
+COPY package.json package-lock.json* ./
+COPY drizzle.config.ts ./
+COPY --chown=nextjs:nodejs drizzle ./drizzle
+
+# Install production dependencies and drizzle-kit for migrations
+RUN npm ci --omit=dev && npm install drizzle-kit
 
 COPY --from=builder /app/public ./public
 
@@ -41,8 +56,13 @@ RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy and set permissions for the entrypoint script
+COPY --chown=nextjs:nodejs entrypoint.sh .
+RUN chmod +x ./entrypoint.sh
+
 USER nextjs
 EXPOSE 3000
 ENV PORT 3000
 
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["node", "server.js"]

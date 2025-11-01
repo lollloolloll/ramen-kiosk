@@ -1,0 +1,20 @@
+# .dockerignore
+
+# 로컬 개발용 환경 변수 파일은 복사하지 않음
+.env.local
+
+# 의존성 폴더 (컨테이너 안에서 새로 설치하므로 불필요)
+node_modules
+
+# 빌드 결과물 (컨테이너 안에서 새로 생성하므로 불필요)
+.next
+
+# Git 폴더
+.git
+
+# 기타 불필요한 파일들
+.DS_Store
+npm-debug.log
+README.md
+.npm
+.gitignore

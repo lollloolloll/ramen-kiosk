@@ -1,24 +1,31 @@
 #!/bin/sh
-# Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Create the data directory if it doesn't exist
+# root로 실행 중이므로 권한 설정 가능
 mkdir -p /app/data
+chmod -R 777 /app/data
 
-# Path to the database file
 DB_FILE="/app/data/local.db"
 
-# Check if the database file already exists.
-# If it doesn't exist, create it and run migrations.
 if [ ! -f "$DB_FILE" ]; then
   echo "Database file not found. Creating and migrating..."
-  # Create an empty database file
-  sqlite3 "$DB_FILE" "VACUUM;"
-  # Run database migrations
-  /app/node_modules/.bin/drizzle-kit migrate
+  touch "$DB_FILE"
+  chmod 666 "$DB_FILE"
+  
+  if [ -f /app/node_modules/.bin/drizzle-kit ]; then
+    /app/node_modules/.bin/drizzle-kit migrate
+  else
+    echo "drizzle-kit not found. Skipping migration."
+  fi
 else
   echo "Database file already exists. Skipping creation and migration."
 fi
 
-# Start the application
-exec "$@"
+# 최종 권한 확인
+chown -R nextjs:nodejs /app/data
+chmod -R 777 /app/data
+
+echo "Starting Next.js as nextjs user..."
+
+# nextjs 유저로 전환해서 Node.js 실행
+exec su-exec nextjs "$@"

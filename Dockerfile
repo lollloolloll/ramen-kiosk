@@ -33,21 +33,19 @@ RUN npm run build
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
+RUN apk add --no-cache sqlite su-exec
+
 ENV DATABASE_URL=/app/data/local.db
 
-# Install sqlite for migrations
 RUN apk add --no-cache sqlite
 
 RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 
-# Copy necessary files for migrations
 COPY package.json package-lock.json* ./
 COPY drizzle.config.ts ./
 COPY --chown=nextjs:nodejs drizzle ./drizzle
 
-# Install dependencies including devDependencies needed for migrations
 RUN npm ci && chown -R nextjs:nodejs node_modules
 
 COPY --from=builder /app/public ./public
@@ -58,13 +56,16 @@ RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy and set permissions for the entrypoint script
-COPY --chown=nextjs:nodejs entrypoint.sh .
-RUN chmod +x ./entrypoint.sh
+# entrypoint는 root 권한으로 실행되어야 함
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-USER nextjs
+# ⚠️ USER nextjs 제거! root로 실행
+# USER nextjs  
+
 EXPOSE 3000
-ENV PORT 3000
+ENV PORT=3000
+ENV NODE_ENV=production
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "server.js"]

@@ -34,6 +34,7 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV DATABASE_URL=/app/data/local.db
 
 # Install sqlite for migrations
 RUN apk add --no-cache sqlite
@@ -47,7 +48,7 @@ COPY drizzle.config.ts ./
 COPY --chown=nextjs:nodejs drizzle ./drizzle
 
 # Install dependencies including devDependencies needed for migrations
-RUN npm ci
+RUN npm ci && chown -R nextjs:nodejs node_modules
 
 COPY --from=builder /app/public ./public
 

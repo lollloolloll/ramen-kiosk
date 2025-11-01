@@ -15,7 +15,7 @@ if [ ! -f "$DB_FILE" ]; then
   # Create an empty database file
   sqlite3 "$DB_FILE" "VACUUM;"
   # Run database migrations
-  npm run db:migrate
+  /app/node_modules/.bin/drizzle-kit migrate
 else
   echo "Database file already exists. Skipping creation and migration."
 fi

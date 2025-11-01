@@ -1,31 +1,55 @@
-#!/bin/sh
-set -e
+# 1️⃣ Dependencies stage
+FROM node:22-alpine AS deps
+RUN apk add --no-cache libc6-compat python3 make g++
+WORKDIR /app
 
-# root로 실행 중이므로 권한 설정 가능
-mkdir -p /app/data
-chmod -R 777 /app/data
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 
-DB_FILE="/app/data/local.db"
-
-if [ ! -f "$DB_FILE" ]; then
-  echo "Database file not found. Creating and migrating..."
-  touch "$DB_FILE"
-  chmod 666 "$DB_FILE"
-  
-  if [ -f /app/node_modules/.bin/drizzle-kit ]; then
-    /app/node_modules/.bin/drizzle-kit migrate
-  else
-    echo "drizzle-kit not found. Skipping migration."
+RUN \
+  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i --frozen-lockfile; \
+  else echo "Lockfile not found." && exit 1; \
   fi
-else
-  echo "Database file already exists. Skipping creation and migration."
-fi
 
-# 최종 권한 확인
-chown -R nextjs:nodejs /app/data
-chmod -R 777 /app/data
+# 2️⃣ Builder stage
+FROM node:22-alpine AS builder
+RUN apk add --no-cache python3 make g++ sqlite
+WORKDIR /app
 
-echo "Starting Next.js as nextjs user..."
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 
-# nextjs 유저로 전환해서 Node.js 실행
-exec su-exec nextjs "$@"
+ENV DATABASE_URL=/app/data/local.db
+
+RUN mkdir -p /app/data && sqlite3 /app/data/local.db "VACUUM;"
+RUN npm run build
+
+# 3️⃣ Runner stage
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+RUN apk add --no-cache sqlite su-exec
+
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 nextjs
+
+COPY .env.production /app/.env.production
+
+COPY --from=builder /app/public ./public
+
+RUN mkdir .next && chown nextjs:nodejs .next
+RUN mkdir -p /app/data && chmod -R 777 /app/data
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 3000
+ENV PORT=3000
+ENV NODE_ENV=production
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["node", "server.js"]

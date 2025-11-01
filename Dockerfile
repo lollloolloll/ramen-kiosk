@@ -46,12 +46,13 @@ COPY package.json package-lock.json* ./
 COPY drizzle.config.ts ./
 COPY --chown=nextjs:nodejs drizzle ./drizzle
 
-# Install production dependencies and drizzle-kit for migrations
-RUN npm ci --omit=dev && npm install drizzle-kit
+# Install dependencies including devDependencies needed for migrations
+RUN npm ci
 
 COPY --from=builder /app/public ./public
 
 RUN mkdir .next && chown nextjs:nodejs .next
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

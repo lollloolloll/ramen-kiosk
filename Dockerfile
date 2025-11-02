@@ -12,7 +12,6 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
-
 # 2️⃣ Builder stage
 FROM node:22-alpine AS builder
 RUN apk add --no-cache python3 make g++ sqlite
@@ -23,10 +22,7 @@ COPY . .
 
 ENV DATABASE_URL=/app/data/local.db
 
-# Create an empty database for the build process
 RUN mkdir -p /app/data && sqlite3 /app/data/local.db "VACUUM;"
-
-# Build the Next.js application
 RUN npm run build
 
 # 3️⃣ Runner stage
@@ -35,33 +31,21 @@ WORKDIR /app
 
 RUN apk add --no-cache sqlite su-exec
 
-ENV DATABASE_URL=/app/data/local.db
-
-RUN apk add --no-cache sqlite
-
 RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 
-COPY package.json package-lock.json* ./
-COPY drizzle.config.ts ./
-COPY --chown=nextjs:nodejs drizzle ./drizzle
-
-RUN npm ci && chown -R nextjs:nodejs node_modules
+COPY .env.production /app/.env.production
 
 COPY --from=builder /app/public ./public
 
 RUN mkdir .next && chown nextjs:nodejs .next
-RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+RUN mkdir -p /app/data && chmod -R 777 /app/data
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# entrypoint는 root 권한으로 실행되어야 함
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-# ⚠️ USER nextjs 제거! root로 실행
-# USER nextjs  
 
 EXPOSE 3000
 ENV PORT=3000

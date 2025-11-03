@@ -6,14 +6,7 @@ const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, "./"),
   output: "standalone" as const,
   images: {
-    remotePatterns: [
-      {
-        protocol: "http" as const, // 'as const' 추가
-        hostname: "localhost",
-        port: "3000",
-        pathname: "/uploads/**",
-      },
-    ],
+    unoptimized: true,
   },
 };
 

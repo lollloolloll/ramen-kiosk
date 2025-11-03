@@ -39,6 +39,16 @@ const formSchema = z.object({
   imageUrl: z
     .any()
     .optional()
+    .refine(
+      (val) => {
+        if (!val || !(val instanceof File)) {
+          return true;
+        }
+        // 1MB
+        return val.size <= 1 * 1024 * 1024;
+      },
+      { message: "이미지 크기는 1MB 미만 이어야 합니다." }
+    )
     .transform((val) => {
       if (val instanceof File) {
         // If it's a File object, we don't modify the file name directly here.
@@ -148,6 +158,12 @@ export function AddItemForm() {
                   onChange={(event) => {
                     const file = event.target.files?.[0];
                     if (file) {
+                      if (file.size > 1 * 1024 * 1024) {
+                        toast.error("File size cannot exceed 1MB.");
+                        event.target.value = ""; // Clear the file input
+                        field.onChange(undefined); // Clear the form field value
+                        return;
+                      }
                       field.onChange(file);
                     } else {
                       field.onChange(undefined);

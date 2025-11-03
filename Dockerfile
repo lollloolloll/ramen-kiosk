@@ -20,8 +20,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ENV DATABASE_URL=/app/data/local.db
-
 RUN mkdir -p /app/data && sqlite3 /app/data/local.db "VACUUM;"
 RUN npm run build
 
@@ -58,6 +56,7 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 3000
 ENV PORT=3000
 ENV NODE_ENV=production
+ENV DOCKER_CONTAINER=true
 ENV BODY_SIZE_LIMIT=104857600
 
 ENTRYPOINT ["/entrypoint.sh"]

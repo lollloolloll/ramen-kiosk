@@ -8,7 +8,7 @@ export default {
   out: "./drizzle",
   dialect: "sqlite",
   dbCredentials: {
-    // 루트의 local.db를 사용하도록 직접 지정합니다.
-    url: "local.db",
+    // 애플리케이션과 동일한 DB 경로를 사용하도록 수정합니다.
+    url: "./data/local.db",
   },
 } satisfies Config;

@@ -1,43 +1,31 @@
 // src/lib/db/index.ts
+// src/lib/db/index.ts
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import * as schema from "@drizzle/schema";
+import path from "path";
+import fs from "fs";
 
-// 환경변수에서 경로 가져오기 (기본값 포함)
 function getDatabasePath(): string {
-  // 프로덕션(컨테이너)에서는 네임드 볼륨 경로를 강제 고정
-  if (process.env.NODE_ENV === "production") {
-    const fixedPath = "/app/data/local.db";
-    console.log(`[DB] Production mode: forcing database path -> ${fixedPath}`);
-    return fixedPath;
+  // Docker 컨테이너 환경에서는 '/app/data' 경로를 사용
+  if (process.env.DOCKER_CONTAINER) {
+    return "/app/data/local.db";
   }
 
-  // 개발 환경에서는 환경변수 우선, 없으면 기본값 사용
-  const dbUrl = process.env.DATABASE_URL;
-  if (!dbUrl) {
-    const defaultPath = "/app/data/local.db";
-    console.log(`[DB] DATABASE_URL not set, using default: ${defaultPath}`);
-    return defaultPath;
-  }
-
-  const path = dbUrl.replace("file:", "");
-  console.log(`[DB] Using DATABASE_URL: ${path}`);
-  return path;
+  // 로컬 환경에서는 프로젝트 루트의 'data' 폴더를 사용
+  return path.resolve(process.cwd(), "data", "local.db");
 }
 
 const DATABASE_PATH = getDatabasePath();
+const DATABASE_DIR = path.dirname(DATABASE_PATH);
 
-// 개발 환경에서 파일 존재 확인 (선택사항)
-try {
-  const fs = require("fs");
-  if (!fs.existsSync(DATABASE_PATH)) {
-    console.warn(
-      `[DB] Warning: Database file does not exist: ${DATABASE_PATH}`
-    );
-  }
-} catch (e) {
-  // 파일 시스템 체크 실패해도 계속 진행
+// 데이터베이스 디렉토리가 없으면 생성
+if (!fs.existsSync(DATABASE_DIR)) {
+  console.log(`[DB] Creating database directory: ${DATABASE_DIR}`);
+  fs.mkdirSync(DATABASE_DIR, { recursive: true });
 }
+
+console.log(`[DB] Using database at: ${DATABASE_PATH}`);
 
 const sqlite = new Database(DATABASE_PATH);
 

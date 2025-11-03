@@ -8,9 +8,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  serverActions: {
-    bodySizeLimit: "100mb",
-  },
 };
 
 // PWA 설정 래핑

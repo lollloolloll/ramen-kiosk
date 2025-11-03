@@ -13,15 +13,27 @@ fi
 
 chmod -R 777 /app/data
 
-# ⭐ 마이그레이션 항상 실행 (조건 없이)
+# ⭐ SQL 파일 직접 실행
 echo "Running migrations..."
+export DATABASE_URL="file:/app/data/local.db"
+
 if [ -d /app/drizzle ]; then
   cd /app
-  export DATABASE_URL="file:/app/data/local.db"
-  npx drizzle-kit push:sqlite || echo "Migration skipped"
+  
+  # drizzle 폴더 안의 SQL 파일들 실행
+  for sql_file in /app/drizzle/*.sql; do
+    if [ -f "$sql_file" ]; then
+      echo "Applying migration: $sql_file"
+      sqlite3 "$DB_FILE" < "$sql_file" || echo "Migration $sql_file failed"
+    fi
+  done
 else
-  echo "Drizzle folder not found, skipping migration"
+  echo "Drizzle folder not found"
 fi
+
+# 테이블 확인
+echo "Tables in database:"
+sqlite3 "$DB_FILE" ".tables"
 
 echo "Starting Next.js..."
 DATABASE_URL="file:/app/data/local.db" exec node server.js

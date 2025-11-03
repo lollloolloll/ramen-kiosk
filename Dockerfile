@@ -36,6 +36,14 @@ RUN addgroup --system --gid 1001 nodejs \
 
 COPY .env.production /app/.env.production
 
+# ⭐ drizzle 관련 파일 복사 (마이그레이션용)
+COPY package.json package-lock.json* ./
+COPY drizzle.config.ts ./
+COPY --from=builder /app/drizzle ./drizzle
+
+# ⭐ node_modules 복사 (deps 스테이지에서)
+COPY --from=deps /app/node_modules ./node_modules
+
 COPY --from=builder /app/public ./public
 
 RUN mkdir .next && chown nextjs:nodejs .next

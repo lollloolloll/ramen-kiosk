@@ -1,15 +1,37 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
 // src/lib/db/index.ts
-
+import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import * as schema from "@drizzle/schema";
 
-// .env 파일에 DATABASE_URL이 설정되어 있는지 확인합니다.
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL 환경 변수가 설정되지 않았습니다.");
+// 환경변수에서 경로 가져오기 (기본값 포함)
+function getDatabasePath(): string {
+  const dbUrl = process.env.DATABASE_URL;
+
+  if (!dbUrl) {
+    const defaultPath = "/app/data/local.db";
+    console.log(`[DB] DATABASE_URL not set, using default: ${defaultPath}`);
+    return defaultPath;
+  }
+
+  const path = dbUrl.replace("file:", "");
+  console.log(`[DB] Using DATABASE_URL: ${path}`);
+  return path;
 }
 
-// .env 파일에 정의된 DATABASE_URL 경로로 데이터베이스에 연결합니다.
-const sqlite = new Database(process.env.DATABASE_URL);
+const DATABASE_PATH = getDatabasePath();
+
+// 개발 환경에서 파일 존재 확인 (선택사항)
+try {
+  const fs = require("fs");
+  if (!fs.existsSync(DATABASE_PATH)) {
+    console.warn(
+      `[DB] Warning: Database file does not exist: ${DATABASE_PATH}`
+    );
+  }
+} catch (e) {
+  // 파일 시스템 체크 실패해도 계속 진행
+}
+
+const sqlite = new Database(DATABASE_PATH);
 
 export const db = drizzle(sqlite, { schema });

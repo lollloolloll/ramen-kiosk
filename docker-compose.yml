@@ -3,17 +3,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    user: "0:0" 
+    user: "0:0"
     ports:
       - "3000:3000"
     volumes:
       - app-data:/app/data
       - ./uploads:/app/public/uploads
     environment:
-      - DATABASE_URL=file:/app/data/local.db  # ⭐ 명시
+      - DATABASE_URL=file:/app/data/local.db
       - NODE_ENV=production
       - NEXTAUTH_URL=http://localhost:3000
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+    env_file:
+      - .env
     restart: always
 
 volumes:

@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1761208663329,
-      "tag": "0000_nervous_kingpin",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1761295626532,
-      "tag": "0001_silent_spacker_dave",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1761531180561,
-      "tag": "0002_spotty_triathlon",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1761633675412,
-      "tag": "0003_flat_salo",
+      "when": 1762165415194,
+      "tag": "0000_neat_daimon_hellstrom",
       "breakpoints": true
     }
   ]

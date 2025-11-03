@@ -1,103 +1,88 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-[oklch(0.75_0.12_165/0.15)] via-[oklch(0.7_0.18_350/0.15)] to-[oklch(0.7_0.18_350/0.15)]">
+      {/* 배경 장식 요소 */}
+      <div
+        className="absolute top-10 left-10 text-6xl opacity-20 animate-bounce"
+        style={{ animationDuration: "3s" }}
+      >
+        🎮
+      </div>
+      <div
+        className="absolute bottom-20 right-16 text-5xl opacity-20 animate-bounce"
+        style={{ animationDuration: "4s", animationDelay: "0.5s" }}
+      >
+        🎯
+      </div>
+      <div
+        className="absolute top-1/3 right-10 text-4xl opacity-20 animate-bounce"
+        style={{ animationDuration: "3.5s", animationDelay: "1s" }}
+      >
+        ⚽
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {/* 관리자 페이지 링크 - 우측 상단 */}
+      <Link
+        href="/admin"
+        className="absolute top-6 right-6 text-sm text-muted-foreground hover:text-[oklch(0.75_0.12_165)] transition-colors"
+      >
+        관리자
+      </Link>
+
+      {/* 메인 컨텐츠 */}
+      <div className="relative z-10 text-center space-y-12 p-8">
+        {/* 로고/제목 영역 */}
+        <div className="space-y-4">
+          <div
+            className="text-8xl mb-6 animate-bounce"
+            style={{ animationDuration: "2s" }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            🍜
+          </div>
+          <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight">
+            학교 끝나고 뭐할래?
+            <br />
+            <span className="text-[oklch(0.75_0.12_165)]">
+              <span style={{ color: "oklch(0.75 0.25 350)" }}>쌍청문</span>에서
+              놀자! 🎉
+            </span>
+          </h1>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        {/* 메인 버튼 */}
+        <div className="pt-8">
+          <Button
+            asChild
+            size="lg"
+            className="h-20 px-16 text-2xl font-bold bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-110 shadow-2xl rounded-2xl"
+          >
+            <Link href="/kiosk">😎 놀 준비 완료!</Link>
+          </Button>
+        </div>
+
+        {/* 안내 텍스트 */}
+        <p className="text-sm text-muted-foreground animate-pulse">
+          화면을 터치하여 시작하세요
+        </p>
+      </div>
+
+      {/* 하단 장식 */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+        <div className="flex gap-2">
+          <div className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)] animate-pulse" />
+          <div
+            className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse"
+            style={{ animationDelay: "0.3s" }}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+          <div
+            className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)] animate-pulse"
+            style={{ animationDelay: "0.6s" }}
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+      </div>
     </div>
   );
 }

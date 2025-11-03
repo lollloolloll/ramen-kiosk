@@ -47,7 +47,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Windows CRLF 라인엔딩 방지 및 실행권한 부여
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # ⭐ uploads 폴더 권한 미리 설정
 RUN chown -R nextjs:nodejs /app/public/uploads

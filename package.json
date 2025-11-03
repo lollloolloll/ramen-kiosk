@@ -9,7 +9,8 @@
     "drizzle:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:reset": "rm -f ./data/local.db && drizzle-kit push"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

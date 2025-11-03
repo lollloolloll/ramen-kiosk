@@ -9,7 +9,7 @@ const nextConfig = {
     unoptimized: true,
   },
   serverActions: {
-    bodySizeLimit: "10mb",
+    bodySizeLimit: "100mb",
   },
 };
 

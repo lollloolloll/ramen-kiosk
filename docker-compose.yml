@@ -8,7 +8,7 @@ services:
       - "3000:3000"
     volumes:
       - app-data:/app/data
-      - ./uploads:/app/public/uploads
+      - uploads-data:/app/public/uploads # 이름있는 볼륨 사용
     environment:
       - NODE_ENV=production
       - NEXTAUTH_URL=http://localhost:3000
@@ -19,3 +19,4 @@ services:
 
 volumes:
   app-data:
+  uploads-data: # uploads용 볼륨 추가

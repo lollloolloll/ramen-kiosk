@@ -8,6 +8,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/uploads/:path*",
+        destination: "/uploads/:path*",
+      },
+    ];
+  },
 };
 
 // PWA 설정 래핑

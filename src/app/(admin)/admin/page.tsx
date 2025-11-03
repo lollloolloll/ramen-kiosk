@@ -1,5 +1,7 @@
 // src/app/(admin)/admin/page.tsx
 
+export const dynamic = 'force-dynamic';
+
 import { db } from "@/lib/db";
 import { getRentalAnalytics, getAllItemNames } from "@/lib/actions/rental";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

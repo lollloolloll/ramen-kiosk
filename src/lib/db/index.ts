@@ -5,8 +5,15 @@ import * as schema from "@drizzle/schema";
 
 // 환경변수에서 경로 가져오기 (기본값 포함)
 function getDatabasePath(): string {
-  const dbUrl = process.env.DATABASE_URL;
+  // 프로덕션(컨테이너)에서는 네임드 볼륨 경로를 강제 고정
+  if (process.env.NODE_ENV === "production") {
+    const fixedPath = "/app/data/local.db";
+    console.log(`[DB] Production mode: forcing database path -> ${fixedPath}`);
+    return fixedPath;
+  }
 
+  // 개발 환경에서는 환경변수 우선, 없으면 기본값 사용
+  const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
     const defaultPath = "/app/data/local.db";
     console.log(`[DB] DATABASE_URL not set, using default: ${defaultPath}`);

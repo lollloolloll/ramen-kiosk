@@ -4,6 +4,10 @@ set -e
 mkdir -p /app/data
 chmod -R 777 /app/data
 
+# uploads 폴더 생성 및 권한 설정 추가
+mkdir -p /app/public/uploads
+chown -R nextjs:nodejs /app/public/uploads
+
 DB_FILE="/app/data/local.db"
 
 if [ ! -f "$DB_FILE" ] || [ ! -s "$DB_FILE" ]; then
@@ -23,4 +27,4 @@ echo "Tables in database:"
 sqlite3 "$DB_FILE" ".tables"
 
 echo "Starting Next.js..."
-exec node server.js
+exec su-exec nextjs node server.js

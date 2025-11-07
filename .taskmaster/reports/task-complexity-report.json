@@ -1,61 +1,53 @@
 {
 	"meta": {
-		"generatedAt": "2025-10-24T07:51:15.015Z",
-		"tasksAnalyzed": 6,
-		"totalTasks": 15,
-		"analysisCount": 6,
+		"generatedAt": "2025-11-07T01:17:16.884Z",
+		"tasksAnalyzed": 5,
+		"totalTasks": 23,
+		"analysisCount": 5,
 		"thresholdScore": 5,
 		"projectName": "Taskmaster",
 		"usedResearch": false
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 10,
-			"taskTitle": "Docker 배포 구성 및 최종 테스트",
-			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Docker 및 PWA 구성을 위한 기술적 세부사항과 모든 사용자 흐름을 포괄하는 엔드투엔드 테스트 시나리오 및 실행 계획을 상세화하세요.",
-			"reasoning": "Docker 컨테이너화(최적화 포함), PWA 기능 구현, 그리고 모든 핵심 사용자 흐름에 대한 포괄적인 엔드투엔드 테스트 시나리오 작성 및 실행이 포함되어 있어 기술적 다양성과 광범위한 테스트 범위로 인해 복잡성이 높습니다. 특히 엔드투엔드 테스트는 다른 모든 기능 개발의 완료에 의존하며 상당한 시간이 소요될 수 있습니다. 일부 하위 작업이 완료되었더라도 남은 작업의 범위와 중요성이 큽니다."
+			"taskId": 20,
+			"taskTitle": "아이템 숨김 기능 추가",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Drizzle 스키마에 `is_hidden` 컬럼을 추가하고 마이그레이션을 실행합니다. 관리자 아이템 관리 UI에 숨김/표시 전환 버튼을 추가하고, 해당 상태를 업데이트하는 서버 액션을 구현합니다. 키오스크 페이지에서 아이템을 조회할 때 `is_hidden`이 `true`인 아이템을 제외하도록 쿼리를 수정합니다.",
+			"reasoning": "기존 Drizzle 스키마에 컬럼을 추가하고 마이그레이션을 실행하는 것은 간단합니다. 관리자 페이지는 기존 아이템 관리 UI에 버튼 하나를 추가하고 서버 액션을 통해 상태를 업데이트하는 방식으로 구현할 수 있습니다. 키오스크 페이지의 쿼리 수정은 `WHERE` 절에 간단한 조건만 추가하면 되므로 복잡도가 낮습니다. 기존에 잘 구축된 Drizzle, Next.js 서버 액션, UI 컴포넌트 환경이 있어 빠르게 구현할 수 있습니다."
 		},
 		{
-			"taskId": 11,
-			"taskTitle": "사용자 스키마 업데이트 및 신규 등록 필드 적용",
+			"taskId": 21,
+			"taskTitle": "성별별 대여 통계 기능 추가",
 			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "사용자 스키마 변경을 위한 Drizzle 마이그레이션, 새로운 필드를 포함하도록 회원가입 UI 수정, 그리고 해당 서버 액션 로직 업데이트에 대한 세부 계획을 수립하세요.",
-			"reasoning": "데이터베이스 스키마 변경, 기존 UI 및 서버 액션 로직 수정이 동시에 발생합니다. Drizzle 마이그레이션 자체는 간단하지만, UI와 백엔드 로직에 새로운 필드를 통합하고 `pin` 필드를 제거하는 작업은 기존 코드베이스에 대한 이해와 수정이 필요하여 중간 정도의 복잡성을 가집니다."
-		},
-		{
-			"taskId": 12,
-			"taskTitle": "키오스크 사용자 식별 방식 변경 및 신규 사용자 등록 플로우 구현",
-			"complexityScore": 8,
 			"recommendedSubtasks": 4,
-			"expansionPrompt": "기존 PIN 기반 사용자 식별 로직을 이름/생년월일 기반으로 변경하고, 키오스크 내 신규 사용자 등록 UI 및 서버 액션을 구현하며, 이 두 플로우를 라면 대여 과정에 매끄럽게 통합하는 계획을 상세화하세요.",
-			"reasoning": "키오스크의 핵심 사용자 식별 방식을 변경하고, 기존 회원가입과는 다른 간소화된 신규 회원가입 플로우를 키오스크 내에 통합해야 합니다. 이는 UI/UX 변경, 백엔드 로직 수정, 그리고 새로운 데이터 필드(Task 11에서 정의)와의 연동을 포함하여 상당한 복잡성을 가집니다. 기존 대여 프로세스의 핵심 로직을 건드리는 작업입니다."
+			"expansionPrompt": "`generalUsers` 테이블에 `gender` 컬럼이 없다면 추가하고 마이그레이션을 실행합니다. `rentalRecords`와 `generalUsers` 테이블을 조인하여 성별 대여 통계를 집계하는 Drizzle 쿼리 및 서버 액션을 구현합니다. 관리자 대시보드의 `RentalAnalyticsClient.tsx`에 해당 통계를 시각적으로 표시하는 UI 컴포넌트(차트 또는 테이블)를 추가하고, 기존 필터링 기능과 연동합니다.",
+			"reasoning": "성별 컬럼 추가 및 마이그레이션은 비교적 간단합니다. 하지만 `rentalRecords`와 `generalUsers` 테이블을 조인하고 성별로 그룹화하여 집계하는 Drizzle 쿼리 로직은 중급 수준의 복잡도를 가집니다. 이를 위한 서버 액션을 구현하고, 관리자 대시보드에 통계를 시각화하는 UI 컴포넌트를 추가하는 것도 고려해야 할 사항입니다. 차트 라이브러리 선택 및 통합에 따라 추가적인 노력이 필요할 수 있습니다."
 		},
 		{
-			"taskId": 13,
-			"taskTitle": "라면 대여 완료 확인 메시지 추가",
-			"complexityScore": 2,
-			"recommendedSubtasks": 1,
-			"expansionPrompt": "라면 대여 성공 시 토스트 또는 메시지 컴포넌트를 사용하여 사용자에게 완료 메시지를 표시하는 방법을 명확히 하세요.",
-			"reasoning": "기존 라면 대여 완료 로직에 간단한 UI 메시지(토스트)만 추가하면 되는 작업으로, 이미 shadcn/ui가 구성되어 있다면 매우 낮은 복잡도를 가집니다."
-		},
-		{
-			"taskId": 14,
-			"taskTitle": "관리자 페이지에 대여 기록 Excel 내보내기 기능 구현",
-			"complexityScore": 7,
+			"taskId": 22,
+			"taskTitle": "아이템/사용자 삭제 시 대여 기록 보존",
+			"complexityScore": 5,
 			"recommendedSubtasks": 3,
-			"expansionPrompt": "관리자 대여 기록 페이지에 Excel 내보내기 버튼 추가, 필터링된 데이터를 기반으로 Excel 파일을 생성하는 서버 액션 구현, 그리고 파일 다운로드 처리 방안을 상세화하세요.",
-			"reasoning": "관리자 페이지에 UI 요소를 추가하고, 현재 필터링된 대여 기록 데이터를 서버에서 조회한 후 Excel 파일로 변환하여 클라이언트에 다운로드하는 기능을 구현해야 합니다. 서버 측에서 파일 생성 라이브러리를 사용해야 하며, 필터링 로직을 재사용해야 하므로 중간에서 높은 수준의 복잡도를 가집니다."
+			"expansionPrompt": "Drizzle 스키마에서 `rentalRecords` 테이블의 `itemId`와 `userId` 컬럼을 `nullable`로 변경하고, 외래 키 제약조건을 `ON DELETE CASCADE`에서 `ON DELETE SET NULL`로 수정합니다. 마이그레이션을 실행하여 데이터베이스에 반영하고, 기존 아이템/사용자 삭제 로직 및 관련 UI에서 `NULL` 값 처리가 필요한지 검토합니다. 'soft delete' 도입은 별도의 논의와 태스크로 분리하여 진행합니다.",
+			"reasoning": "Drizzle 스키마에서 외래 키 제약 조건을 변경하고 컬럼을 `nullable`로 만드는 것은 비교적 명확한 작업입니다. 마이그레이션 시 기존 데이터 무결성을 유지하는 데 주의가 필요하지만, Drizzle의 기능을 활용하면 어렵지 않습니다. 'soft delete'를 포함할 경우 복잡도가 크게 증가하지만, 현재는 외래 키 변경에 중점을 둡니다. 변경 후 UI 또는 다른 비즈니스 로직에서 `NULL` 값에 대한 추가적인 처리가 필요한지 검토하는 것이 중요합니다."
 		},
 		{
-			"taskId": 15,
-			"taskTitle": "관리자 대시보드 통계 기능 개선",
+			"taskId": 23,
+			"taskTitle": "특정 품목 시간제 대여 및 대기자 관리 기능 구현",
 			"complexityScore": 9,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "일별/주별/월별, 학교별, 성별 라면 소비 통계를 위한 데이터 집계 서버 액션 및 데이터베이스 쿼리를 설계하고, 이를 시각화할 수 있는 관리자 대시보드 UI(탭, 필터, 차트 포함) 구현 계획을 상세화하세요.",
-			"reasoning": "다양한 기준으로 데이터를 집계하는 복잡한 데이터베이스 쿼리/서버 액션 구현, 그리고 이 데이터를 시각적으로 표현하기 위한 새로운 UI 컴포넌트(탭, 필터, 차트 라이브러리 연동) 개발이 필요합니다. 이는 데이터 처리, UI/UX 디자인, 프론트엔드/백엔드 개발 전반에 걸쳐 높은 기술적 복잡도를 가집니다."
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "`items` 테이블에 `isTimeLimited`, `rentalTimeMinutes`, `maxRentalsPerUser` 컬럼을 추가하고, `waiting_queue` 테이블을 신규 생성하는 Drizzle 스키마 업데이트 및 마이그레이션을 실행합니다. 관리자 페이지의 아이템 관리 UI에 새로운 설정 필드를 추가합니다. 키오스크 대여 로직을 전면 수정하여 시간제 대여, 사용자별 횟수 제한, 대기자 명단 추가/관리 기능을 구현합니다. 반납 시 대기자에게 다음 기회를 부여하는 로직과 만료된 대여를 처리하는 메커니즘을 구축합니다.",
+			"reasoning": "이 태스크는 새로운 테이블 생성, 기존 테이블에 여러 컬럼 추가 등 광범위한 스키마 변경을 포함합니다. 또한 시간제 대여, 대여 횟수 제한, 대기자 명단 관리와 같은 복잡한 비즈니스 로직이 기존 대여 로직에 통합되어야 합니다. 이는 데이터 모델, 서버 액션, 그리고 키오스크와 관리자 UI 모두에 걸쳐 상당한 수정이 필요합니다. 동시성 문제, 대기열 순서, 대여 만료 처리 등 고려해야 할 시스템 설계 측면의 복잡성이 매우 높습니다."
+		},
+		{
+			"taskId": 24,
+			"taskTitle": "사용자 등록 시 개인정보 동의 파일 업로드 기능 추가",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Drizzle 스키마에 `generalUsers` 테이블에 `consentFilePath` 컬럼을 추가하고 마이그레이션을 실행합니다. 관리자 페이지의 사용자 추가 폼(`AddUserForm.tsx`)에 파일 업로드 필드를 추가합니다. 서버 액션에서 `multipart/form-data`를 파싱하고, 업로드된 파일의 유효성을 검사(확장자, 크기 등)한 뒤 서버의 지정된 경로에 안전하게 저장하는 로직을 구현합니다. 파일 경로를 사용자 정보와 함께 데이터베이스에 저장하도록 사용자 생성 서버 액션을 수정합니다.",
+			"reasoning": "단순한 데이터베이스 컬럼 추가와 UI 필드 추가는 간단하지만, 파일 업로드 기능은 서버 측에서 `multipart/form-data` 처리, 파일 시스템 접근, 파일 유효성 검사 및 보안(악성 파일 업로드 방지) 등 추가적인 복잡성을 수반합니다. Next.js 서버 액션 환경에서 파일 업로드를 안전하고 효율적으로 구현하는 것은 중급 이상의 기술 지식을 요구하며, 서버 리소스 관리 및 잠재적인 보안 취약점을 고려해야 합니다."
 		}
 	]
 }

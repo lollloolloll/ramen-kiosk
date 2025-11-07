@@ -52,6 +52,11 @@ type Step = "identification" | "register" | "success";
 const identificationSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요."),
   phoneNumber: z.string().min(1, "휴대폰 번호를 입력해주세요."),
+  maleCount: z.number().optional().default(0),
+  femaleCount: z.number().optional().default(0),
+}).refine((data) => data.maleCount + data.femaleCount > 0, {
+  message: "대여 인원은 최소 1명 이상이어야 합니다.",
+  path: ["maleCount", "femaleCount"], // 에러 메시지를 maleCount와 femaleCount 필드 모두에 연결
 });
 
 type IdentificationFormValues = z.infer<typeof identificationSchema>;
@@ -75,7 +80,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [peopleCount, setPeopleCount] = useState("1");
+  // const [peopleCount, setPeopleCount] = useState("1"); // peopleCount 제거
   const [countdown, setCountdown] = useState(5);
 
   // 생년월일 상태
@@ -92,7 +97,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
 
   const identificationForm = useForm<IdentificationFormValues>({
     resolver: zodResolver(identificationSchema),
-    defaultValues: { name: "", phoneNumber: "" },
+    defaultValues: { name: "", phoneNumber: "", maleCount: 0, femaleCount: 0 },
   });
 
   const registerForm = useForm<GeneralUserFormValues>({
@@ -176,8 +181,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         values.phoneNumber
       );
       if (user) {
-        const count = Math.max(1, parseInt(peopleCount, 10) || 1);
-        await handleRental(user.id, count);
+        // const count = Math.max(1, parseInt(peopleCount, 10) || 1); // peopleCount 제거
+        await handleRental(user.id, values.maleCount, values.femaleCount); // maleCount, femaleCount 전달
       } else {
         toast.info("등록된 사용자가 아닙니다. 신규 등록을 진행해주세요.");
         setStep("register");
@@ -199,8 +204,9 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         throw new Error(result.error);
       }
       if (result.user) {
-        const count = Math.max(1, parseInt(peopleCount, 10) || 1);
-        await handleRental(result.user.id, count);
+        // 신규 등록 시 대여 인원은 identificationForm에서 입력받은 값을 사용합니다.
+        const { maleCount, femaleCount } = identificationForm.getValues();
+        await handleRental(result.user.id, maleCount, femaleCount);
       }
     } catch (error) {
       toast.error(
@@ -211,14 +217,14 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
   };
 
-  const handleRental = async (userId: number, peopleCount: number) => {
+  const handleRental = async (userId: number, maleCount: number, femaleCount: number) => {
     if (!item) {
       toast.error("아이템 정보가 없습니다.");
       return;
     }
     setIsSubmitting(true);
     try {
-      const result = await rentItem(userId, item.id, peopleCount);
+      const result = await rentItem(userId, item.id, maleCount, femaleCount); // maleCount, femaleCount 전달
       if (result.error) {
         throw new Error(result.error);
       }
@@ -253,7 +259,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     setSchoolLevel("");
     setSchoolName("");
     setYearSelectOpen(false);
-    setPeopleCount("1");
+    // setPeopleCount("1"); // peopleCount 제거
   };
 
   const years = useMemo(() => {
@@ -335,23 +341,62 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                   </FormItem>
                 )}
               />
-              <FormItem>
-                <FormLabel>대여 인원</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={peopleCount}
-                    onChange={(e) => setPeopleCount(e.target.value)}
-                    onBlur={(e) => {
-                      const num = parseInt(e.target.value, 10);
-                      if (isNaN(num) || num < 1) {
-                        setPeopleCount("1");
-                      }
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
+              <div className="flex gap-4">
+                <FormField
+                  control={identificationForm.control}
+                  name="maleCount"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>남자 인원</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(parseInt(e.target.value, 10) || 0);
+                          }}
+                          onBlur={(e) => {
+                            const num = parseInt(e.target.value, 10);
+                            if (isNaN(num) || num < 0) {
+                              field.onChange(0);
+                            }
+                            identificationForm.trigger("maleCount"); // blur 시 유효성 검사 트리거
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={identificationForm.control}
+                  name="femaleCount"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>여자 인원</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(parseInt(e.target.value, 10) || 0);
+                          }}
+                          onBlur={(e) => {
+                            const num = parseInt(e.target.value, 10);
+                            if (isNaN(num) || num < 0) {
+                              field.onChange(0);
+                            }
+                            identificationForm.trigger("femaleCount"); // blur 시 유효성 검사 트리거
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <DialogFooter className="gap-2 sm:justify-between">
                 <Button
                   type="button"
@@ -372,10 +417,10 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                     취소
                   </Button>
                   <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
-                  >
+                  type="submit"
+                  disabled={isSubmitting || !identificationForm.formState.isValid}
+                  className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                >
                     {isSubmitting ? "확인 중..." : "대여하기"}
                   </Button>
                 </div>

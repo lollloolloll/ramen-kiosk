@@ -14,6 +14,9 @@ import { MoreHorizontal } from "lucide-react";
 import { items } from "@drizzle/schema";
 import { EditItemForm } from "./EditItemForm";
 import { DeleteItemDialog } from "./DeleteItemDialog";
+import { Switch } from "@/components/ui/switch";
+import { toggleItemVisibility } from "@/lib/actions/item";
+import { toast } from "sonner";
 
 export type Item = typeof items.$inferSelect;
 
@@ -44,6 +47,26 @@ export const columns: ColumnDef<Item>[] = [
       ) : (
         <span className="text-muted-foreground">이미지 없음</span>
       );
+    },
+  },
+  {
+    accessorKey: "isHidden",
+    header: "Hidden",
+    cell: ({ row }) => {
+      const item = row.original;
+      const isChecked = !item.isHidden; // isHidden이 true면 체크 해제 (숨김), false면 체크 (표시)
+
+      const handleToggle = async (newCheckedState: boolean) => {
+        const newIsHidden = !newCheckedState; // Switch의 checked 상태와 isHidden은 반대
+        const result = await toggleItemVisibility(item.id, newIsHidden);
+        if (result.success) {
+          toast.success("아이템 가시성이 업데이트되었습니다.");
+        } else {
+          toast.error(result.error || "아이템 가시성 업데이트에 실패했습니다.");
+        }
+      };
+
+      return <Switch checked={isChecked} onCheckedChange={handleToggle} />;
     },
   },
   {

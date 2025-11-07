@@ -21,7 +21,8 @@ import { AnalyticsData } from "@/lib/types/analytics";
 export async function rentItem(
   userId: number,
   itemId: number,
-  peopleCount: number
+  maleCount: number,
+  femaleCount: number
 ) {
   try {
     // 1. 트랜잭션을 사용하지 않고 직접 db 객체를 사용합니다.
@@ -43,7 +44,8 @@ export async function rentItem(
       // 2. rentalDate를 초 단위 UNIX 타임스탬프로 직접 설정합니다.
       // Date.now()는 밀리초이므로 1000으로 나눠 초 단위로 만듭니다.
       rentalDate: Math.floor(Date.now() / 1000),
-      peopleCount: peopleCount,
+      maleCount: maleCount,
+      femaleCount: femaleCount,
     });
 
     revalidatePath("/");
@@ -128,7 +130,8 @@ export async function getRentalRecords(
         userName: generalUsers.name,
         itemName: items.name,
         itemCategory: items.category,
-        peopleCount: rentalRecords.peopleCount,
+        maleCount: rentalRecords.maleCount,
+        femaleCount: rentalRecords.femaleCount,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
@@ -146,7 +149,8 @@ export async function getRentalRecords(
         rentalDate: rentalRecords.rentalDate,
         username: generalUsers.name,
         itemName: items.name,
-        peopleCount: rentalRecords.peopleCount,
+        maleCount: rentalRecords.maleCount,
+        femaleCount: rentalRecords.femaleCount,
       };
       const sortColumn =
         sortColumnMap[sort as keyof typeof sortColumnMap] ||
@@ -215,7 +219,8 @@ export async function getRentalRecordsByUserId(
       rentalDate: rentalRecords.rentalDate,
       username: generalUsers.name,
       itemName: items.name,
-      peopleCount: rentalRecords.peopleCount,
+      maleCount: rentalRecords.maleCount,
+      femaleCount: rentalRecords.femaleCount,
     };
     const sortColumn =
       sortColumnMap[sort as keyof typeof sortColumnMap] ||
@@ -229,7 +234,8 @@ export async function getRentalRecordsByUserId(
         userName: generalUsers.name,
         itemName: items.name,
         itemCategory: items.category,
-        peopleCount: rentalRecords.peopleCount,
+        maleCount: rentalRecords.maleCount,
+        femaleCount: rentalRecords.femaleCount,
         imageUrl: items.imageUrl,
       })
       .from(rentalRecords)
@@ -321,7 +327,7 @@ export async function getRentalAnalytics(filters: {
         itemName: items.name,
         itemId: items.id,
         itemCategory: items.category,
-        peopleCount: rentalRecords.peopleCount,
+        peopleCount: sql<number>`${rentalRecords.maleCount} + ${rentalRecords.femaleCount}`,
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
@@ -333,7 +339,7 @@ export async function getRentalAnalytics(filters: {
     records = records.map((r) => ({
       ...r,
       school: r.school ?? "기타",
-      peopleCount: r.peopleCount ?? 1,
+      peopleCount: r.peopleCount || 0, // maleCount + femaleCount의 합이므로 0이 될 수 있음
     }));
 
     // 연령대 필터가 있으면 JS에서 추가 필터링
@@ -517,7 +523,7 @@ export async function getRentalAnalytics(filters: {
       };
     } = {};
     records.forEach((r) => {
-      const p = r.peopleCount || 1;
+      const p = r.peopleCount || 0; // maleCount + femaleCount의 합이므로 0이 될 수 있음
       if (!peopleItemStats[p]) peopleItemStats[p] = {};
       if (r.itemId && typeof r.itemId === "number" && r.itemName) {
         if (!peopleItemStats[p][r.itemId]) {
@@ -600,6 +606,26 @@ export async function getRentalAnalytics(filters: {
   }
 }
 
+export async function getGenderRentalStatistics() {
+  try {
+    const genderStats = await db
+      .select({
+        gender: generalUsers.gender,
+        maleCount: sql<number>`sum(${rentalRecords.maleCount})`,
+        femaleCount: sql<number>`sum(${rentalRecords.femaleCount})`,
+        totalRentals: sql<number>`count(${rentalRecords.id})`,
+      })
+      .from(rentalRecords)
+      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
+      .groupBy(generalUsers.gender);
+
+    return { success: true, data: genderStats };
+  } catch (error) {
+    console.error("Error fetching gender rental statistics:", error);
+    return { error: "성별 대여 통계를 불러오는 데 실패했습니다." };
+  }
+}
+
 export async function exportRentalRecordsToExcel(
   filters: {
     username?: string;
@@ -629,7 +655,8 @@ export async function exportRentalRecordsToExcel(
       { header: "사용자 이름", key: "userName", width: 15 },
       { header: "아이템 이름", key: "itemName", width: 20 },
       { header: "아이템 카테고리", key: "itemCategory", width: 15 },
-      { header: "인원수", key: "peopleCount", width: 10 },
+      { header: "남자 인원", key: "maleCount", width: 10 },
+      { header: "여자 인원", key: "femaleCount", width: 10 },
     ];
 
     // 데이터 추가
@@ -640,7 +667,8 @@ export async function exportRentalRecordsToExcel(
         userName: record.userName,
         itemName: record.itemName,
         itemCategory: record.itemCategory,
-        peopleCount: record.peopleCount,
+        maleCount: record.maleCount,
+        femaleCount: record.femaleCount,
       });
     });
 

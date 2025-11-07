@@ -9,7 +9,7 @@ import { items } from "@drizzle/schema";
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
 
 export async function getItems() {
-  const data = await db.select().from(items);
+  const data = await db.select().from(items).where(eq(items.isHidden, false));
   return data;
 }
 
@@ -143,5 +143,17 @@ export async function getDistinctItemNames() {
     return { success: true, data: itemNames.map((c) => c.name) };
   } catch (error) {
     return { error: "아이템 이름을 불러오는 데 실패했습니다." };
+  }
+}
+
+export async function toggleItemVisibility(id: number, isHidden: boolean) {
+  try {
+    await db.update(items).set({ isHidden }).where(eq(items.id, id));
+    revalidatePath("/admin/items");
+    revalidatePath("/kiosk"); // 키오스크 페이지도 업데이트
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to toggle item visibility:", error);
+    return { error: "아이템 가시성 업데이트에 실패했습니다." };
   }
 }

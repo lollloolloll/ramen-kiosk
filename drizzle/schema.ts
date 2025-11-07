@@ -13,10 +13,9 @@ export const items = sqliteTable("items", {
   name: text().notNull(),
   category: text().notNull(),
   imageUrl: text("image_url"),
-  // Task 20: 아이템 숨김 기능
   isHidden: integer("is_hidden", { mode: "boolean" }).default(false).notNull(),
 
-  // Task 23: 시간제 대여 관련 (닌텐도 같은 수요가 높은 물품)
+  // 시간제 대여 관련 (닌텐도 같은 수요가 높은 물품)
   isTimeLimited: integer("is_time_limited", { mode: "boolean" })
     .default(false)
     .notNull(),
@@ -41,12 +40,10 @@ export const generalUsers = sqliteTable(
     id: integer().primaryKey({ autoIncrement: true }).notNull(),
     name: text().notNull(),
     phoneNumber: text("phone_number").notNull(),
-    // Task 21: 성별 컬럼
     gender: text().notNull(),
     birthDate: text("birth_date"),
     school: text(),
     personalInfoConsent: integer("personal_info_consent", { mode: "boolean" }),
-    // Task 24: 개인정보 동의서 파일 경로 (addUserForm에서 업로드되어 저장됨)
     consentFilePath: text("consent_file_path"),
   },
   (table) => [
@@ -57,7 +54,7 @@ export const generalUsers = sqliteTable(
 export const rentalRecords = sqliteTable("rental_records", {
   id: integer().primaryKey({ autoIncrement: true }).notNull(),
 
-  // Task 22: 삭제 시 대여 기록 보존
+  //삭제 시 대여 기록 보존
   // set null로 변경하되, 사용자/아이템 정보는 별도로 저장
   userId: integer("user_id").references(() => generalUsers.id, {
     onDelete: "set null",
@@ -99,7 +96,7 @@ export const rentalRecords = sqliteTable("rental_records", {
     .notNull(),
 });
 
-// Task 23: 대기자 명단 테이블
+// 대기자 명단 테이블
 // 닌텐도 같은 인기 있는 시간제 대여 아이템 전용 (사용자 경험 개선)
 // 30분 대기 시스템으로 공평한 이용 기회 제공
 export const waitingQueue = sqliteTable("waiting_queue", {

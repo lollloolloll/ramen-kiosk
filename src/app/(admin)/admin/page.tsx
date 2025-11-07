@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { db } from "@/lib/db";
-import { getRentalAnalytics, getAllItemNames } from "@/lib/actions/rental";
+import { getRentalAnalytics, getAllItemNames, getAvailableRentalYears } from "@/lib/actions/rental";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RentalAnalyticsClient } from "./RentalAnalyticsClient";
 import { items, rentalRecords } from "@drizzle/schema";
@@ -21,6 +21,9 @@ export default async function AdminDashboardPage() {
   
   const categoryResult = await db.selectDistinct({ category: items.category }).from(items);
   const categories = categoryResult.map(c => c.category).filter(Boolean);
+
+  const { success: yearsSuccess, data: availableYearsData } = await getAvailableRentalYears();
+  const availableYears = yearsSuccess && availableYearsData ? availableYearsData : [];
 
   const allItems = await db.query.items.findMany();
   const allUsers = await db.query.generalUsers.findMany();
@@ -64,7 +67,11 @@ export default async function AdminDashboardPage() {
       {/* Analytics Section */}
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">대여 데이터 분석</h2>
-        <RentalAnalyticsClient initialData={initialData} categories={categories} />
+        <RentalAnalyticsClient
+          initialData={initialData}
+          categories={categories}
+          availableYears={availableYears} // availableYears prop 전달
+        />
       </div>
     </div>
   );

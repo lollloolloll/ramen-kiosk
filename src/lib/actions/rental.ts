@@ -63,6 +63,39 @@ export async function rentItem(
     };
   }
 }
+// src/lib/actions/rental.ts
+export async function getAvailableRentalYears() {
+  try {
+    // 1. DB에서는 날짜 계산 없이 raw 타임스탬프 값만 모두 가져옵니다.
+    const allDatesResult = await db
+      .selectDistinct({ rentalDate: rentalRecords.rentalDate })
+      .from(rentalRecords);
+
+    if (!allDatesResult) {
+      return { success: true, data: [] };
+    }
+
+    // 2. JavaScript의 Date 객체를 사용하여 연도를 계산합니다.
+    //    Set을 사용하여 중복을 자동으로 제거합니다.
+    const yearsSet = new Set<number>();
+    allDatesResult.forEach((record) => {
+      if (record.rentalDate) {
+        const year = new Date(record.rentalDate * 1000).getUTCFullYear();
+        if (!isNaN(year)) {
+          yearsSet.add(year);
+        }
+      }
+    });
+
+    // 3. Set을 배열로 변환하고 내림차순으로 정렬합니다.
+    const sortedYears = Array.from(yearsSet).sort((a, b) => b - a);
+
+    return { success: true, data: sortedYears };
+  } catch (error) {
+    console.error("Error fetching available rental years:", error);
+    return { error: "사용 가능한 대여 연도를 불러오는 데 실패했습니다." };
+  }
+}
 
 export async function getAllItemNames() {
   try {
@@ -287,11 +320,14 @@ export async function getRentalAnalytics(filters: {
   const { year, month, ageGroup, category } = filters;
 
   try {
-    // 1. 동적 WHERE 조건 생성
     const whereConditions = [];
 
-    // 날짜 필터
     const yearNum = parseInt(year);
+    if (isNaN(yearNum)) {
+      // 유효하지 않은 연도 입력 시 빈 데이터 반환 또는 에러 처리
+      throw new Error(`Invalid year provided: ${year}`);
+    }
+
     const startMonth = month === "all" ? 0 : parseInt(month) - 1;
     const startDate = new Date(Date.UTC(yearNum, startMonth, 1));
     const endDate = new Date(startDate);
@@ -300,23 +336,19 @@ export async function getRentalAnalytics(filters: {
     } else {
       endDate.setUTCMonth(startMonth + 1);
     }
-    endDate.setUTCDate(0); // 해당 월의 마지막 날로 설정
+    endDate.setUTCDate(0);
     endDate.setUTCHours(23, 59, 59, 999);
 
-    whereConditions.push(
-      gte(rentalRecords.rentalDate, Math.floor(startDate.getTime() / 1000))
-    );
-    whereConditions.push(
-      lte(rentalRecords.rentalDate, Math.floor(endDate.getTime() / 1000))
-    );
+    const startTimestamp = Math.floor(startDate.getTime() / 1000);
+    const endTimestamp = Math.floor(endDate.getTime() / 1000);
 
-    // 카테고리 필터
+    whereConditions.push(gte(rentalRecords.rentalDate, startTimestamp));
+    whereConditions.push(lte(rentalRecords.rentalDate, endTimestamp));
+
     if (category && category !== "all") {
       whereConditions.push(eq(items.category, category));
     }
 
-    // 연령대 필터 (DB에서 직접 처리하기 복잡하므로 JS에서 필터링)
-    // 하지만 먼저 DB에서 최대한 필터링된 데이터를 가져옵니다.
     const baseQuery = db
       .select({
         rentalDate: rentalRecords.rentalDate,
@@ -335,14 +367,13 @@ export async function getRentalAnalytics(filters: {
       .where(and(...whereConditions));
 
     let records = await baseQuery;
-    // undefined/null 값 타입 안전 가공 (school, peopleCount 등의 타입 보정)
+
     records = records.map((r) => ({
       ...r,
       school: r.school ?? "기타",
-      peopleCount: r.peopleCount || 0, // maleCount + femaleCount의 합이므로 0이 될 수 있음
+      peopleCount: r.peopleCount || 0,
     }));
 
-    // 연령대 필터가 있으면 JS에서 추가 필터링
     if (ageGroup && ageGroup !== "all") {
       records = records.filter((r) => {
         if (!r.birthDate) return false;
@@ -355,9 +386,6 @@ export async function getRentalAnalytics(filters: {
       });
     }
 
-    // 2. 데이터 분석 및 가공
-
-    // KPIs
     const totalRentals = records.length;
     const uniqueUsers = new Set(records.map((r) => r.userId)).size;
 
@@ -366,7 +394,7 @@ export async function getRentalAnalytics(filters: {
         acc[r.itemId] = acc[r.itemId] || {
           id: r.itemId,
           name: r.itemName,
-          category: r.itemCategory || "Unknown", // Add category here
+          category: r.itemCategory || "Unknown",
           rentals: 0,
         };
         acc[r.itemId].rentals++;
@@ -393,7 +421,6 @@ export async function getRentalAnalytics(filters: {
       Object.values(categoryCounts).sort((a, b) => b.rentals - a.rentals)[0] ||
       null;
 
-    // Age Group Stats
     const ageGroupStats = {
       child: { count: 0, uniqueUsers: new Set<number | null>() },
       teen: { count: 0, uniqueUsers: new Set<number | null>() },
@@ -417,7 +444,6 @@ export async function getRentalAnalytics(filters: {
       }
     });
 
-    // Category Stats
     const categoryStats = Object.entries(categoryCounts)
       .map(([name, data]) => {
         const itemsInCategory = records.filter((r) => r.itemCategory === name);
@@ -440,12 +466,11 @@ export async function getRentalAnalytics(filters: {
           totalRentals: data.rentals,
           percentage:
             totalRentals > 0 ? (data.rentals / totalRentals) * 100 : 0,
-          topItems: topItemsInCategory.slice(0, 5), // Top 5 items in this category
+          topItems: topItemsInCategory.slice(0, 5),
         };
       })
       .sort((a, b) => b.totalRentals - a.totalRentals);
 
-    // Item Stats
     const allItemCounts = Object.values(itemCounts).sort(
       (a, b) => b.rentals - a.rentals
     );
@@ -454,7 +479,6 @@ export async function getRentalAnalytics(filters: {
       .filter((item) => item.rentals <= 5)
       .reverse();
 
-    // Time Pattern Stats
     const dayOfWeekStats = Array(7)
       .fill(0)
       .map((_, i) => ({
@@ -470,7 +494,6 @@ export async function getRentalAnalytics(filters: {
       hourStats[date.getHours()].count++;
     });
 
-    // Gender Stats
     const genderCounts = { male: 0, female: 0, other: 0 };
     records.forEach((r) => {
       if (r.gender) {
@@ -487,7 +510,6 @@ export async function getRentalAnalytics(filters: {
       { name: "기타", value: genderCounts.other },
     ].filter((g) => g.value > 0);
 
-    // --- 학교별 대여 순위 집계 ---
     const schoolCounts: {
       [school: string]: {
         school: string;
@@ -516,14 +538,13 @@ export async function getRentalAnalytics(filters: {
       }))
       .sort((a, b) => b.totalRentals - a.totalRentals);
 
-    // --- 인원수별 품목 집계 ---
     const peopleItemStats: {
       [key: number]: {
         [itemId: number]: { itemId: number; itemName: string; rentals: number };
       };
     } = {};
     records.forEach((r) => {
-      const p = r.peopleCount || 0; // maleCount + femaleCount의 합이므로 0이 될 수 있음
+      const p = r.peopleCount || 0;
       if (!peopleItemStats[p]) peopleItemStats[p] = {};
       if (r.itemId && typeof r.itemId === "number" && r.itemName) {
         if (!peopleItemStats[p][r.itemId]) {
@@ -543,7 +564,6 @@ export async function getRentalAnalytics(filters: {
       ) as { itemId: number; itemName: string; rentals: number }[],
     }));
 
-    // 3. 최종 데이터 구조로 반환
     return {
       kpis: { totalRentals, uniqueUsers, mostPopularItem, mostPopularCategory },
       ageGroupStats: {
@@ -582,7 +602,6 @@ export async function getRentalAnalytics(filters: {
     };
   } catch (error) {
     console.error("Error fetching rental analytics:", error);
-    // 에러 발생 시 빈 데이터 구조 반환
     return {
       kpis: {
         totalRentals: 0,
@@ -603,26 +622,6 @@ export async function getRentalAnalytics(filters: {
       schoolRankings: [],
       peopleCountItemStats: [],
     };
-  }
-}
-
-export async function getGenderRentalStatistics() {
-  try {
-    const genderStats = await db
-      .select({
-        gender: generalUsers.gender,
-        maleCount: sql<number>`sum(${rentalRecords.maleCount})`,
-        femaleCount: sql<number>`sum(${rentalRecords.femaleCount})`,
-        totalRentals: sql<number>`count(${rentalRecords.id})`,
-      })
-      .from(rentalRecords)
-      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
-      .groupBy(generalUsers.gender);
-
-    return { success: true, data: genderStats };
-  } catch (error) {
-    console.error("Error fetching gender rental statistics:", error);
-    return { error: "성별 대여 통계를 불러오는 데 실패했습니다." };
   }
 }
 

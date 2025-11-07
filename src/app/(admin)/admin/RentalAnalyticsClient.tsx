@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-
 import { getRentalAnalytics } from "@/lib/actions/rental";
 import { AnalyticsData } from "@/lib/types/analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,8 +38,6 @@ import { useDebounce } from "@/lib/shared/use-debounce";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF"];
-
-// --- 재사용 가능한 차트 컴포넌트들 ---
 
 const MemoizedAgeBarChart = ({
   data,
@@ -83,7 +80,6 @@ const MemoizedCategoryPieChart = ({ data }: { data: any[] }) => (
   </ResponsiveContainer>
 );
 
-// ✨ 성별 분포를 위한 새로운 Pie Chart 컴포넌트
 const MemoizedGenderPieChart = ({
   data,
 }: {
@@ -155,20 +151,36 @@ const MemoizedHourlyChart = ({
   </ResponsiveContainer>
 );
 
-// --- 메인 컴포넌트 ---
 export function RentalAnalyticsClient({
   initialData,
   categories,
+  availableYears,
 }: {
   initialData: AnalyticsData;
   categories: string[];
+  availableYears: number[];
 }) {
   const [analyticsData, setAnalyticsData] =
     useState<AnalyticsData>(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const currentYear = new Date().getFullYear();
+
+  const getDefaultYear = () => {
+    const sortedYears = [...availableYears].sort((a, b) => b - a);
+
+    if (availableYears.includes(currentYear)) {
+      return currentYear.toString();
+    }
+    if (sortedYears.length > 0) {
+      return sortedYears[0].toString();
+    }
+    return currentYear.toString();
+  };
+
   const [filters, setFilters] = useState({
-    year: new Date().getFullYear().toString(),
+    year: getDefaultYear(),
     month: "all",
     ageGroup: "all",
     category: "all",
@@ -190,18 +202,15 @@ export function RentalAnalyticsClient({
       setLoading(false);
     };
 
-    fetchData(); // 필터가 바뀔 때마다 항상 데이터 fetch
+    fetchData();
   }, [debouncedFilters]);
 
   const handleFilterChange = (filterName: string, value: string) => {
     setFilters((prev) => ({ ...prev, [filterName]: value }));
   };
 
-  const years = Array.from({ length: 5 }, (_, i) =>
-    (new Date().getFullYear() - i).toString()
-  );
   const ageGroupMap: { [key: string]: string } = {
-    all: "전체",
+    all: "전체 연령대",
     child: "아동",
     teen: "청소년",
     adult: "성인",
@@ -216,9 +225,13 @@ export function RentalAnalyticsClient({
     [analyticsData.ageGroupStats]
   );
 
+  const sortedAvailableYears = useMemo(
+    () => [...availableYears].sort((a, b) => b - a),
+    [availableYears]
+  );
+
   return (
     <div className="space-y-6">
-      {/* --- 필터 섹션 --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-card">
         <Select
           value={filters.year}
@@ -228,11 +241,17 @@ export function RentalAnalyticsClient({
             <SelectValue placeholder="연도 선택" />
           </SelectTrigger>
           <SelectContent>
-            {years.map((y) => (
-              <SelectItem key={y} value={y}>
-                {y}년
+            {sortedAvailableYears.length > 0 ? (
+              sortedAvailableYears.map((y) => (
+                <SelectItem key={y.toString()} value={y.toString()}>
+                  {y}년
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value={currentYear.toString()}>
+                {currentYear}년
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
         <Select
@@ -248,7 +267,7 @@ export function RentalAnalyticsClient({
               ...Array.from({ length: 12 }, (_, i) => (i + 1).toString()),
             ].map((m) => (
               <SelectItem key={m} value={m}>
-                {m === "all" ? "전체" : `${m}월`}
+                {m === "all" ? "전체(월)" : `${m}월`}
               </SelectItem>
             ))}
           </SelectContent>
@@ -292,7 +311,6 @@ export function RentalAnalyticsClient({
         </div>
       )}
 
-      {/* --- KPI 카드 섹션 --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -358,7 +376,6 @@ export function RentalAnalyticsClient({
         )}
       </div>
 
-      {/* --- 차트 섹션 1 --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -386,7 +403,6 @@ export function RentalAnalyticsClient({
         </Card>
       </div>
 
-      {/* --- 차트 섹션 2 --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -414,7 +430,6 @@ export function RentalAnalyticsClient({
         </Card>
       </div>
 
-      {/* ✨ --- 테이블 & 성별 차트 섹션 (비인기 품목 대체) --- ✨ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="lg:col-span-1">
           <CardHeader>
@@ -461,7 +476,6 @@ export function RentalAnalyticsClient({
         </Card>
       </div>
 
-      {/* --- 학교별 순위 차트/테이블 --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -496,7 +510,6 @@ export function RentalAnalyticsClient({
         </Card>
       </div>
 
-      {/* --- 인원수별 품목 인기 통계 --- */}
       <div className="grid grid-cols-1 gap-4">
         <Card>
           <CardHeader>

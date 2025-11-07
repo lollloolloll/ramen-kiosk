@@ -35,13 +35,13 @@ export const columns: ColumnDef<Item>[] = [
     cell: ({ row }) => {
       // 현재 행(row)의 원본 데이터(original)에서 값을 가져옵니다.
       const imageUrl = row.original.imageUrl;
-      const  itemName = row.original.name;
+      const itemName = row.original.name;
 
       // 이미지 URL이 존재하면 img 태그를, 없으면 대체 텍스트를 보여줍니다.
       return imageUrl ? (
         <img
           src={imageUrl}
-          alt={`${ itemName} 이미지`}
+          alt={`${itemName} 이미지`}
           className="h-16 w-16 rounded-md object-cover mx-auto" // 이미지 크기와 스타일 지정, mx-auto로 중앙 정렬
         />
       ) : (
@@ -60,9 +60,9 @@ export const columns: ColumnDef<Item>[] = [
         const newIsHidden = !newCheckedState; // Switch의 checked 상태와 isHidden은 반대
         const result = await toggleItemVisibility(item.id, newIsHidden);
         if (result.success) {
-          toast.success("아이템 가시성이 업데이트되었습니다.");
+          toast.success("아이템 숨김처리 업데이트.");
         } else {
-          toast.error(result.error || "아이템 가시성 업데이트에 실패했습니다.");
+          toast.error(result.error || "아이템 숨김처리 업데이트 실패");
         }
       };
 
@@ -72,7 +72,7 @@ export const columns: ColumnDef<Item>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const  item = row.original;
+      const item = row.original;
 
       return (
         <DropdownMenu>
@@ -85,17 +85,17 @@ export const columns: ColumnDef<Item>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(String( item.id))}
+              onClick={() => navigator.clipboard.writeText(String(item.id))}
             >
               Copy Item ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <EditItemForm  item={ item}>
+            <EditItemForm item={item}>
               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                 Edit
               </DropdownMenuItem>
             </EditItemForm>
-            <DeleteItemDialog  itemId={ item.id}>
+            <DeleteItemDialog itemId={item.id}>
               <DropdownMenuItem
                 onSelect={(e) => e.preventDefault()}
                 className="text-red-500"

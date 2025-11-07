@@ -16,7 +16,7 @@ import {
   createGeneralUser,
 } from "@/lib/actions/generalUser";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -49,15 +49,17 @@ interface RentalDialogProps {
 
 type Step = "identification" | "register" | "success";
 
-const identificationSchema = z.object({
-  name: z.string().min(1, "이름을 입력해주세요."),
-  phoneNumber: z.string().min(1, "휴대폰 번호를 입력해주세요."),
-  maleCount: z.number().optional().default(0),
-  femaleCount: z.number().optional().default(0),
-}).refine((data) => data.maleCount + data.femaleCount > 0, {
-  message: "대여 인원은 최소 1명 이상이어야 합니다.",
-  path: ["maleCount", "femaleCount"], // 에러 메시지를 maleCount와 femaleCount 필드 모두에 연결
-});
+const identificationSchema = z
+  .object({
+    name: z.string().min(1, "이름을 입력해주세요."),
+    phoneNumber: z.string().min(1, "휴대폰 번호를 입력해주세요."),
+    maleCount: z.number().optional().default(0),
+    femaleCount: z.number().optional().default(0),
+  })
+  .refine((data) => data.maleCount + data.femaleCount > 0, {
+    message: "대여 인원은 최소 1명 이상이어야 합니다.",
+    path: ["maleCount", "femaleCount"], // 에러 메시지를 maleCount와 femaleCount 필드 모두에 연결
+  });
 
 type IdentificationFormValues = z.infer<typeof identificationSchema>;
 type GeneralUserFormValues = z.infer<typeof generalUserSchema>;
@@ -96,12 +98,14 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const [yearSelectOpen, setYearSelectOpen] = useState(false);
 
   const identificationForm = useForm<IdentificationFormValues>({
-    resolver: zodResolver(identificationSchema),
+    resolver: zodResolver(
+      identificationSchema
+    ) as Resolver<IdentificationFormValues>,
     defaultValues: { name: "", phoneNumber: "", maleCount: 0, femaleCount: 0 },
   });
 
   const registerForm = useForm<GeneralUserFormValues>({
-    resolver: zodResolver(generalUserSchema),
+    resolver: zodResolver(generalUserSchema) as Resolver<GeneralUserFormValues>,
     defaultValues: {
       name: "",
       phoneNumber: "",
@@ -217,7 +221,11 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
   };
 
-  const handleRental = async (userId: number, maleCount: number, femaleCount: number) => {
+  const handleRental = async (
+    userId: number,
+    maleCount: number,
+    femaleCount: number
+  ) => {
     if (!item) {
       toast.error("아이템 정보가 없습니다.");
       return;
@@ -417,10 +425,12 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                     취소
                   </Button>
                   <Button
-                  type="submit"
-                  disabled={isSubmitting || !identificationForm.formState.isValid}
-                  className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
-                >
+                    type="submit"
+                    disabled={
+                      isSubmitting || !identificationForm.formState.isValid
+                    }
+                    className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                  >
                     {isSubmitting ? "확인 중..." : "대여하기"}
                   </Button>
                 </div>

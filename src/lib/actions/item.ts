@@ -154,6 +154,6 @@ export async function toggleItemVisibility(id: number, isHidden: boolean) {
     return { success: true };
   } catch (error) {
     console.error("Failed to toggle item visibility:", error);
-    return { error: "아이템 가시성 업데이트에 실패했습니다." };
+    return { error: "아이템 숨김 업데이트에 실패했습니다." };
   }
 }

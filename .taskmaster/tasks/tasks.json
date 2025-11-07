@@ -875,9 +875,9 @@
           {
             "id": 1,
             "title": "Drizzle 스키마에 is_hidden 컬럼 추가 및 마이그레이션",
-            "description": "Drizzle 스키마의 `ramens` 테이블에 아이템의 숨김 상태를 나타내는 `is_hidden` (boolean, 기본값 false) 컬럼을 추가하고, Drizzle 마이그레이션을 실행합니다.",
+            "description": "Drizzle 스키마의 `items` 테이블에 아이템의 숨김 상태를 나타내는 `is_hidden` (boolean, 기본값 false) 컬럼을 추가하고, Drizzle 마이그레이션을 실행합니다.",
             "dependencies": [],
-            "details": "`lib/db/schema.ts` 파일의 `ramens` 테이블 스키마에 `is_hidden: boolean('is_hidden').default(false)` 컬럼을 추가합니다. Drizzle-kit 명령어를 사용하여 새 마이그레이션 파일을 생성하고 데이터베이스에 적용합니다.",
+            "details": "`lib/db/schema.ts` 파일의 `items` 테이블 스키마에 `is_hidden: boolean('is_hidden').default(false)` 컬럼을 추가합니다. Drizzle-kit 명령어를 사용하여 새 마이그레이션 파일을 생성하고 데이터베이스에 적용합니다.",
             "status": "done",
             "testStrategy": "Drizzle 스튜디오 또는 데이터베이스 클라이언트를 사용하여 `ramens` 테이블에 `is_hidden` 컬럼이 성공적으로 추가되었고 기본값이 `false`로 설정되었는지 확인합니다."
           },
@@ -903,49 +903,49 @@
       },
       {
         "id": 21,
-        "title": "대여 인원수에 남/녀 항목 구분 기능 추가",
-        "description": "RentalDialog.tsx에서 대여 인원수에 남성/여성 항목을 구분하여 선택할 수 있는 UI를 추가합니다.",
+        "title": "대여 인원에 남녀 구분 추가",
+        "description": "`src/components/item/RentalDialog.tsx` 파일에 대여 인원 선택 시 남녀 구분을 추가합니다.",
+        "details": "`RentalDialog.tsx`의 대여 인원 입력 필드에 성별 선택(남/여 버튼) UI를 추가하고, 선택된 성별 정보를 대여 로직에 포함하도록 수정합니다. 스키마 작업은 완료되었으므로 UI 및 로직 수정에 집중합니다.",
+        "testStrategy": "대여 인원 선택 시 남녀 구분이 올바르게 표시되고, 선택된 성별 정보가 대여 요청에 포함되는지 확인합니다.",
         "status": "pending",
         "dependencies": [],
         "priority": "medium",
-        "details": "src/components/item/RentalDialog.tsx 파일의 '대여 인원' 섹션에 남성/여성 선택을 위한 UI를 추가합니다. 이 선택 값은 대여 서버 액션에 함께 전달되어야 합니다.",
-        "testStrategy": "성별 선택 UI가 `src/components/item/RentalDialog.tsx`에 올바르게 구현되고 작동하는지 확인합니다. 남성 또는 여성을 선택한 후 대여를 진행할 때, 선택된 성별 값이 `lib/actions/rental.ts`의 `executeRental` 서버 액션으로 성공적으로 전달되는지 확인합니다.",
         "subtasks": [
           {
             "id": 1,
-            "title": "RentalDialog.tsx에 성별 선택 UI 추가 및 서버 액션 전달",
-            "description": "`src/components/item/RentalDialog.tsx` 파일의 '대여 인원' 섹션에 남성/여성 선택을 위한 UI를 추가하고, 선택된 성별 값을 `executeRental` 서버 액션으로 전달하도록 수정합니다.",
-            "dependencies": [],
-            "details": "`RentalDialog.tsx`에 라디오 버튼 또는 셀렉트 박스를 사용하여 남성/여성 중 하나를 선택할 수 있도록 구현합니다. 이 선택 값을 `executeRental` 함수 호출 시 파라미터로 추가하여 서버로 전송해야 합니다. `lib/actions/rental.ts`의 `executeRental` 함수 시그니처를 업데이트해야 합니다.",
-            "status": "pending",
-            "testStrategy": "성별 선택 UI가 `src/components/item/RentalDialog.tsx`에 올바르게 구현되고 작동하는지 확인합니다. 남성 또는 여성을 선택한 후 대여를 진행할 때, 선택된 성별 값이 `lib/actions/rental.ts`의 `executeRental` 서버 액션으로 성공적으로 전달되는지 브라우저 개발자 도구의 네트워크 탭을 통해 검증합니다."
+            "title": "generalUsers 테이블에 gender 컬럼 추가 및 마이그레이션",
+            "description": "`lib/db/schema.ts` 파일의 `generalUsers` 테이블 스키마에 `gender` 컬럼(ENUM 또는 VARCHAR)을 추가하고, Drizzle-kit을 사용하여 데이터베이스 마이그레이션을 실행합니다.",
+            "dependencies": [1],
+            "details": "`gender` 컬럼을 `generalUsers` 테이블에 추가합니다. 적절한 타입(예: `pgEnum` for 'MALE', 'FEMALE' 또는 `varchar` with constraints)을 선택하고, Drizzle 마이그레이션 스크립트를 생성 및 실행하여 변경사항을 데이터베이스에 반영합니다.",
+            "status": "done",
+            "testStrategy": "Drizzle 마이그레이션이 성공적으로 실행되었는지 확인하고, 데이터베이스 클라이언트에서 `generalUsers` 테이블에 `gender` 컬럼이 올바르게 추가되었는지 확인합니다. 더미 데이터를 삽입하여 컬럼이 예상대로 작동하는지 검증합니다."
           },
           {
             "id": 2,
-            "title": "generalUsers 테이블에 gender 컬럼 추가 및 마이그레이션",
-            "description": "`generalUsers` 테이블에 `gender` 컬럼(예: `text('gender', { enum: ['male', 'female')`)을 추가하고 Drizzle 마이그레이션을 실행합니다.",
-            "dependencies": [],
-            "details": "`lib/db/schema.ts` 파일의 `generalUsers` 스키마에 `gender` 컬럼을 추가합니다. 가능한 값은 'male', 'female', 'other' 등으로 정의하고, `drizzle-kit generate` 및 `drizzle-kit push` 또는 `drizzle-kit migrate` 명령어를 사용하여 데이터베이스 스키마를 업데이트합니다.",
-            "status": "done",
-            "testStrategy": "마이그레이션이 성공적으로 실행되었는지 확인합니다. 데이터베이스 클라이언트를 사용하여 `generalUsers` 테이블에 `gender` 컬럼이 생성되었는지, 그리고 해당 컬럼의 제약 조건(enum, nullable 등)이 올바르게 적용되었는지 확인합니다."
+            "title": "대여 다이얼로그(RentalDialog.tsx) 성별 선택 UI 및 로직 구현",
+            "description": "`src/components/item/RentalDialog.tsx` 파일에 대여 인원 선택 시 남/여 성별을 선택할 수 있는 UI 컴포넌트(버튼 그룹 또는 라디오 버튼)를 추가하고, 선택된 성별 정보를 대여 로직에 포함하여 백엔드로 전송하도록 수정합니다.",
+            "dependencies": [1],
+            "details": "shadcn/ui의 Button 또는 RadioGroup 컴포넌트를 활용하여 성별 선택 UI를 구현합니다. 대여 폼의 상태에 선택된 성별 정보를 포함하고, `executeRental` 서버 액션 호출 시 해당 성별 데이터를 함께 전달하도록 수정합니다.",
+            "status": "pending",
+            "testStrategy": "`RentalDialog`가 올바르게 렌더링되고 성별 선택 UI가 표시되는지 확인합니다. 성별을 선택한 후 대여를 시도하여, 개발자 도구의 네트워크 탭에서 전송되는 대여 요청 페이로드에 `gender` 정보가 올바르게 포함되어 있는지 확인합니다."
           },
           {
             "id": 3,
             "title": "성별 대여 통계 Drizzle 쿼리 및 서버 액션 구현",
-            "description": "`rentalRecords`와 `generalUsers` 테이블을 조인하여 성별 대여 통계를 집계하는 Drizzle 쿼리 로직을 구현하고, 이를 제공하는 서버 액션을 생성합니다.",
-            "dependencies": [2],
-            "details": "`lib/actions/analytics.ts`와 같은 서버 액션 파일에 `getRentalStatsByGender` 함수를 구현합니다. 이 함수는 `rentalRecords`와 `generalUsers` 테이블을 조인하고, `gender` 컬럼으로 그룹화하여 각 성별의 총 대여 횟수를 집계하는 Drizzle 쿼리를 포함해야 합니다.",
+            "description": "`rentalRecords` 테이블과 `generalUsers` 테이블을 조인하고, `gender` 컬럼을 기준으로 대여 통계를 집계하는 Drizzle 쿼리를 구현합니다. 이 쿼리를 호출하고 결과를 반환하는 새로운 서버 액션(예: `getGenderRentalStatistics`)을 생성합니다.",
+            "dependencies": [1, 8],
+            "details": "`lib/actions/analytics.ts`와 같은 파일에 `getGenderRentalStatistics` 서버 액션을 구현합니다. 이 액션 내에서 Drizzle ORM을 사용하여 `rentalRecords`와 `generalUsers` 테이블을 `userId`로 조인하고, `gender`별로 그룹화하여 대여 횟수, 평균 대여 기간 등 필요한 통계를 집계합니다.",
             "status": "pending",
-            "testStrategy": "새로운 서버 액션(`getRentalStatsByGender`)을 직접 호출하거나 Postman/Insomnia와 같은 도구를 사용하여 예상되는 성별별 대여 통계 데이터(예: `{ male: 10, female: 15}`)가 올바르게 반환되는지 확인합니다. 여러 성별의 테스트 데이터를 생성하여 쿼리 정확성을 검증합니다."
+            "testStrategy": "개발자 도구를 사용하여 구현된 서버 액션을 직접 호출하거나, API 테스트 도구(Postman, Insomnia)로 엔드포인트를 호출하여 반환되는 데이터가 예상대로 성별 통계를 포함하고 있는지 확인합니다. 다양한 테스트 데이터를 사용하여 쿼리의 정확성을 검증합니다."
           },
           {
             "id": 4,
-            "title": "관리자 대시보드에 성별 통계 시각화 UI 추가",
-            "description": "관리자 대시보드의 `RentalAnalyticsClient.tsx`에 성별 대여 통계를 시각적으로 표시하는 UI 컴포넌트(예: 원형 차트 또는 막대 차트)를 추가하고, 기존 필터링 기능과 연동합니다.",
-            "dependencies": [3],
-            "details": "`app/(admin)/rental/RentalAnalyticsClient.tsx` 파일에 새로운 섹션을 추가하고, 서버 액션(`getRentalStatsByGender`)을 호출하여 데이터를 가져온 후, Recharts나 Chart.js와 같은 차트 라이브러리를 사용하여 성별 대여 통계를 시각화합니다. 기존 날짜 필터링 기능과 연동하여 특정 기간의 성별 통계를 볼 수 있도록 구현합니다.",
-            "status": "pending",
-            "testStrategy": "관리자 대시보드(`/admin/rental`)에 접근하여 성별 대여 통계 차트 또는 테이블이 올바르게 렌더링되는지 시각적으로 확인합니다. 데이터를 변경(예: 새로운 성별 대여 기록 추가)한 후 UI가 업데이트되는지 확인합니다. 날짜 필터를 사용하여 특정 기간의 성별 통계가 정확하게 표시되는지 검증합니다."
+            "title": "관리자 대시보드에 성별 대여 통계 UI 컴포넌트 추가",
+            "description": "`app/(admin)/dashboard/RentalAnalyticsClient.tsx` 파일에 성별 대여 통계를 시각적으로 표시하는 UI 컴포넌트(예: 원형 차트, 막대 차트 또는 테이블)를 추가하고, 기존 필터링 기능과 연동하여 동적으로 데이터를 표시하도록 구현합니다.",
+            "dependencies": [3, 5],
+            "details": "`RentalAnalyticsClient.tsx` 내에서 subtask 3에서 구현된 `getGenderRentalStatistics` 서버 액션을 클라이언트 컴포넌트에서 호출(fetch)하고, Chart.js, Recharts 또는 Tremor와 같은 라이브러리를 사용하여 데이터를 시각화합니다. 기존 날짜 필터링 등의 기능과 연동하여 성별 통계도 필터링에 따라 업데이트되도록 구현합니다.",
+            "status": "done",
+            "testStrategy": "관리자 계정으로 대시보드에 로그인하여 성별 대여 통계 UI 컴포넌트가 올바르게 렌더링되는지 확인합니다. 필터링 옵션을 변경했을 때 통계 데이터와 차트/테이블이 동적으로 업데이트되는지 시각적으로 검증합니다. 통계 수치가 실제 데이터와 일치하는지 확인합니다."
           }
         ]
       },
@@ -1114,7 +1114,7 @@
     ],
     "metadata": {
       "created": "2025-10-17T11:49:36.913Z",
-      "updated": "2025-11-07T01:49:04.717Z",
+      "updated": "2025-11-07T04:32:38.418Z",
       "description": "Tasks for master context"
     }
   }

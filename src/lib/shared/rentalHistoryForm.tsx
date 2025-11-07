@@ -27,7 +27,8 @@ type RentalRecord = {
   userName: string | null;
   itemName: string | null;
   itemCategory: string | null;
-  peopleCount: number;
+  maleCount: number;
+  femaleCount: number;
   imageUrl: string | null;
 };
 
@@ -53,8 +54,12 @@ export const rentalHistoryColumns: ColumnDef<RentalRecord>[] = [
     },
   },
   {
-    accessorKey: "peopleCount",
     header: "대여인원",
+    cell: ({ row }) => {
+      const maleCount = row.original.maleCount ?? 0;
+      const femaleCount = row.original.femaleCount ?? 0;
+      return `남: ${maleCount}, 여: ${femaleCount}`;
+    },
   },
 ];
 
@@ -295,7 +300,6 @@ export function RentalHistoryForm({
               <SelectContent>
                 <SelectItem value="rentalDate">대여일시</SelectItem>
                 <SelectItem value="itemName">물품명</SelectItem>
-                <SelectItem value="peopleCount">대여인원</SelectItem>
               </SelectContent>
             </Select>
             <Button

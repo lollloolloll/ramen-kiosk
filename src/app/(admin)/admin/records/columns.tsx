@@ -8,7 +8,8 @@ export type RentalRecord = {
   rentalDate: Date | null;
   userName: string | null;
   itemName: string | null;
-  peopleCount: number | null;
+  maleCount: number | null;
+  femaleCount: number | null;
 };
 
 export const columns: ColumnDef<RentalRecord>[] = [
@@ -25,8 +26,12 @@ export const columns: ColumnDef<RentalRecord>[] = [
     header: "Item",
   },
   {
-    accessorKey: "peopleCount",
     header: "대여인원",
+    cell: ({ row }) => {
+      const maleCount = row.original.maleCount ?? 0;
+      const femaleCount = row.original.femaleCount ?? 0;
+      return `남: ${maleCount}, 여: ${femaleCount}`;
+    },
   },
   {
     accessorKey: "rentalDate",

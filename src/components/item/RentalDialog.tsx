@@ -58,7 +58,7 @@ const identificationSchema = z
   })
   .refine((data) => data.maleCount + data.femaleCount > 0, {
     message: "대여 인원은 최소 1명 이상이어야 합니다.",
-    path: ["maleCount", "femaleCount"], // 에러 메시지를 maleCount와 femaleCount 필드 모두에 연결
+    path: ["maleCount", "femaleCount"],
   });
 
 type IdentificationFormValues = z.infer<typeof identificationSchema>;
@@ -82,7 +82,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [peopleCount, setPeopleCount] = useState("1"); // peopleCount 제거
   const [countdown, setCountdown] = useState(5);
 
   // 생년월일 상태
@@ -126,7 +125,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     } else {
       registerForm.setValue("birthDate", "");
     }
-  }, [birthYear, birthMonth, birthDay, registerForm.setValue]);
+  }, [birthYear, birthMonth, birthDay, registerForm]);
 
   // 학교 useEffect
   useEffect(() => {
@@ -154,7 +153,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     } else {
       registerForm.setValue("school", "");
     }
-  }, [schoolLevel, schoolName, registerForm.setValue]);
+  }, [schoolLevel, schoolName, registerForm]);
 
   // Success 화면 카운트다운 및 자동 종료
   useEffect(() => {
@@ -185,8 +184,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         values.phoneNumber
       );
       if (user) {
-        // const count = Math.max(1, parseInt(peopleCount, 10) || 1); // peopleCount 제거
-        await handleRental(user.id, values.maleCount, values.femaleCount); // maleCount, femaleCount 전달
+        await handleRental(user.id, values.maleCount, values.femaleCount);
       } else {
         toast.info("등록된 사용자가 아닙니다. 신규 등록을 진행해주세요.");
         setStep("register");
@@ -208,7 +206,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         throw new Error(result.error);
       }
       if (result.user) {
-        // 신규 등록 시 대여 인원은 identificationForm에서 입력받은 값을 사용합니다.
         const { maleCount, femaleCount } = identificationForm.getValues();
         await handleRental(result.user.id, maleCount, femaleCount);
       }
@@ -232,7 +229,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
     setIsSubmitting(true);
     try {
-      const result = await rentItem(userId, item.id, maleCount, femaleCount); // maleCount, femaleCount 전달
+      const result = await rentItem(userId, item.id, maleCount, femaleCount);
       if (result.error) {
         throw new Error(result.error);
       }
@@ -267,12 +264,10 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     setSchoolLevel("");
     setSchoolName("");
     setYearSelectOpen(false);
-    // setPeopleCount("1"); // peopleCount 제거
   };
 
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    // 1930년부터 현재년도까지 (역순)
     return Array.from(
       { length: currentYear - 1929 },
       (_, i) => currentYear - i
@@ -283,7 +278,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
 
   const days = useMemo(() => {
     if (!birthYear || !birthMonth) {
-      // 년/월이 선택 안됐으면 1~31일까지 기본 표시
       return Array.from({ length: 31 }, (_, i) => i + 1);
     }
     const daysInMonth = new Date(
@@ -360,16 +354,26 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                         <Input
                           type="number"
                           min="0"
-                          {...field}
+                          placeholder="0"
+                          value={field.value || ""}
                           onChange={(e) => {
-                            field.onChange(parseInt(e.target.value, 10) || 0);
+                            const value = e.target.value;
+                            if (value === "") {
+                              field.onChange(0);
+                            } else {
+                              const num = parseInt(value, 10);
+                              field.onChange(isNaN(num) ? 0 : Math.max(0, num));
+                            }
+                          }}
+                          onFocus={(e) => {
+                            if (field.value === 0) {
+                              e.target.value = "";
+                            }
                           }}
                           onBlur={(e) => {
-                            const num = parseInt(e.target.value, 10);
-                            if (isNaN(num) || num < 0) {
+                            if (e.target.value === "") {
                               field.onChange(0);
                             }
-                            identificationForm.trigger("maleCount"); // blur 시 유효성 검사 트리거
                           }}
                         />
                       </FormControl>
@@ -387,16 +391,26 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                         <Input
                           type="number"
                           min="0"
-                          {...field}
+                          placeholder="0"
+                          value={field.value || ""}
                           onChange={(e) => {
-                            field.onChange(parseInt(e.target.value, 10) || 0);
+                            const value = e.target.value;
+                            if (value === "") {
+                              field.onChange(0);
+                            } else {
+                              const num = parseInt(value, 10);
+                              field.onChange(isNaN(num) ? 0 : Math.max(0, num));
+                            }
+                          }}
+                          onFocus={(e) => {
+                            if (field.value === 0) {
+                              e.target.value = "";
+                            }
                           }}
                           onBlur={(e) => {
-                            const num = parseInt(e.target.value, 10);
-                            if (isNaN(num) || num < 0) {
+                            if (e.target.value === "") {
                               field.onChange(0);
                             }
-                            identificationForm.trigger("femaleCount"); // blur 시 유효성 검사 트리거
                           }}
                         />
                       </FormControl>
@@ -699,7 +713,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
             className="flex flex-col items-center justify-center py-12 px-8 text-center relative overflow-hidden"
             key="success"
           >
-            {/* 배경 애니메이션 효과 - 테마 색상 적용 */}
+            {/* 배경 애니메이션 효과 */}
             <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)] animate-pulse" />
 
             {/* 파티클 효과 */}

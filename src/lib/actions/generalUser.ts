@@ -239,3 +239,20 @@ export async function exportGeneralUsersToExcel() {
     return { error: "사용자 정보를 엑셀로 내보내는 데 실패했습니다." };
   }
 }
+
+export async function getGeneralUserById(id: number) {
+  try {
+    const [user] = await db
+      .select()
+      .from(generalUsers)
+      .where(eq(generalUsers.id, id));
+
+    if (!user) {
+      return { error: "사용자를 찾을 수 없습니다." };
+    }
+    return { success: true, data: user };
+  } catch (error) {
+    console.error("Error fetching general user by id:", error);
+    return { error: "사용자 정보를 가져오는 데 실패했습니다." };
+  }
+}

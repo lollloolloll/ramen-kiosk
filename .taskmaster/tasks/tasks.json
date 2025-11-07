@@ -878,7 +878,7 @@
             "description": "Drizzle 스키마의 `ramens` 테이블에 아이템의 숨김 상태를 나타내는 `is_hidden` (boolean, 기본값 false) 컬럼을 추가하고, Drizzle 마이그레이션을 실행합니다.",
             "dependencies": [],
             "details": "`lib/db/schema.ts` 파일의 `ramens` 테이블 스키마에 `is_hidden: boolean('is_hidden').default(false)` 컬럼을 추가합니다. Drizzle-kit 명령어를 사용하여 새 마이그레이션 파일을 생성하고 데이터베이스에 적용합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Drizzle 스튜디오 또는 데이터베이스 클라이언트를 사용하여 `ramens` 테이블에 `is_hidden` 컬럼이 성공적으로 추가되었고 기본값이 `false`로 설정되었는지 확인합니다."
           },
           {
@@ -923,10 +923,10 @@
           {
             "id": 2,
             "title": "generalUsers 테이블에 gender 컬럼 추가 및 마이그레이션",
-            "description": "`generalUsers` 테이블에 `gender` 컬럼(예: `text('gender', { enum: ['male', 'female', 'other'] })`)을 추가하고 Drizzle 마이그레이션을 실행합니다.",
+            "description": "`generalUsers` 테이블에 `gender` 컬럼(예: `text('gender', { enum: ['male', 'female')`)을 추가하고 Drizzle 마이그레이션을 실행합니다.",
             "dependencies": [],
             "details": "`lib/db/schema.ts` 파일의 `generalUsers` 스키마에 `gender` 컬럼을 추가합니다. 가능한 값은 'male', 'female', 'other' 등으로 정의하고, `drizzle-kit generate` 및 `drizzle-kit push` 또는 `drizzle-kit migrate` 명령어를 사용하여 데이터베이스 스키마를 업데이트합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "마이그레이션이 성공적으로 실행되었는지 확인합니다. 데이터베이스 클라이언트를 사용하여 `generalUsers` 테이블에 `gender` 컬럼이 생성되었는지, 그리고 해당 컬럼의 제약 조건(enum, nullable 등)이 올바르게 적용되었는지 확인합니다."
           },
           {
@@ -965,7 +965,7 @@
             "description": "`lib/db/schema.ts` 파일에서 `rentalRecords` 테이블의 `itemId`와 `userId` 컬럼을 `nullable`로 변경하고, 해당 컬럼에 대한 외래 키 제약조건을 `onDelete: 'cascade'`에서 `onDelete: 'set null'`로 수정합니다.",
             "dependencies": [],
             "details": "`rentalRecords` 테이블 정의에서 `itemId`와 `userId` 필드를 `references(..., { onDelete: 'set null' }).notNull()`에서 `references(..., { onDelete: 'set null' })`로 변경하여 nullable로 만들고, `onDelete` 옵션을 수정합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "변경될 스키마 파일(`lib/db/schema.ts`)을 검토하여 `itemId`와 `userId`가 `nullable`로 정의되었는지, 그리고 `onDelete` 옵션이 `set null`로 설정되었는지 확인합니다."
           },
           {
@@ -974,7 +974,7 @@
             "description": "Subtask 1에서 수정한 Drizzle 스키마를 기반으로 마이그레이션 스크립트를 생성하고, 데이터베이스에 해당 변경 사항을 적용합니다.",
             "dependencies": [1],
             "details": "`drizzle-kit generate` 명령어를 사용하여 새 마이그레이션 파일을 생성합니다. 생성된 SQL 마이그레이션 스크립트를 검토하여 예상대로 `ALTER TABLE` 문이 포함되어 있는지 확인합니다. 이후 `drizzle-kit push` 또는 수동으로 `drizzle-kit migrate` 명령어를 실행하여 변경 사항을 데이터베이스에 적용합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "마이그레이션 실행 후 데이터베이스 관리 도구(예: `sqlitebrowser` for SQLite)를 사용하여 `rentalRecords` 테이블의 `itemId`와 `userId` 컬럼이 `NULL` 값을 허용하도록 변경되었고, 외래 키 제약조건이 `ON DELETE SET NULL`로 설정되었는지 확인합니다."
           },
           {
@@ -1004,7 +1004,7 @@
             "description": "시간제 대여 관련 컬럼을 `items` 테이블에 추가하고, 대기자 관리를 위한 `waiting_queue` 테이블 스키마를 새로 정의합니다.",
             "dependencies": [],
             "details": "`lib/db/schema.ts` 파일에서 `items` 테이블에 `isTimeLimited` (boolean), `rentalTimeMinutes` (integer), `maxRentalsPerUser` (integer) 컬럼을 추가합니다. 또한, `id`, `itemId`, `userId`, `requestDate`, `status` (예: 'pending', 'granted', 'cancelled'), `grantedDate` 등의 컬럼을 포함하는 `waiting_queue` 테이블을 정의합니다. 외래 키 제약 조건 및 인덱싱을 고려합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "스키마 정의 후 `drizzle-kit generate`를 통해 마이그레이션 파일이 올바르게 생성되는지 확인합니다. 생성된 SQL 스크립트를 검토하여 테이블 및 컬럼 정의가 의도한 대로 되었는지 확인합니다."
           },
           {
@@ -1013,7 +1013,7 @@
             "description": "정의된 데이터베이스 스키마 변경사항을 데이터베이스에 적용하기 위해 Drizzle 마이그레이션을 실행합니다.",
             "dependencies": [1],
             "details": "`drizzle-kit generate` 명령어를 통해 마이그레이션 스크립트를 생성하고, 생성된 스크립트를 검토한 후 `drizzle-kit push` 또는 해당 마이그레이션 명령어를 사용하여 실제 데이터베이스에 변경사항을 적용합니다. 기존 데이터의 손실이 없도록 특히 주의합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "마이그레이션 실행 후, SQLite 브라우저와 같은 도구를 사용하여 `items` 테이블에 새로운 컬럼이 추가되고 `waiting_queue` 테이블이 올바르게 생성되었는지 확인합니다. 더미 데이터를 삽입하여 테이블이 정상 작동하는지 검증합니다."
           },
           {
@@ -1070,7 +1070,7 @@
             "description": "Drizzle 스키마에서 `generalUsers` 테이블에 `consentFilePath` 컬럼을 `TEXT` 타입으로 추가하고, 변경 사항을 데이터베이스에 적용하기 위해 마이그레이션을 생성하고 실행합니다.",
             "dependencies": [],
             "details": "`src/lib/db/schema.ts` 파일의 `generalUsers` 테이블 정의에 `consentFilePath: text('consent_file_path')`를 추가합니다. `drizzle-kit generate` 명령어를 사용하여 마이그레이션 파일을 생성하고, `drizzle-kit migrate` 명령어를 실행하여 데이터베이스에 적용합니다. `nullable` 여부도 고려하여 적절히 설정합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "데이터베이스 클라이언트를 사용하여 `generalUsers` 테이블에 `consentFilePath` 컬럼이 성공적으로 추가되었는지, 그리고 컬럼 타입이 올바른지 확인합니다."
           },
           {

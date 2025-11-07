@@ -15,6 +15,13 @@
       "when": 1762480919445,
       "tag": "0001_right_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1762483743083,
+      "tag": "0002_zippy_leech",
+      "breakpoints": true
     }
   ]
 }

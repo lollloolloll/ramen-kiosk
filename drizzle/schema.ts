@@ -12,6 +12,7 @@ export const items = sqliteTable("items", {
   name: text().notNull(),
   category: text().notNull(),
   imageUrl: text("image_url"),
+  isHidden: integer("is_hidden", { mode: "boolean" }).default(false).notNull(),
 });
 
 export const users = sqliteTable(

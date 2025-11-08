@@ -14,10 +14,7 @@ import { MoreHorizontal } from "lucide-react";
 import { waitingQueue, items, generalUsers } from "@drizzle/schema";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import {
-  grantWaitingEntry,
-  cancelWaitingEntry,
-} from "@/lib/actions/rental"; // 이 액션들은 나중에 구현합니다.
+import { grantWaitingEntry, cancelWaitingEntry } from "@/lib/actions/rental"; // 이 액션들은 나중에 구현합니다.
 
 export type WaitingEntry = typeof waitingQueue.$inferSelect & {
   itemName?: string | null;
@@ -49,10 +46,7 @@ export const columns: ColumnDef<WaitingEntry>[] = [
       return <div>{date.toLocaleString("ko-KR")}</div>;
     },
   },
-  {
-    accessorKey: "status",
-    header: "상태",
-  },
+
   {
     id: "actions",
     cell: ({ row }) => {
@@ -89,16 +83,10 @@ export const columns: ColumnDef<WaitingEntry>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>액션</DropdownMenuLabel>
-            {entry.status === "pending" && (
-              <DropdownMenuItem onClick={handleGrant}>
-                승인
-              </DropdownMenuItem>
-            )}
-            {entry.status === "pending" && (
-              <DropdownMenuItem onClick={handleCancel} className="text-red-500">
-                취소
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onClick={handleGrant}>대여 처리</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleCancel} className="text-red-500">
+              대기 취소
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(String(entry.id))}

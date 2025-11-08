@@ -78,22 +78,31 @@ export async function rentItem(
 
       const rentedCount = currentRentals?.count || 0;
 
-      // 4. 사용자별 최대 대여 횟수 제한 확인 (시간제 대여 아이템에만 적용)
+      // 4. 사용자별 최대 대여 횟수 제한 확인 (시간제 대여 아이템에만 적용, 하루 기준)
       if (itemToRent.isTimeLimited && itemToRent.maxRentalsPerUser) {
-        const userCurrentRentals = await tx
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startOfDay = Math.floor(today.getTime() / 1000);
+
+        const endOfDay = new Date(today);
+        endOfDay.setHours(23, 59, 59, 999);
+        const endOfDayTimestamp = Math.floor(endOfDay.getTime() / 1000);
+
+        const userDailyRentals = await tx
           .select({ count: sql<number>`count(*)` })
           .from(rentalRecords)
           .where(
             and(
               eq(rentalRecords.userId, userId),
               eq(rentalRecords.itemsId, itemId),
-              eq(rentalRecords.isReturned, false)
+              gte(rentalRecords.rentalDate, startOfDay),
+              lte(rentalRecords.rentalDate, endOfDayTimestamp)
             )
           )
           .get();
 
-        if ((userCurrentRentals?.count || 0) >= itemToRent.maxRentalsPerUser) {
-          throw new Error("사용자별 최대 대여 횟수를 초과했습니다.");
+        if ((userDailyRentals?.count || 0) >= itemToRent.maxRentalsPerUser) {
+          throw new Error("오늘 해당 아이템의 최대 대여 횟수를 초과했습니다.");
         }
       }
 

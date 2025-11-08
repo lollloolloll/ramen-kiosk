@@ -14,6 +14,9 @@ export const items = sqliteTable("items", {
   category: text().notNull(),
   imageUrl: text("image_url"),
   isHidden: integer("is_hidden", { mode: "boolean" }).default(false).notNull(),
+  isDeleted: integer("is_deleted", { mode: "boolean" })
+    .default(false)
+    .notNull(),
 
   // 시간제 대여 관련 (닌텐도 같은 수요가 높은 물품)
   isTimeLimited: integer("is_time_limited", { mode: "boolean" })
@@ -107,9 +110,8 @@ export const waitingQueue = sqliteTable("waiting_queue", {
   userId: integer("user_id")
     .notNull()
     .references(() => generalUsers.id, { onDelete: "cascade" }),
+  // 오직 이 시간으로만 순서를 결정합니다.
   requestDate: integer("request_date")
     .default(sql`(CURRENT_TIMESTAMP)`)
     .notNull(),
-  status: text().default("pending").notNull(), // 'pending', 'granted', 'cancelled'
-  grantedDate: integer("granted_date"),
 });

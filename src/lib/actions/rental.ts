@@ -106,12 +106,23 @@ export async function rentItem(
     }
 
     // 5. 재고 확인 및 대기자 등록 로직
-    // 현재는 items 테이블에 stock 컬럼이 없으므로, isReturned=false인 기록이 총 아이템 개수와 같으면 재고가 없다고 가정
-    // 이 로직은 실제 재고 관리 시스템이 아니므로, 단순화된 접근입니다.
-    // 실제 아이템의 총 개수를 알 수 없으므로, 일단 '대여 중인 아이템이 1개라도 있으면 재고가 없다'고 가정하거나
-    // 더 복잡한 로직이 필요합니다. 여기서는 '대여 가능한 아이템이 없다면 대기열에 추가'로 구현합니다.
-    // (현재는 단일 아이템 대여이므로, 이미 대여 중이면 재고 없음으로 간주)
     if (rentedCount > 0) {
+      // [추가] 사용자가 이미 해당 아이템의 대기열에 있는지 확인
+      const existingWaiting = await db
+        .select()
+        .from(waitingQueue)
+        .where(
+          and(eq(waitingQueue.itemId, itemId), eq(waitingQueue.userId, userId))
+        )
+        .get();
+
+      if (existingWaiting) {
+        return {
+          success: true,
+          message: "이미 대기열에 등록되어 있습니다.",
+        };
+      }
+
       // 아이템이 이미 대여 중이므로 대기열에 추가
       await db.insert(waitingQueue).values({
         itemId: itemId,
@@ -918,199 +929,6 @@ export async function getRentalAnalytics(filters: {
       genderStats: [],
       schoolRankings: [],
       peopleCountItemStats: [],
-    };
-  }
-}
-
-export async function getWaitingQueueEntries(filters: {
-  page?: number;
-  per_page?: number;
-}) {
-  try {
-    const { page = 1, per_page = 10 } = filters;
-    const offset = (page - 1) * per_page;
-
-    const whereConditions: any[] = [];
-
-    const baseQuery = db
-      .select({
-        id: waitingQueue.id,
-        itemId: waitingQueue.itemId,
-        userId: waitingQueue.userId,
-        requestDate: waitingQueue.requestDate,
-        itemName: items.name,
-        userName: generalUsers.name,
-      })
-      .from(waitingQueue)
-      .leftJoin(items, eq(waitingQueue.itemId, items.id))
-      .leftJoin(generalUsers, eq(waitingQueue.userId, generalUsers.id));
-
-    const filteredQuery =
-      whereConditions.length > 0
-        ? baseQuery.where(and(...whereConditions))
-        : baseQuery;
-
-    const dataQuery = filteredQuery
-      .limit(per_page)
-      .offset(offset)
-      .orderBy(desc(waitingQueue.requestDate));
-
-    const countQuery = db
-      .select({ count: sql<number>`count(*)` })
-      .from(waitingQueue)
-      .leftJoin(items, eq(waitingQueue.itemId, items.id))
-      .leftJoin(generalUsers, eq(waitingQueue.userId, generalUsers.id))
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
-
-    const [data, total] = await Promise.all([dataQuery, countQuery]);
-
-    const total_count = total[0]?.count || 0;
-
-    return { success: true, data, total_count };
-  } catch (error) {
-    console.error("Error fetching waiting queue entries:", error);
-    return { error: "대기열 항목을 불러오는 데 실패했습니다." };
-  }
-}
-export async function grantWaitingEntry(entryId: number) {
-  try {
-    // 1. 대기열 항목 조회
-    const entry = await db.query.waitingQueue.findFirst({
-      where: eq(waitingQueue.id, entryId),
-    });
-
-    if (!entry) {
-      throw new Error("대기열 항목을 찾을 수 없습니다.");
-    }
-
-    // 2. 대여할 아이템 및 사용자 정보 조회
-    const [itemToRent, userToRent] = await Promise.all([
-      db.query.items.findFirst({ where: eq(items.id, entry.itemId) }),
-      db.query.generalUsers.findFirst({
-        where: eq(generalUsers.id, entry.userId),
-      }),
-    ]);
-
-    if (!itemToRent || !userToRent) {
-      throw new Error("아이템 또는 사용자 정보를 찾을 수 없습니다.");
-    }
-
-    // 3. [방어 로직] 아이템이 현재 사용 중인지 확인
-    const currentRental = await db.query.rentalRecords.findFirst({
-      where: and(
-        eq(rentalRecords.itemsId, entry.itemId),
-        eq(rentalRecords.isReturned, false)
-      ),
-    });
-
-    if (currentRental) {
-      throw new Error(
-        "해당 아이템은 이미 다른 사용자가 이용 중입니다. 먼저 반납 처리를 해주세요."
-      );
-    }
-
-    // 4. [검증 로직] 사용자의 하루 최대 대여 횟수 확인
-    if (itemToRent.isTimeLimited && itemToRent.maxRentalsPerUser) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const startOfDay = Math.floor(today.getTime() / 1000);
-      const endOfDay = new Date(today);
-      endOfDay.setHours(23, 59, 59, 999);
-      const endOfDayTimestamp = Math.floor(endOfDay.getTime() / 1000);
-
-      const [result] = await db
-        .select({ value: count() })
-        .from(rentalRecords)
-        .where(
-          and(
-            eq(rentalRecords.userId, entry.userId),
-            eq(rentalRecords.itemsId, entry.itemId),
-            gte(rentalRecords.rentalDate, startOfDay),
-            lte(rentalRecords.rentalDate, endOfDayTimestamp)
-          )
-        );
-
-      if (result.value >= itemToRent.maxRentalsPerUser) {
-        // 횟수 초과 시, 대기열에서는 삭제하되 대여는 시키지 않음
-        await db.delete(waitingQueue).where(eq(waitingQueue.id, entryId));
-        revalidatePath("/admin/waitings");
-        throw new Error(
-          `사용자(ID: ${entry.userId})가 하루 최대 대여 횟수를 초과하여 대여할 수 없습니다. 대기열에서 삭제되었습니다.`
-        );
-      }
-    }
-
-    // 5. 대여 기록 생성
-    const rentalDate = Math.floor(Date.now() / 1000);
-    let returnDueDate: number | undefined = undefined;
-
-    if (itemToRent.isTimeLimited && itemToRent.rentalTimeMinutes) {
-      returnDueDate = rentalDate + itemToRent.rentalTimeMinutes * 60;
-    }
-
-    await db.insert(rentalRecords).values({
-      userId: entry.userId,
-      itemsId: entry.itemId,
-      rentalDate: rentalDate,
-      maleCount: 0, // 수동 승인 시 인원수는 기본값으로 설정
-      femaleCount: 0,
-      userName: userToRent.name,
-      userPhone: userToRent.phoneNumber,
-      itemName: itemToRent.name,
-      itemCategory: itemToRent.category,
-      returnDueDate: returnDueDate,
-      isReturned: false,
-    });
-
-    // 6. 처리된 대기열 항목 삭제
-    await db.delete(waitingQueue).where(eq(waitingQueue.id, entryId));
-
-    revalidatePath("/admin/waitings");
-    revalidatePath("/admin/records");
-    revalidatePath("/admin/items");
-
-    return {
-      success: true,
-      message: "대기열 항목이 성공적으로 승인되었습니다.",
-    };
-  } catch (error) {
-    console.error("Error granting waiting entry:", error);
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : "대기열 항목 승인 중 오류가 발생했습니다.",
-    };
-  }
-}
-
-export async function cancelWaitingEntry(entryId: number) {
-  try {
-    const entry = await db
-      .select({ id: waitingQueue.id })
-      .from(waitingQueue)
-      .where(eq(waitingQueue.id, entryId))
-      .get();
-
-    if (!entry) {
-      throw new Error("대기열 항목을 찾을 수 없습니다.");
-    }
-
-    await db.delete(waitingQueue).where(eq(waitingQueue.id, entryId));
-
-    revalidatePath("/admin/waitings");
-
-    return {
-      success: true,
-      message: "대기열 항목이 성공적으로 취소되었습니다.",
-    };
-  } catch (error) {
-    console.error("Error cancelling waiting entry:", error);
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : "대기열 항목 취소 중 오류가 발생했습니다.",
     };
   }
 }

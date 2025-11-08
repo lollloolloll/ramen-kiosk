@@ -14,7 +14,7 @@ import { MoreHorizontal } from "lucide-react";
 import { waitingQueue, items, generalUsers } from "@drizzle/schema";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { grantWaitingEntry, cancelWaitingEntry } from "@/lib/actions/rental"; // 이 액션들은 나중에 구현합니다.
+import { grantWaitingEntry, cancelWaitingEntry } from "@/lib/actions/waiting"; // 이 액션들은 나중에 구현합니다.
 
 export type WaitingEntry = typeof waitingQueue.$inferSelect & {
   itemName?: string | null;
@@ -22,6 +22,12 @@ export type WaitingEntry = typeof waitingQueue.$inferSelect & {
 };
 
 export const columns: ColumnDef<WaitingEntry>[] = [
+  {
+    header: "대기 순번",
+    cell: ({ row }) => {
+      return <div>{row.index + 1}</div>;
+    },
+  },
   {
     accessorKey: "id",
     header: "ID",

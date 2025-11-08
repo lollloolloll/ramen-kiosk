@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { WaitingPageClient } from "./WaitingPageClient";
-import { getWaitingQueueEntries } from "@/lib/actions/rental";
+import { getWaitingQueueEntries } from "@/lib/actions/waiting";
 
 export default async function WaitingPage({
   searchParams,

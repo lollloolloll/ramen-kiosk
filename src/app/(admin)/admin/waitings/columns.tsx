@@ -19,6 +19,8 @@ import { grantWaitingEntry, cancelWaitingEntry } from "@/lib/actions/waiting"; /
 export type WaitingEntry = typeof waitingQueue.$inferSelect & {
   itemName?: string | null;
   userName?: string | null;
+  rentalTimeMinutes?: number | null;
+  maxRentalsPerUser?: number | null;
 };
 
 export const columns: ColumnDef<WaitingEntry>[] = [
@@ -35,6 +37,22 @@ export const columns: ColumnDef<WaitingEntry>[] = [
   {
     accessorKey: "itemName",
     header: "아이템",
+  },
+  {
+    accessorKey: "rentalTimeMinutes",
+    header: "대여 시간(분)",
+    cell: ({ row }) => {
+      const minutes = row.original.rentalTimeMinutes;
+      return <div>{minutes ? `${minutes}분` : "-"}</div>;
+    },
+  },
+  {
+    accessorKey: "maxRentalsPerUser",
+    header: "일일 대여 한도",
+    cell: ({ row }) => {
+      const count = row.original.maxRentalsPerUser;
+      return <div>{count ? `하루 ${count}회` : "-"}</div>;
+    },
   },
   {
     accessorKey: "userName",

@@ -39,6 +39,8 @@ export async function getWaitingQueueEntries(filters: {
         requestDate: waitingQueue.requestDate,
         itemName: items.name,
         userName: generalUsers.name,
+        rentalTimeMinutes: items.rentalTimeMinutes,
+        maxRentalsPerUser: items.maxRentalsPerUser,
       })
       .from(waitingQueue)
       .leftJoin(items, eq(waitingQueue.itemId, items.id))

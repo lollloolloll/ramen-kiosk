@@ -1,17 +1,16 @@
 import { db } from "@/lib/db";
 import { WaitingPageClient } from "./WaitingPageClient";
-import { getWaitingQueueEntries } from "@/lib/actions/rental"; // 이 액션은 나중에 구현합니다.
+import { getWaitingQueueEntries } from "@/lib/actions/rental";
 
-interface WaitingPageProps {
-  searchParams: {
-    page?: string;
-    per_page?: string;
-  };
-}
-
-export default async function WaitingPage({ searchParams }: WaitingPageProps) {
-  const page = parseInt(searchParams.page || "1");
-  const per_page = parseInt(searchParams.per_page || "10");
+export default async function WaitingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ page?: string; per_page?: string }>;
+}) {
+  // searchParams를 await로 받습니다
+  const params = await searchParams;
+  const page = parseInt(params?.page || "1");
+  const per_page = parseInt(params?.per_page || "10");
 
   const { data: waitingEntries, total_count } = await getWaitingQueueEntries({
     page,

@@ -54,20 +54,18 @@ interface EditItemFormProps {
   children: React.ReactNode;
 }
 
-export function EditItemForm({ item, children }: EditItemProps) {
+export function EditItemForm({ item, children }: EditItemFormProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const form = useForm<UpdateItemSchema>({
-    resolver: zodResolver(
-      updateItemClientSchema
-    ) as Resolver<UpdateItemSchema>,
+    resolver: zodResolver(updateItemClientSchema) as Resolver<UpdateItemSchema>,
     defaultValues: {
       name: item.name,
       category: item.category,
       imageUrl: item.imageUrl || undefined,
       isTimeLimited: item.isTimeLimited || false,
-      rentalTimeMinutes: item.rentalTimeMinutes ?? "",
-      maxRentalsPerUser: item.maxRentalsPerUser ?? "",
+      rentalTimeMinutes: item.rentalTimeMinutes ?? undefined,
+      maxRentalsPerUser: item.maxRentalsPerUser ?? undefined,
     },
   });
 

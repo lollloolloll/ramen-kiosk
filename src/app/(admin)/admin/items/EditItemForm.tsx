@@ -1,14 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { updateItem } from "@/lib/actions/item";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,11 +17,25 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
 
 const updateItemClientSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요."),
   category: z.string().min(1, "카테고리를 입력해주세요."),
   imageUrl: z.any().optional(),
+  isTimeLimited: z.boolean().optional(),
+  rentalTimeMinutes: z.coerce
+    .number()
+    .int()
+    .positive("대여 시간은 양의 정수여야 합니다.")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  maxRentalsPerUser: z.coerce
+    .number()
+    .int()
+    .positive("최대 대여 횟수는 양의 정수여야 합니다.")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 });
 
 type UpdateItemSchema = z.infer<typeof updateItemClientSchema>;
@@ -40,7 +45,7 @@ interface EditItemFormProps {
   children: React.ReactNode;
 }
 
-export function EditItemForm({ item, children }: EditItemFormProps) {
+export function EditItemForm({ item, children }: EditItemProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const form = useForm<UpdateItemSchema>({
@@ -51,14 +56,27 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
       name: item.name,
       category: item.category,
       imageUrl: item.imageUrl || undefined,
+      isTimeLimited: item.isTimeLimited || false,
+      rentalTimeMinutes: item.rentalTimeMinutes || undefined,
+      maxRentalsPerUser: item.maxRentalsPerUser || undefined,
     },
   });
+
+  const isTimeLimited = form.watch("isTimeLimited");
 
   const onSubmit = async (values: UpdateItemSchema) => {
     const formData = new FormData();
     formData.append("id", item.id.toString());
     formData.append("name", values.name);
     formData.append("category", values.category);
+    formData.append("isTimeLimited", String(values.isTimeLimited));
+    if (values.rentalTimeMinutes !== undefined) {
+      formData.append("rentalTimeMinutes", String(values.rentalTimeMinutes));
+    }
+    if (values.maxRentalsPerUser !== undefined) {
+      formData.append("maxRentalsPerUser", String(values.maxRentalsPerUser));
+    }
+
     if (values.imageUrl && values.imageUrl instanceof File) {
       formData.append("image", values.imageUrl);
     } else if (typeof values.imageUrl === "string") {
@@ -157,6 +175,56 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="isTimeLimited"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">시간제 대여</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {isTimeLimited && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="rentalTimeMinutes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>대여 시간 (분)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="ex) 30" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="maxRentalsPerUser"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>사용자별 최대 대여 횟수</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="ex) 3" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "수정 중..." : "수정"}

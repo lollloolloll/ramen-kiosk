@@ -25,55 +25,114 @@ export async function rentItem(
   femaleCount: number
 ) {
   try {
-    // 1. 대여할 아이템 정보 조회
-    const itemToRent = await db
-      .select({
-        id: items.id,
-        name: items.name,
-        category: items.category,
-      })
-      .from(items)
-      .where(eq(items.id, itemId))
-      .get();
+    const result = await db.transaction(async (tx) => {
+      // 1. 대여할 아이템 정보 조회 (시간제 대여 관련 속성 포함)
+      const itemToRent = await tx
+        .select({
+          id: items.id,
+          name: items.name,
+          category: items.category,
+          isTimeLimited: items.isTimeLimited,
+          rentalTimeMinutes: items.rentalTimeMinutes,
+          maxRentalsPerUser: items.maxRentalsPerUser,
+        })
+        .from(items)
+        .where(eq(items.id, itemId))
+        .get();
 
-    if (!itemToRent) {
-      throw new Error("해당 아이템을 찾을 수 없습니다.");
-    }
+      if (!itemToRent) {
+        throw new Error("해당 아이템을 찾을 수 없습니다.");
+      }
 
-    // 2. 대여하는 사용자 정보 조회
-    const userToRent = await db
-      .select({
-        id: generalUsers.id,
-        name: generalUsers.name,
-        phoneNumber: generalUsers.phoneNumber,
-      })
-      .from(generalUsers)
-      .where(eq(generalUsers.id, userId))
-      .get();
+      // 2. 대여하는 사용자 정보 조회
+      const userToRent = await tx
+        .select({
+          id: generalUsers.id,
+          name: generalUsers.name,
+          phoneNumber: generalUsers.phoneNumber,
+        })
+        .from(generalUsers)
+        .where(eq(generalUsers.id, userId))
+        .get();
 
-    if (!userToRent) {
-      throw new Error("사용자 정보를 찾을 수 없습니다.");
-    }
+      if (!userToRent) {
+        throw new Error("사용자 정보를 찾을 수 없습니다.");
+      }
 
-    // 3. rentalRecords 테이블에 새 기록 삽입 (사용자 및 아이템 정보 포함)
-    await db.insert(rentalRecords).values({
-      userId: userId,
-      itemsId: itemId,
-      rentalDate: Math.floor(Date.now() / 1000),
-      maleCount: maleCount,
-      femaleCount: femaleCount,
-      // 사용자 및 아이템 정보 스냅샷 저장
-      userName: userToRent.name,
-      userPhone: userToRent.phoneNumber,
-      itemName: itemToRent.name,
-      itemCategory: itemToRent.category,
+      // 3. 현재 대여 중인 아이템 수 확인 (재고 대신 사용)
+      const currentRentals = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(rentalRecords)
+        .where(and(eq(rentalRecords.itemsId, itemId), eq(rentalRecords.isReturned, false)))
+        .get();
+
+      const rentedCount = currentRentals?.count || 0;
+
+      // 4. 사용자별 최대 대여 횟수 제한 확인 (시간제 대여 아이템에만 적용)
+      if (itemToRent.isTimeLimited && itemToRent.maxRentalsPerUser) {
+        const userCurrentRentals = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(rentalRecords)
+          .where(
+            and(
+              eq(rentalRecords.userId, userId),
+              eq(rentalRecords.itemsId, itemId),
+              eq(rentalRecords.isReturned, false)
+            )
+          )
+          .get();
+
+        if ((userCurrentRentals?.count || 0) >= itemToRent.maxRentalsPerUser) {
+          throw new Error("사용자별 최대 대여 횟수를 초과했습니다.");
+        }
+      }
+
+      // 5. 재고 확인 및 대기자 등록 로직
+      // 현재는 items 테이블에 stock 컬럼이 없으므로, isReturned=false인 기록이 총 아이템 개수와 같으면 재고가 없다고 가정
+      // 이 로직은 실제 재고 관리 시스템이 아니므로, 단순화된 접근입니다.
+      // 실제 아이템의 총 개수를 알 수 없으므로, 일단 '대여 중인 아이템이 1개라도 있으면 재고가 없다'고 가정하거나
+      // 더 복잡한 로직이 필요합니다. 여기서는 '대여 가능한 아이템이 없다면 대기열에 추가'로 구현합니다.
+      // (현재는 단일 아이템 대여이므로, 이미 대여 중이면 재고 없음으로 간주)
+      if (rentedCount > 0) {
+        // 아이템이 이미 대여 중이므로 대기열에 추가
+        await tx.insert(waitingQueue).values({
+          itemId: itemId,
+          userId: userId,
+          requestDate: Math.floor(Date.now() / 1000),
+          status: "pending",
+        });
+        return { success: true, message: "아이템이 대여 중입니다. 대기열에 추가되었습니다." };
+      }
+
+      // 6. 대여 기록 삽입
+      const rentalDate = Math.floor(Date.now() / 1000);
+      let returnDueDate: number | undefined = undefined;
+
+      if (itemToRent.isTimeLimited && itemToRent.rentalTimeMinutes) {
+        returnDueDate = rentalDate + itemToRent.rentalTimeMinutes * 60; // 분을 초로 변환
+      }
+
+      await tx.insert(rentalRecords).values({
+        userId: userId,
+        itemsId: itemId,
+        rentalDate: rentalDate,
+        maleCount: maleCount,
+        femaleCount: femaleCount,
+        userName: userToRent.name,
+        userPhone: userToRent.phoneNumber,
+        itemName: itemToRent.name,
+        itemCategory: itemToRent.category,
+        returnDueDate: returnDueDate,
+        isReturned: false, // 새로 대여하는 아이템은 반납되지 않은 상태
+      });
+
+      revalidatePath("/");
+      revalidatePath("/admin/items");
+      revalidatePath("/admin/records");
+
+      return { success: true, message: "아이템 대여가 완료되었습니다." };
     });
-
-    revalidatePath("/");
-    revalidatePath("/admin/items");
-    revalidatePath("/admin/records");
-
-    return { success: true };
+    return result;
   } catch (error) {
     console.error("Rental Failed:", error);
     return {
@@ -84,8 +143,123 @@ export async function rentItem(
     };
   }
 }
-// src/lib/actions/rental.ts
-export async function getAvailableRentalYears() {
+
+export async function returnItem(rentalRecordId: number) {
+  try {
+    const result = await db.transaction(async (tx) => {
+      // 1. 대여 기록을 반납 처리
+      const [updatedRecord] = await tx
+        .update(rentalRecords)
+        .set({
+          isReturned: true,
+          returnDate: Math.floor(Date.now() / 1000),
+          isManualReturn: true, // 관리자에 의한 수동 반납으로 간주
+        })
+        .where(eq(rentalRecords.id, rentalRecordId))
+        .returning();
+
+      if (!updatedRecord) {
+        throw new Error("해당 대여 기록을 찾을 수 없습니다.");
+      }
+
+      // 2. 대기열 확인 및 처리
+      const nextWaitingUser = await tx
+        .select()
+        .from(waitingQueue)
+        .where(and(eq(waitingQueue.itemId, updatedRecord.itemsId || 0), eq(waitingQueue.status, "pending")))
+        .orderBy(asc(waitingQueue.requestDate))
+        .limit(1)
+        .get();
+
+      if (nextWaitingUser) {
+        // 다음 대기자에게 대여 기회 부여 (상태 변경)
+        await tx
+          .update(waitingQueue)
+          .set({
+            status: "granted",
+            grantedDate: Math.floor(Date.now() / 1000),
+          })
+          .where(eq(waitingQueue.id, nextWaitingUser.id));
+
+        // TODO: 다음 대기자에게 알림을 보내는 로직 추가 (예: 키오스크 UI 업데이트, 푸시 알림 등)
+        console.log(
+          `Item ${updatedRecord.itemName} is now available for user ${nextWaitingUser.userId}`
+                );
+              }
+        
+              revalidatePath("/");
+              revalidatePath("/admin/items");
+              revalidatePath("/admin/records");
+        
+              return { success: true, message: "아이템 반납이 완료되었습니다." };
+            });
+            return result;
+          } catch (error) {
+            console.error("Return Item Failed:", error);
+            return {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "아이템 반납 처리 중 예상치 못한 오류가 발생했습니다.",
+            };
+          }
+        }
+        
+        export async function processExpiredRentals() {
+          try {
+            const now = Math.floor(Date.now() / 1000);
+        
+            // 1. 만료되었지만 아직 반납되지 않은 시간제 대여 기록 조회
+            const expiredRentals = await db
+              .select()
+              .from(rentalRecords)
+              .where(
+                and(
+                  eq(rentalRecords.isReturned, false),
+                  sql`${rentalRecords.returnDueDate} IS NOT NULL`,
+                  lte(rentalRecords.returnDueDate, now)
+                )
+              );
+        
+            if (expiredRentals.length === 0) {
+              console.log("No expired rentals to process.");
+              return { success: true, message: "처리할 만료된 대여가 없습니다." };
+            }
+        
+            // 2. 각 만료된 대여 기록을 반납 처리
+            const updatePromises = expiredRentals.map((record) =>
+              db
+                .update(rentalRecords)
+                .set({
+                  isReturned: true,
+                  returnDate: record.returnDueDate, // 만료 시간을 반납 시간으로 설정
+                  isManualReturn: false, // 시스템에 의한 자동 반납
+                })
+                .where(eq(rentalRecords.id, record.id))
+            );
+        
+            await Promise.all(updatePromises);
+        
+            // 3. 관련 경로 재검증
+            revalidatePath("/");
+            revalidatePath("/admin/items");
+            revalidatePath("/admin/records");
+        
+            console.log(`Processed ${expiredRentals.length} expired rentals.`);
+            return { success: true, message: `${expiredRentals.length}개의 만료된 대여를 처리했습니다.` };
+          } catch (error) {
+            console.error("Error processing expired rentals:", error);
+            return {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "만료된 대여 처리 중 예상치 못한 오류가 발생했습니다.",
+            };
+          }
+        }
+        
+        // src/lib/actions/rental.ts
+        export async function getAvailableRentalYears() {
   try {
     // 1. DB에서는 날짜 계산 없이 raw 타임스탬프 값만 모두 가져옵니다.
     const allDatesResult = await db

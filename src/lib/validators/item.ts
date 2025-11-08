@@ -12,6 +12,9 @@ export const itemSchema = z.object({
     .min(1, "카테고리를 입력해주세요.")
     .transform((val) => val.replace(/\s/g, "")),
   imageUrl: z.string().optional(),
+  isTimeLimited: z.boolean().default(false).optional(),
+  rentalTimeMinutes: z.number().int().positive().optional(),
+  maxRentalsPerUser: z.number().int().positive().optional(),
 });
 
 export const updateItemSchema = z.object({
@@ -29,4 +32,7 @@ export const updateItemSchema = z.object({
     .transform((val) => val.replace(/\s/g, ""))
     .optional(),
   imageUrl: z.string().optional(),
+  isTimeLimited: z.boolean().optional(),
+  rentalTimeMinutes: z.number().int().positive().optional(),
+  maxRentalsPerUser: z.number().int().positive().optional(),
 });

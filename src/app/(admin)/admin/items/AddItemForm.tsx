@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   name: z
@@ -58,6 +59,19 @@ const formSchema = z.object({
       // If it's a string (e.g., from defaultValues or if it's a URL string), remove spaces.
       return typeof val === "string" ? val.replace(/\s/g, "") : val;
     }),
+  isTimeLimited: z.boolean().default(false).optional(),
+  rentalTimeMinutes: z.coerce
+    .number()
+    .int()
+    .positive("대여 시간은 양의 정수여야 합니다.")
+    .optional()
+    .or(z.literal("").transform(() => undefined)), // 빈 문자열을 undefined로 처리
+  maxRentalsPerUser: z.coerce
+    .number()
+    .int()
+    .positive("최대 대여 횟수는 양의 정수여야 합니다.")
+    .optional()
+    .or(z.literal("").transform(() => undefined)), // 빈 문자열을 undefined로 처리
 });
 
 export function AddItemForm() {
@@ -67,13 +81,26 @@ export function AddItemForm() {
     defaultValues: {
       name: "",
       category: "",
-      imageUrl: undefined, // Changed to undefined for file input
+      imageUrl: undefined,
+      isTimeLimited: false,
+      rentalTimeMinutes: undefined,
+      maxRentalsPerUser: undefined,
     },
   });
+
+  const isTimeLimited = form.watch("isTimeLimited");
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const formData = new FormData();
     formData.append("name", values.name);
     formData.append("category", values.category);
+    formData.append("isTimeLimited", String(values.isTimeLimited));
+    if (values.rentalTimeMinutes !== undefined) {
+      formData.append("rentalTimeMinutes", String(values.rentalTimeMinutes));
+    }
+    if (values.maxRentalsPerUser !== undefined) {
+      formData.append("maxRentalsPerUser", String(values.maxRentalsPerUser));
+    }
 
     if (values.imageUrl instanceof File) {
       const file = values.imageUrl;
@@ -182,6 +209,56 @@ export function AddItemForm() {
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="isTimeLimited"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">시간제 대여</FormLabel>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        {isTimeLimited && (
+          <>
+            <FormField
+              control={form.control}
+              name="rentalTimeMinutes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>대여 시간 (분)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="ex) 30" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="maxRentalsPerUser"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>사용자별 최대 대여 횟수</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="ex) 3" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+
         <DialogFooter>
           <Button type="submit">아이템 추가</Button>
         </DialogFooter>

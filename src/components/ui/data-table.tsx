@@ -19,7 +19,7 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  onRowClick?: (data: TData) => void;
+  onRowClick?: (data: TData, event: React.MouseEvent) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -66,7 +66,7 @@ export function DataTable<TData, TValue>({
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
                 className={onRowClick ? "cursor-pointer" : ""}
-                onClick={() => onRowClick?.(row.original)}
+                onClick={(event) => onRowClick?.(row.original, event)}
               >
                 {row.getVisibleCells().map((cell, index) => (
                   <TableCell
@@ -74,6 +74,13 @@ export function DataTable<TData, TValue>({
                     className={`text-center align-middle ${
                       index < row.getVisibleCells().length - 1 ? "border-r" : ""
                     }`}
+                    onClick={(e) => {
+                      // 'actions' 컬럼의 셀 내부에서 발생하는 클릭 이벤트는
+                      // 행 전체의 onRowClick으로 전파되지 않도록 막습니다.
+                      if (cell.column.id === "actions") {
+                        e.stopPropagation();
+                      }
+                    }}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>

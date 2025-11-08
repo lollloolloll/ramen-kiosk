@@ -65,7 +65,13 @@ export function UsersPageClient({
   } | null>(null);
   const [availableItems, setAvailableItems] = useState<string[]>([]);
 
-  const handleRowClick = (user: GeneralUser) => {
+  const handleRowClick = (user: GeneralUser, event: React.MouseEvent) => {
+    // 드롭다운 메뉴 내부의 클릭 이벤트는 무시합니다.
+    // 클릭된 요소가 Dialog 또는 AlertDialog 내부에 있는지 확인합니다.
+    // Dialog 및 AlertDialog는 일반적으로 role="dialog" 속성을 가집니다.
+    if (event.target instanceof HTMLElement && event.target.closest('[role="dialog"]')) {
+      return;
+    }
     setSelectedUserForHistory({ userId: user.id, username: user.name });
     setIsRentalHistoryDialogOpen(true);
   };
@@ -180,7 +186,7 @@ export function UsersPageClient({
         <DataTable
           columns={generalUserColumns}
           data={generalUsers}
-          onRowClick={handleRowClick}
+          onRowClick={(user, event) => handleRowClick(user, event)}
         />
       </div>
       <Pagination page={page} per_page={per_page} total_count={total_count} />

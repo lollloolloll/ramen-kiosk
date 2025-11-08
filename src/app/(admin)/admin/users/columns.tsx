@@ -81,7 +81,9 @@ export const generalUserColumns: ColumnDef<GeneralUser>[] = [
             <Button
               variant="ghost"
               className="h-8 w-8 p-0"
-              onClick={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation(); // 드롭다운 메뉴 트리거 클릭 시 이벤트 전파 중지
+              }}
             >
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />

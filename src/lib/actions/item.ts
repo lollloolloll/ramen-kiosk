@@ -2,14 +2,26 @@
 
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { items } from "@drizzle/schema";
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
 
-export async function getItems() {
-  const data = await db.select().from(items).where(eq(items.isHidden, false));
+export async function getItems(includeDeleted = false) {
+  if (includeDeleted) {
+    const data = await db.select().from(items);
+    return data;
+  }
+  const data = await db
+    .select()
+    .from(items)
+    .where(and(eq(items.isHidden, false), eq(items.isDeleted, false)));
+  return data;
+}
+
+export async function getAllItems() {
+  const data = await db.select().from(items);
   return data;
 }
 
@@ -148,7 +160,7 @@ export async function updateItem(formData: FormData) {
 
 export async function deleteItem(id: number) {
   try {
-    await db.delete(items).where(eq(items.id, id));
+    await db.update(items).set({ isDeleted: true }).where(eq(items.id, id));
     revalidatePath("/admin/items");
     return { success: true };
   } catch (error) {
@@ -185,5 +197,16 @@ export async function toggleItemVisibility(id: number, isHidden: boolean) {
   } catch (error) {
     console.error("Failed to toggle item visibility:", error);
     return { error: "아이템 숨김 업데이트에 실패했습니다." };
+  }
+}
+
+export async function toggleItemDeletedStatus(id: number, isDeleted: boolean) {
+  try {
+    await db.update(items).set({ isDeleted }).where(eq(items.id, id));
+    revalidatePath("/admin/items");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to toggle item deleted status:", error);
+    return { error: "아이템 삭제 상태 업데이트에 실패했습니다." };
   }
 }

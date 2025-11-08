@@ -15,8 +15,9 @@ import { items } from "@drizzle/schema";
 import { EditItemForm } from "./EditItemForm";
 import { DeleteItemDialog } from "./DeleteItemDialog";
 import { Switch } from "@/components/ui/switch";
-import { toggleItemVisibility } from "@/lib/actions/item";
+import { toggleItemVisibility, toggleItemDeletedStatus } from "@/lib/actions/item";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export type Item = typeof items.$inferSelect;
 
@@ -24,10 +25,26 @@ export const columns: ColumnDef<Item>[] = [
   {
     accessorKey: "name",
     header: "Name",
+    cell: ({ row }) => {
+      const item = row.original;
+      return (
+        <span className={cn({ "text-muted-foreground": item.isDeleted })}>
+          {item.name}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "category",
     header: "Category",
+    cell: ({ row }) => {
+      const item = row.original;
+      return (
+        <span className={cn({ "text-muted-foreground": item.isDeleted })}>
+          {item.category}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "imageUrl",
@@ -82,6 +99,17 @@ export const columns: ColumnDef<Item>[] = [
     cell: ({ row }) => {
       const item = row.original;
 
+      const handleToggleDelete = async () => {
+        const result = await toggleItemDeletedStatus(item.id, !item.isDeleted);
+        if (result.success) {
+          toast.success(
+            `아이템이 성공적으로 ${item.isDeleted ? "복구" : "삭제"}되었습니다.`
+          );
+        } else {
+          toast.error(result.error || "작업에 실패했습니다.");
+        }
+      };
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -99,18 +127,22 @@ export const columns: ColumnDef<Item>[] = [
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <EditItemForm item={item}>
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                disabled={item.isDeleted}
+              >
                 Edit
               </DropdownMenuItem>
             </EditItemForm>
-            <DeleteItemDialog itemId={item.id}>
-              <DropdownMenuItem
-                onSelect={(e) => e.preventDefault()}
-                className="text-red-500"
-              >
-                Delete
-              </DropdownMenuItem>
-            </DeleteItemDialog>
+            <DropdownMenuItem
+              onClick={handleToggleDelete}
+              className={cn({
+                "text-red-500": !item.isDeleted,
+                "text-green-500": item.isDeleted,
+              })}
+            >
+              {item.isDeleted ? "Restore" : "Delete"}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

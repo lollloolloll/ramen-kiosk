@@ -14,11 +14,12 @@ import { generalUsers } from "@drizzle/schema";
 type GeneralUser = typeof generalUsers.$inferSelect;
 
 interface UserInfoFormProps {
-  userId: number;
-  username: string;
+  userId: number | null;
+  username: string | null;
+  userPhone: string | null;
 }
 
-export function UserInfoForm({ userId, username }: UserInfoFormProps) {
+export function UserInfoForm({ userId, username, userPhone }: UserInfoFormProps) {
   const [user, setUser] = useState<GeneralUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,14 +27,19 @@ export function UserInfoForm({ userId, username }: UserInfoFormProps) {
   useEffect(() => {
     async function fetchUserData() {
       setLoading(true);
-      // 이 액션은 아직 존재하지 않을 수 있습니다. 필요 시 생성해야 합니다.
-      const result = await getGeneralUserById(userId);
-      if (result.success && result.data) {
-        setUser(result.data);
-        setError(null);
+      if (userId) {
+        const result = await getGeneralUserById(userId);
+        if (result.success && result.data) {
+          setUser(result.data);
+          setError(null);
+        } else {
+          setError(result.error || "사용자 정보를 불러오는데 실패했습니다.");
+          setUser(null);
+        }
       } else {
-        setError(result.error || "사용자 정보를 불러오는데 실패했습니다.");
+        // userId가 없는 경우 (삭제된 사용자 등), 기본 정보만 표시
         setUser(null);
+        setError("사용자 ID를 찾을 수 없습니다.");
       }
       setLoading(false);
     }
@@ -44,12 +50,10 @@ export function UserInfoForm({ userId, username }: UserInfoFormProps) {
   return (
     <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
-        <DialogTitle>{username}님의 상세 정보</DialogTitle>
+        <DialogTitle>{username || "알 수 없는 사용자"}님의 상세 정보</DialogTitle>
       </DialogHeader>
       {loading ? (
         <p className="text-center py-8">로딩 중...</p>
-      ) : error ? (
-        <p className="text-center py-8 text-red-500">오류: {error}</p>
       ) : user ? (
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -84,9 +88,26 @@ export function UserInfoForm({ userId, username }: UserInfoFormProps) {
           </div>
         </div>
       ) : (
-        <p className="text-center py-8 text-muted-foreground">
-          사용자 정보가 없습니다.
-        </p>
+        <div className="grid gap-4 py-4">
+          <p className="text-center py-4 text-muted-foreground">사용자 정보를 불러올 수 없습니다.</p>
+          {username && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                이름
+              </Label>
+              <Input id="name" value={username} readOnly className="col-span-3" />
+            </div>
+          )}
+          {userPhone && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phoneNumber" className="text-right">
+                전화번호
+              </Label>
+              <Input id="phoneNumber" value={userPhone} readOnly className="col-span-3" />
+            </div>
+          )}
+          {error && <p className="text-center text-red-500">({error})</p>}
+        </div>
       )}
     </DialogContent>
   );

@@ -5,6 +5,7 @@ import { ColumnDef } from "@tanstack/react-table";
 export type RentalRecord = {
   id: number;
   userId: number; // Added userId
+  userPhone: string | null;
   rentalDate: Date | null;
   userName: string | null;
   itemName: string | null;

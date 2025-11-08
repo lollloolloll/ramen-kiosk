@@ -27,18 +27,18 @@ export function RecordsPageClient({
   const [isRentalHistoryDialogOpen, setIsRentalHistoryDialogOpen] =
     useState(false);
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<{
-    userId: number;
-    username: string;
+    userId: number | null;
+    username: string | null;
+    userPhone: string | null;
   } | null>(null);
 
   const handleRowClick = (record: RentalRecord) => {
-    if (record.userId && record.userName) {
-      setSelectedUserForHistory({
-        userId: record.userId,
-        username: record.userName,
-      });
-      setIsRentalHistoryDialogOpen(true);
-    }
+    setSelectedUserForHistory({
+      userId: record.userId || null,
+      username: record.userName || null,
+      userPhone: record.userPhone || null,
+    });
+    setIsRentalHistoryDialogOpen(true);
   };
 
   return (

@@ -25,10 +25,13 @@ export async function rentItem(
   femaleCount: number
 ) {
   try {
-    // 1. 트랜잭션을 사용하지 않고 직접 db 객체를 사용합니다.
-    // 먼저 대여할 아이템이 DB에 존재하는지 확인합니다.
+    // 1. 대여할 아이템 정보 조회
     const itemToRent = await db
-      .select({ id: items.id }) // 전체 데이터를 가져올 필요 없이 id만 확인해도 됩니다.
+      .select({
+        id: items.id,
+        name: items.name,
+        category: items.category,
+      })
       .from(items)
       .where(eq(items.id, itemId))
       .get();
@@ -37,15 +40,33 @@ export async function rentItem(
       throw new Error("해당 아이템을 찾을 수 없습니다.");
     }
 
-    // 아이템이 존재하면 rentalRecords 테이블에 새 기록을 삽입합니다.
+    // 2. 대여하는 사용자 정보 조회
+    const userToRent = await db
+      .select({
+        id: generalUsers.id,
+        name: generalUsers.name,
+        phoneNumber: generalUsers.phoneNumber,
+      })
+      .from(generalUsers)
+      .where(eq(generalUsers.id, userId))
+      .get();
+
+    if (!userToRent) {
+      throw new Error("사용자 정보를 찾을 수 없습니다.");
+    }
+
+    // 3. rentalRecords 테이블에 새 기록 삽입 (사용자 및 아이템 정보 포함)
     await db.insert(rentalRecords).values({
       userId: userId,
       itemsId: itemId,
-      // 2. rentalDate를 초 단위 UNIX 타임스탬프로 직접 설정합니다.
-      // Date.now()는 밀리초이므로 1000으로 나눠 초 단위로 만듭니다.
       rentalDate: Math.floor(Date.now() / 1000),
       maleCount: maleCount,
       femaleCount: femaleCount,
+      // 사용자 및 아이템 정보 스냅샷 저장
+      userName: userToRent.name,
+      userPhone: userToRent.phoneNumber,
+      itemName: itemToRent.name,
+      itemCategory: itemToRent.category,
     });
 
     revalidatePath("/");
@@ -160,9 +181,10 @@ export async function getRentalRecords(
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
         userId: generalUsers.id,
-        userName: generalUsers.name,
-        itemName: items.name,
-        itemCategory: items.category,
+        userName: sql<string>`COALESCE(${generalUsers.name}, ${rentalRecords.userName})`,
+        userPhone: sql<string>`COALESCE(${generalUsers.phoneNumber}, ${rentalRecords.userPhone})`,
+        itemName: sql<string>`COALESCE(${items.name}, ${rentalRecords.itemName})`,
+        itemCategory: sql<string>`COALESCE(${items.category}, ${rentalRecords.itemCategory})`,
         maleCount: rentalRecords.maleCount,
         femaleCount: rentalRecords.femaleCount,
       })
@@ -264,9 +286,9 @@ export async function getRentalRecordsByUserId(
       .select({
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
-        userName: generalUsers.name,
-        itemName: items.name,
-        itemCategory: items.category,
+        userName: sql<string>`COALESCE(${generalUsers.name}, ${rentalRecords.userName})`,
+        itemName: sql<string>`COALESCE(${items.name}, ${rentalRecords.itemName})`,
+        itemCategory: sql<string>`COALESCE(${items.category}, ${rentalRecords.itemCategory})`,
         maleCount: rentalRecords.maleCount,
         femaleCount: rentalRecords.femaleCount,
         imageUrl: items.imageUrl,

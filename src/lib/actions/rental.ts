@@ -999,3 +999,19 @@ export async function exportRentalRecordsToExcel(
     };
   }
 }
+
+export async function deleteRentalRecord(recordId: number) {
+  try {
+    await db.delete(rentalRecords).where(eq(rentalRecords.id, recordId));
+    revalidatePath("/admin/records");
+    return { success: true, message: "대여 기록이 삭제되었습니다." };
+  } catch (error) {
+    console.error("Delete Rental Record Failed:", error);
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "대여 기록 삭제 중 오류가 발생했습니다.",
+    };
+  }
+}

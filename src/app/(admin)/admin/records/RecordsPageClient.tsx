@@ -6,6 +6,7 @@ import { columns, RentalRecord } from "./columns";
 import { Pagination } from "@/lib/shared/pagination";
 import { Dialog } from "@/components/ui/dialog";
 import { UserInfoForm } from "@/lib/shared/userInfoForm";
+import { Toaster } from "sonner"; // sonner Toaster import로 변경
 
 interface RecordsPageClientProps {
   records: RentalRecord[];
@@ -61,6 +62,7 @@ export function RecordsPageClient({
           />
         </Dialog>
       )}
+      <Toaster /> {/* sonner Toaster 컴포넌트 추가 */}
     </div>
   );
 }

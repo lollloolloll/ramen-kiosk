@@ -1,6 +1,18 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { deleteRentalRecord } from "@/lib/actions/rental";
+import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 
 export type RentalRecord = {
   id: number;
@@ -47,6 +59,59 @@ export const columns: ColumnDef<RentalRecord>[] = [
 
       const date = new Date(timestampInSeconds * 1000);
       return <div>{date.toLocaleString("ko-KR")}</div>;
+    },
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => {
+      const record = row.original;
+      const router = useRouter();
+
+      const handleDelete = async () => {
+        if (window.confirm("정말로 이 대여 기록을 삭제하시겠습니까?")) {
+          const result = await deleteRentalRecord(record.id);
+          if (result.success) {
+            toast.success("삭제 성공", {
+              description: result.message,
+            });
+            router.refresh(); // 페이지를 새로고침하여 변경사항 반영
+          } else {
+            toast.error("삭제 실패", {
+              description: result.error,
+            });
+          }
+        }
+      };
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="h-8 w-8 p-0"
+              onClick={(event) => {
+                event.stopPropagation(); // 드롭다운 메뉴 트리거 클릭 시 이벤트 전파 중지
+              }}
+            >
+              <span className="sr-only">메뉴 열기</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDelete();
+              }}
+              className="text-red-500"
+            >
+              삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
     },
   },
 ];

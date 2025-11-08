@@ -1,7 +1,12 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { rentalRecords, items, generalUsers } from "@drizzle/schema";
+import {
+  rentalRecords,
+  items,
+  generalUsers,
+  waitingQueue,
+} from "@drizzle/schema";
 import {
   eq,
   and,
@@ -63,7 +68,12 @@ export async function rentItem(
       const currentRentals = await tx
         .select({ count: sql<number>`count(*)` })
         .from(rentalRecords)
-        .where(and(eq(rentalRecords.itemsId, itemId), eq(rentalRecords.isReturned, false)))
+        .where(
+          and(
+            eq(rentalRecords.itemsId, itemId),
+            eq(rentalRecords.isReturned, false)
+          )
+        )
         .get();
 
       const rentedCount = currentRentals?.count || 0;
@@ -101,7 +111,10 @@ export async function rentItem(
           requestDate: Math.floor(Date.now() / 1000),
           status: "pending",
         });
-        return { success: true, message: "아이템이 대여 중입니다. 대기열에 추가되었습니다." };
+        return {
+          success: true,
+          message: "아이템이 대여 중입니다. 대기열에 추가되었습니다.",
+        };
       }
 
       // 6. 대여 기록 삽입
@@ -166,7 +179,12 @@ export async function returnItem(rentalRecordId: number) {
       const nextWaitingUser = await tx
         .select()
         .from(waitingQueue)
-        .where(and(eq(waitingQueue.itemId, updatedRecord.itemsId || 0), eq(waitingQueue.status, "pending")))
+        .where(
+          and(
+            eq(waitingQueue.itemId, updatedRecord.itemsId || 0),
+            eq(waitingQueue.status, "pending")
+          )
+        )
         .orderBy(asc(waitingQueue.requestDate))
         .limit(1)
         .get();
@@ -184,82 +202,85 @@ export async function returnItem(rentalRecordId: number) {
         // TODO: 다음 대기자에게 알림을 보내는 로직 추가 (예: 키오스크 UI 업데이트, 푸시 알림 등)
         console.log(
           `Item ${updatedRecord.itemName} is now available for user ${nextWaitingUser.userId}`
-                );
-              }
-        
-              revalidatePath("/");
-              revalidatePath("/admin/items");
-              revalidatePath("/admin/records");
-        
-              return { success: true, message: "아이템 반납이 완료되었습니다." };
-            });
-            return result;
-          } catch (error) {
-            console.error("Return Item Failed:", error);
-            return {
-              error:
-                error instanceof Error
-                  ? error.message
-                  : "아이템 반납 처리 중 예상치 못한 오류가 발생했습니다.",
-            };
-          }
-        }
-        
-        export async function processExpiredRentals() {
-          try {
-            const now = Math.floor(Date.now() / 1000);
-        
-            // 1. 만료되었지만 아직 반납되지 않은 시간제 대여 기록 조회
-            const expiredRentals = await db
-              .select()
-              .from(rentalRecords)
-              .where(
-                and(
-                  eq(rentalRecords.isReturned, false),
-                  sql`${rentalRecords.returnDueDate} IS NOT NULL`,
-                  lte(rentalRecords.returnDueDate, now)
-                )
-              );
-        
-            if (expiredRentals.length === 0) {
-              console.log("No expired rentals to process.");
-              return { success: true, message: "처리할 만료된 대여가 없습니다." };
-            }
-        
-            // 2. 각 만료된 대여 기록을 반납 처리
-            const updatePromises = expiredRentals.map((record) =>
-              db
-                .update(rentalRecords)
-                .set({
-                  isReturned: true,
-                  returnDate: record.returnDueDate, // 만료 시간을 반납 시간으로 설정
-                  isManualReturn: false, // 시스템에 의한 자동 반납
-                })
-                .where(eq(rentalRecords.id, record.id))
-            );
-        
-            await Promise.all(updatePromises);
-        
-            // 3. 관련 경로 재검증
-            revalidatePath("/");
-            revalidatePath("/admin/items");
-            revalidatePath("/admin/records");
-        
-            console.log(`Processed ${expiredRentals.length} expired rentals.`);
-            return { success: true, message: `${expiredRentals.length}개의 만료된 대여를 처리했습니다.` };
-          } catch (error) {
-            console.error("Error processing expired rentals:", error);
-            return {
-              error:
-                error instanceof Error
-                  ? error.message
-                  : "만료된 대여 처리 중 예상치 못한 오류가 발생했습니다.",
-            };
-          }
-        }
-        
-        // src/lib/actions/rental.ts
-        export async function getAvailableRentalYears() {
+        );
+      }
+
+      revalidatePath("/");
+      revalidatePath("/admin/items");
+      revalidatePath("/admin/records");
+
+      return { success: true, message: "아이템 반납이 완료되었습니다." };
+    });
+    return result;
+  } catch (error) {
+    console.error("Return Item Failed:", error);
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "아이템 반납 처리 중 예상치 못한 오류가 발생했습니다.",
+    };
+  }
+}
+
+export async function processExpiredRentals() {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+
+    // 1. 만료되었지만 아직 반납되지 않은 시간제 대여 기록 조회
+    const expiredRentals = await db
+      .select()
+      .from(rentalRecords)
+      .where(
+        and(
+          eq(rentalRecords.isReturned, false),
+          sql`${rentalRecords.returnDueDate} IS NOT NULL`,
+          lte(rentalRecords.returnDueDate, now)
+        )
+      );
+
+    if (expiredRentals.length === 0) {
+      console.log("No expired rentals to process.");
+      return { success: true, message: "처리할 만료된 대여가 없습니다." };
+    }
+
+    // 2. 각 만료된 대여 기록을 반납 처리
+    const updatePromises = expiredRentals.map((record) =>
+      db
+        .update(rentalRecords)
+        .set({
+          isReturned: true,
+          returnDate: record.returnDueDate, // 만료 시간을 반납 시간으로 설정
+          isManualReturn: false, // 시스템에 의한 자동 반납
+        })
+        .where(eq(rentalRecords.id, record.id))
+    );
+
+    await Promise.all(updatePromises);
+
+    // 3. 관련 경로 재검증
+    revalidatePath("/");
+    revalidatePath("/admin/items");
+    revalidatePath("/admin/records");
+
+    console.log(`Processed ${expiredRentals.length} expired rentals.`);
+    return {
+      success: true,
+      message: `${expiredRentals.length}개의 만료된 대여를 처리했습니다.`,
+    };
+  } catch (error) {
+    console.error("Error processing expired rentals:", error);
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "만료된 대여 처리 중 예상치 못한 오류가 발생했습니다.",
+    };
+  }
+}
+
+// src/lib/actions/rental.ts
+export async function getAvailableRentalYears() {
   try {
     // 1. DB에서는 날짜 계산 없이 raw 타임스탬프 값만 모두 가져옵니다.
     const allDatesResult = await db

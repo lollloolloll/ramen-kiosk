@@ -1,5 +1,14 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { updateItem } from "@/lib/actions/item";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,8 +66,8 @@ export function EditItemForm({ item, children }: EditItemProps) {
       category: item.category,
       imageUrl: item.imageUrl || undefined,
       isTimeLimited: item.isTimeLimited || false,
-      rentalTimeMinutes: item.rentalTimeMinutes || undefined,
-      maxRentalsPerUser: item.maxRentalsPerUser || undefined,
+      rentalTimeMinutes: item.rentalTimeMinutes ?? "",
+      maxRentalsPerUser: item.maxRentalsPerUser ?? "",
     },
   });
 

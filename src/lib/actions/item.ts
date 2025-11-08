@@ -17,6 +17,13 @@ export async function addItem(formData: FormData) {
   const name = formData.get("name") as string;
   const category = formData.get("category") as string;
   const imageFile = formData.get("image") as File;
+  const isTimeLimited = formData.get("isTimeLimited") === "true";
+  const rentalTimeMinutes = formData.get("rentalTimeMinutes")
+    ? parseInt(formData.get("rentalTimeMinutes") as string)
+    : undefined;
+  const maxRentalsPerUser = formData.get("maxRentalsPerUser")
+    ? parseInt(formData.get("maxRentalsPerUser") as string)
+    : undefined;
 
   if (!name || !category) return { error: "필수 필드를 모두 입력해주세요." };
 
@@ -42,7 +49,14 @@ export async function addItem(formData: FormData) {
     }
   }
 
-  const data = { name, category, imageUrl };
+  const data = {
+    name,
+    category,
+    imageUrl,
+    isTimeLimited,
+    rentalTimeMinutes,
+    maxRentalsPerUser,
+  };
   const validatedData = itemSchema.safeParse(data);
   if (!validatedData.success) {
     console.error("Validation error:", validatedData.error);
@@ -65,6 +79,13 @@ export async function updateItem(formData: FormData) {
   const category = formData.get("category") as string;
   const imageFile = formData.get("image") as File;
   const imageUrlFromForm = formData.get("imageUrl") as string;
+  const isTimeLimited = formData.get("isTimeLimited") === "true";
+  const rentalTimeMinutes = formData.get("rentalTimeMinutes")
+    ? parseInt(formData.get("rentalTimeMinutes") as string)
+    : undefined;
+  const maxRentalsPerUser = formData.get("maxRentalsPerUser")
+    ? parseInt(formData.get("maxRentalsPerUser") as string)
+    : undefined;
 
   if (isNaN(id)) {
     return { error: "유효하지 않은 ID입니다." };
@@ -96,11 +117,20 @@ export async function updateItem(formData: FormData) {
     imageUrl = imageUrlFromForm;
   }
 
-  const dataToUpdate: { name?: string; category?: string; imageUrl?: string } =
-    {};
+  const dataToUpdate: {
+    name?: string;
+    category?: string;
+    imageUrl?: string;
+    isTimeLimited?: boolean;
+    rentalTimeMinutes?: number;
+    maxRentalsPerUser?: number;
+  } = {};
   if (name) dataToUpdate.name = name;
   if (category) dataToUpdate.category = category;
   if (imageUrl) dataToUpdate.imageUrl = imageUrl;
+  dataToUpdate.isTimeLimited = isTimeLimited;
+  if (rentalTimeMinutes) dataToUpdate.rentalTimeMinutes = rentalTimeMinutes;
+  if (maxRentalsPerUser) dataToUpdate.maxRentalsPerUser = maxRentalsPerUser;
 
   const validatedData = updateItemSchema.safeParse({ id, ...dataToUpdate });
   if (!validatedData.success) {

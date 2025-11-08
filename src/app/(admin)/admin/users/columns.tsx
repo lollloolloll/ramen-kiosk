@@ -78,7 +78,11 @@ export const generalUserColumns: ColumnDef<GeneralUser>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button
+              variant="ghost"
+              className="h-8 w-8 p-0"
+              onClick={(event) => event.stopPropagation()}
+            >
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -86,19 +90,32 @@ export const generalUserColumns: ColumnDef<GeneralUser>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(String(user.id))}
+              onClick={(event) => {
+                event.stopPropagation();
+                navigator.clipboard.writeText(String(user.id));
+              }}
             >
               Copy User ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <EditUserForm user={user}>
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+                onClick={(event) => event.stopPropagation()}
+              >
                 Edit
               </DropdownMenuItem>
             </EditUserForm>
             <DeleteUserDialog userId={user.id}>
               <DropdownMenuItem
-                onSelect={(e) => e.preventDefault()}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+                onClick={(event) => event.stopPropagation()}
                 className="text-red-500"
               >
                 Delete

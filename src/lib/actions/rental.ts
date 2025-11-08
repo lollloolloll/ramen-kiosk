@@ -845,6 +845,187 @@ export async function getRentalAnalytics(filters: {
   }
 }
 
+export async function getWaitingQueueEntries(filters: {
+  page?: number;
+  per_page?: number;
+  status?: string;
+}) {
+  try {
+    const { page = 1, per_page = 10, status } = filters;
+    const offset = (page - 1) * per_page;
+
+    const whereConditions = [];
+    if (status && status !== "all") {
+      whereConditions.push(eq(waitingQueue.status, status));
+    }
+
+    const baseQuery = db
+      .select({
+        id: waitingQueue.id,
+        itemId: waitingQueue.itemId,
+        userId: waitingQueue.userId,
+        requestDate: waitingQueue.requestDate,
+        status: waitingQueue.status,
+        grantedDate: waitingQueue.grantedDate,
+        itemName: items.name,
+        userName: generalUsers.name,
+      })
+      .from(waitingQueue)
+      .leftJoin(items, eq(waitingQueue.itemId, items.id))
+      .leftJoin(generalUsers, eq(waitingQueue.userId, generalUsers.id));
+
+    const filteredQuery =
+      whereConditions.length > 0
+        ? baseQuery.where(and(...whereConditions))
+        : baseQuery;
+
+    const dataQuery = filteredQuery
+      .limit(per_page)
+      .offset(offset)
+      .orderBy(desc(waitingQueue.requestDate));
+
+    const countQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(waitingQueue)
+      .leftJoin(items, eq(waitingQueue.itemId, items.id))
+      .leftJoin(generalUsers, eq(waitingQueue.userId, generalUsers.id))
+      .where(and(...whereConditions));
+
+    const [data, total] = await Promise.all([dataQuery, countQuery]);
+
+    const total_count = total[0]?.count || 0;
+
+    return { success: true, data, total_count };
+  } catch (error) {
+    console.error("Error fetching waiting queue entries:", error);
+    return { error: "대기열 항목을 불러오는 데 실패했습니다." };
+  }
+}
+
+export async function grantWaitingEntry(entryId: number) {
+  try {
+    const entry = await db
+      .select()
+      .from(waitingQueue)
+      .where(eq(waitingQueue.id, entryId))
+      .get();
+
+    if (!entry) {
+      throw new Error("대기열 항목을 찾을 수 없습니다.");
+    }
+    if (entry.status !== "pending") {
+      throw new Error("대기 중인 항목만 승인할 수 있습니다.");
+    }
+
+    // 1. 대기열 항목 상태를 'granted'로 업데이트
+    await db
+      .update(waitingQueue)
+      .set({
+        status: "granted",
+        grantedDate: Math.floor(Date.now() / 1000),
+      })
+      .where(eq(waitingQueue.id, entryId));
+
+    // 2. 대여 기록 생성
+    const itemToRent = await db
+      .select({
+        id: items.id,
+        name: items.name,
+        category: items.category,
+        isTimeLimited: items.isTimeLimited,
+        rentalTimeMinutes: items.rentalTimeMinutes,
+      })
+      .from(items)
+      .where(eq(items.id, entry.itemId))
+      .get();
+
+    const userToRent = await db
+      .select({
+        id: generalUsers.id,
+        name: generalUsers.name,
+        phoneNumber: generalUsers.phoneNumber,
+      })
+      .from(generalUsers)
+      .where(eq(generalUsers.id, entry.userId))
+      .get();
+
+    if (!itemToRent || !userToRent) {
+      throw new Error("아이템 또는 사용자 정보를 찾을 수 없습니다.");
+    }
+
+    const rentalDate = Math.floor(Date.now() / 1000);
+    let returnDueDate: number | undefined = undefined;
+
+    if (itemToRent.isTimeLimited && itemToRent.rentalTimeMinutes) {
+      returnDueDate = rentalDate + itemToRent.rentalTimeMinutes * 60;
+    }
+
+    await db.insert(rentalRecords).values({
+      userId: entry.userId,
+      itemsId: entry.itemId,
+      rentalDate: rentalDate,
+      maleCount: 0, // 대기열 승인 시 인원수는 0으로 초기화 (추후 수정 필요)
+      femaleCount: 0, // 대기열 승인 시 인원수는 0으로 초기화 (추후 수정 필요)
+      userName: userToRent.name,
+      userPhone: userToRent.phoneNumber,
+      itemName: itemToRent.name,
+      itemCategory: itemToRent.category,
+      returnDueDate: returnDueDate,
+      isReturned: false,
+    });
+
+    revalidatePath("/admin/waitings");
+    revalidatePath("/admin/records");
+    revalidatePath("/admin/items"); // 아이템 재고 상태가 변경될 수 있으므로
+
+    return { success: true, message: "대기열 항목이 성공적으로 승인되었습니다." };
+  } catch (error) {
+    console.error("Error granting waiting entry:", error);
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "대기열 항목 승인 중 오류가 발생했습니다.",
+    };
+  }
+}
+
+export async function cancelWaitingEntry(entryId: number) {
+  try {
+    const entry = await db
+      .select()
+      .from(waitingQueue)
+      .where(eq(waitingQueue.id, entryId))
+      .get();
+
+    if (!entry) {
+      throw new Error("대기열 항목을 찾을 수 없습니다.");
+    }
+    if (entry.status !== "pending") {
+      throw new Error("대기 중인 항목만 취소할 수 있습니다.");
+    }
+
+    await db
+      .update(waitingQueue)
+      .set({
+        status: "cancelled",
+      })
+      .where(eq(waitingQueue.id, entryId));
+
+    revalidatePath("/admin/waitings");
+
+    return { success: true, message: "대기열 항목이 성공적으로 취소되었습니다." };
+  } catch (error) {
+    console.error("Error cancelling waiting entry:", error);
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "대기열 항목 취소 중 오류가 발생했습니다.",
+    };
+  }
+}
+
 export async function exportRentalRecordsToExcel(
   filters: {
     username?: string;

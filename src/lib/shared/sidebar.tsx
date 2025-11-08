@@ -10,6 +10,7 @@ const links = [
   { href: "/admin/users", label: "Users" },
   { href: "/admin/items", label: "Items" },
   { href: "/admin/records", label: "Records" },
+  { href: "/admin/waitings", label: "Waitings" },
 ];
 
 export function Sidebar() {

@@ -57,6 +57,7 @@ export function RecordsPageClient({
           <UserInfoForm
             userId={selectedUserForHistory.userId}
             username={selectedUserForHistory.username}
+            userPhone={selectedUserForHistory.userPhone}
           />
         </Dialog>
       )}

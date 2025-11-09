@@ -1,28 +1,33 @@
-import { db } from "@/lib/db";
-import { WaitingPageClient } from "./WaitingPageClient";
 import { getWaitingQueueEntries } from "@/lib/actions/waiting";
+import { getActiveRentalsWithWaitCount } from "@/lib/actions/rental";
+import { WaitingPageClient } from "./WaitingPageClient";
 
 export default async function WaitingPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ page?: string; per_page?: string }>;
+  searchParams?: { page?: string; per_page?: string };
 }) {
-  // searchParams를 await로 받습니다
-  const params = await searchParams;
-  const page = parseInt(params?.page || "1");
-  const per_page = parseInt(params?.per_page || "10");
+  const page = parseInt(searchParams?.page || "1");
+  const per_page = parseInt(searchParams?.per_page || "10");
 
-  const { data: waitingEntries, total_count } = await getWaitingQueueEntries({
-    page,
-    per_page,
-  });
+  const [waitingResult, activeRentalsResult] = await Promise.all([
+    getWaitingQueueEntries({ page, per_page }),
+    getActiveRentalsWithWaitCount(),
+  ]);
+
+  const { data: waitingEntries, total_count } = waitingResult;
+  const { data: activeRentals } = activeRentalsResult;
 
   return (
-    <WaitingPageClient
-      waitingEntries={waitingEntries || []}
-      page={page}
-      per_page={per_page}
-      total_count={total_count || 0}
-    />
+    <div className="container mx-auto py-10">
+      <h1 className="text-3xl font-bold mb-8">특수 아이템 관제탑</h1>
+      <WaitingPageClient
+        activeRentals={activeRentals || []}
+        waitingEntries={waitingEntries || []}
+        page={page}
+        per_page={per_page}
+        total_count={total_count || 0}
+      />
+    </div>
   );
 }

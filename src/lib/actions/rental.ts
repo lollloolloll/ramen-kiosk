@@ -1015,3 +1015,103 @@ export async function deleteRentalRecord(recordId: number) {
     };
   }
 }
+
+export async function getActiveRentalsWithWaitCount() {
+  try {
+    const waitCountSubquery = db
+      .select({
+        itemId: waitingQueue.itemId,
+        count: sql<number>`count(*)`.as("wait_count"),
+      })
+      .from(waitingQueue)
+      .groupBy(waitingQueue.itemId)
+      .as("wait_counts");
+
+    const activeRentals = await db
+      .select({
+        recordId: rentalRecords.id,
+        itemName: items.name,
+        userName: generalUsers.name,
+        rentalDate: rentalRecords.rentalDate,
+        returnDueDate: rentalRecords.returnDueDate,
+        waitCount: sql<number>`COALESCE(${waitCountSubquery.count}, 0)`.mapWith(
+          Number
+        ),
+        itemsId: rentalRecords.itemsId,
+      })
+      .from(rentalRecords)
+      .leftJoin(items, eq(rentalRecords.itemsId, items.id))
+      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
+      .leftJoin(
+        waitCountSubquery,
+        eq(rentalRecords.itemsId, waitCountSubquery.itemId)
+      )
+      .where(
+        and(
+          eq(items.isTimeLimited, true),
+          eq(rentalRecords.isReturned, false)
+        )
+      );
+
+    return { success: true, data: activeRentals };
+  } catch (error) {
+    console.error("Error fetching active rentals with wait count:", error);
+    return {
+      error: "활성 대여 목록을 불러오는 데 실패했습니다.",
+    };
+  }
+}
+
+export async function extendRentalTime(rentalRecordId: number) {
+  try {
+    const rentalRecord = await db.query.rentalRecords.findFirst({
+      where: eq(rentalRecords.id, rentalRecordId),
+    });
+
+    if (!rentalRecord || !rentalRecord.itemsId || !rentalRecord.returnDueDate) {
+      throw new Error(
+        "연장할 대여 기록을 찾을 수 없거나, 연장 가능한 항목이 아닙니다."
+      );
+    }
+
+    const itemId = rentalRecord.itemsId;
+
+    const item = await db.query.items.findFirst({
+      where: eq(items.id, itemId),
+    });
+
+    if (!item || !item.isTimeLimited || !item.rentalTimeMinutes) {
+      throw new Error(
+        "연장할 아이템 정보를 찾을 수 없거나, 시간제 대여 아이템이 아닙니다."
+      );
+    }
+
+    const waitingUser = await db.query.waitingQueue.findFirst({
+      where: eq(waitingQueue.itemId, itemId),
+    });
+
+    if (waitingUser) {
+      throw new Error("대기자가 있어 연장할 수 없습니다.");
+    }
+
+    const newReturnDueDate =
+      rentalRecord.returnDueDate + item.rentalTimeMinutes * 60;
+
+    await db
+      .update(rentalRecords)
+      .set({ returnDueDate: newReturnDueDate })
+      .where(eq(rentalRecords.id, rentalRecordId));
+
+    revalidatePath("/admin/waitings");
+
+    return { success: true, message: "대여 시간이 연장되었습니다." };
+  } catch (error) {
+    console.error("Extend Rental Time Failed:", error);
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "대여 시간 연장 중 오류가 발생했습니다.",
+    };
+  }
+}

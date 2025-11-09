@@ -15,11 +15,24 @@ import { items } from "@drizzle/schema";
 import { EditItemForm } from "./EditItemForm";
 import { DeleteItemDialog } from "./DeleteItemDialog";
 import { Switch } from "@/components/ui/switch";
-import { toggleItemVisibility, toggleItemDeletedStatus } from "@/lib/actions/item";
+import {
+  toggleItemVisibility,
+  toggleItemDeletedStatus,
+} from "@/lib/actions/item";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export type Item = typeof items.$inferSelect;
+type BaseItem = typeof items.$inferSelect;
+
+// 2. API 응답에 포함될, 계산된 추가 속성을 정의합니다.
+interface ItemComputedFields {
+  status: "AVAILABLE" | "RENTED";
+  waitingCount: number;
+}
+
+// 3. 기본 타입과 계산된 속성을 결합(&)하여 최종 Item 타입을 만듭니다.
+// 이 타입이 프론트엔드 컴포넌트에서 실제로 사용될 API 응답 객체의 타입입니다.
+export type Item = BaseItem & ItemComputedFields;
 
 export const columns: ColumnDef<Item>[] = [
   {

@@ -87,18 +87,15 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
 
   const isRentedMode = item?.status === "RENTED";
-  const estimatedWaitingTime = (item?.waitingCount ?? 0) * 15; // 팀당 예상 대기시간 15분
+  const estimatedWaitingTime = (item?.waitingCount ?? 0) * 15;
 
-  // 생년월일 상태
   const [birthYear, setBirthYear] = useState<string>();
   const [birthMonth, setBirthMonth] = useState<string>();
   const [birthDay, setBirthDay] = useState<string>();
 
-  // 학교 정보 상태
   const [schoolLevel, setSchoolLevel] = useState("");
   const [schoolName, setSchoolName] = useState("");
 
-  // 년도 Select가 열렸을 때 2010년으로 스크롤
   const [yearSelectOpen, setYearSelectOpen] = useState(false);
 
   const identificationForm = useForm<IdentificationFormValues>({
@@ -120,7 +117,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     },
   });
 
-  // 생년월일 useEffect
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {
       registerForm.setValue(
@@ -132,7 +128,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
   }, [birthYear, birthMonth, birthDay, registerForm]);
 
-  // 학교 useEffect
   useEffect(() => {
     if (schoolLevel === "해당없음") {
       registerForm.setValue("school", "해당없음");
@@ -160,7 +155,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
   }, [schoolLevel, schoolName, registerForm]);
 
-  // Success 화면 카운트다운 및 자동 종료
   useEffect(() => {
     if (step === "success" || step === "waitingSuccess") {
       setCountdown(5);
@@ -343,14 +337,58 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 </DialogTitle>
                 <DialogDescription>
                   {isRentedMode
-                    ? `현재 '${item.name}'은(는) 대여 중입니다. ${
-                        item.waitingCount > 0
-                          ? `현재 ${item.waitingCount}팀이 대기 중이며, 예상 대기 시간은 약 ${estimatedWaitingTime}분입니다.`
-                          : ""
-                      } 대기열에 등록하려면 정보를 입력하세요.`
+                    ? `현재 '${item.name}'은(는) 대여 중입니다.`
                     : `'${item.name}'을(를) 대여하려면 이름과 휴대폰 번호를 입력하세요.`}
                 </DialogDescription>
               </DialogHeader>
+
+              {/* 대기자 명단 카드 */}
+              {isRentedMode && item.waitingCount > 0 && (
+                <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse" />
+                      <span className="text-sm font-semibold text-foreground">
+                        현재 대기 중
+                      </span>
+                    </div>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      예상 {estimatedWaitingTime}분
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl font-black text-[oklch(0.7_0.18_350)]">
+                      {item.waitingCount}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      팀이 줄 서 있어요
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)]">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      네 차례가 되면 알려드릴게요! 다른 거 구경하면서 기다려도
+                      돼요 😊
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {isRentedMode && item.waitingCount === 0 && (
+                <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)]" />
+                    <span className="text-sm font-semibold text-foreground">
+                      첫 번째 대기자가 되세요!
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    지금 등록하면 가장 먼저 이용할 수 있어요
+                  </p>
+                </div>
+              )}
+
               <FormField
                 control={identificationForm.control}
                 name="name"
@@ -762,10 +800,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
             className="flex flex-col items-center justify-center py-12 px-8 text-center relative overflow-hidden"
             key="success"
           >
-            {/* 배경 애니메이션 효과 */}
             <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)] animate-pulse" />
 
-            {/* 파티클 효과 */}
             <div className="absolute top-4 left-1/4 text-4xl animate-bounce">
               ✨
             </div>
@@ -782,9 +818,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               🎈
             </div>
 
-            {/* 메인 컨텐츠 */}
             <div className="relative z-10 space-y-6">
-              {/* 아이콘 영역 */}
               <div className="relative inline-block">
                 <div className="text-8xl animate-bounce">🎉</div>
                 <div
@@ -795,7 +829,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 </div>
               </div>
 
-              {/* 제목 */}
               <div className="space-y-2">
                 <DialogTitle className="text-3xl font-black bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
                   대여 완료!
@@ -805,7 +838,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 </div>
               </div>
 
-              {/* 메시지 */}
               <DialogDescription className="text-lg font-medium text-foreground leading-relaxed">
                 신나게 즐기고 <br />
                 <span className="text-[oklch(0.7_0.18_350)] font-bold">
@@ -814,7 +846,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 하는 거 잊지 말기!
               </DialogDescription>
 
-              {/* 카운트다운 원형 프로그레스 */}
               <div className="relative w-24 h-24 mx-auto my-6">
                 <svg className="transform -rotate-90 w-24 h-24">
                   <circle
@@ -862,7 +893,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 </div>
               </div>
 
-              {/* 버튼 */}
               <DialogFooter className="mt-6">
                 <Button
                   onClick={handleSuccessConfirm}

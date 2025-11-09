@@ -31,7 +31,7 @@ export async function getAllItems() {
         .from(rentalRecords)
         .where(and(eq(rentalRecords.itemsId, item.id), eq(rentalRecords.isReturned, false)));
 
-      const status = rented.length > 0 ? "RENTED" : "AVAILABLE";
+      const status: "RENTED" | "AVAILABLE" = rented.length > 0 ? "RENTED" : "AVAILABLE";
 
       // Calculate waitingCount
       const waitingCount = await db

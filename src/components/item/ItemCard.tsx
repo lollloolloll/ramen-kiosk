@@ -17,7 +17,7 @@ export function ItemCard({ item, onOrder }: ItemCardProps) {
   return (
     <Card
       // flex flex-col 추가하여 자식 요소들을 수직으로 정렬
-      className="flex flex-col overflow-hidden cursor-pointer transition-all hover:shadow-2xl hover:scale-[1.03] active:scale-[0.98] border-2 border-[oklch(0.75_0.12_165/0.2)] hover:border-[oklch(0.75_0.12_165/0.4)] bg-card pt-4"
+      className="relative flex flex-col overflow-hidden cursor-pointer transition-all hover:shadow-2xl hover:scale-[1.03] active:scale-[0.98] border-2 border-[oklch(0.75_0.12_165/0.2)] hover:border-[oklch(0.75_0.12_165/0.4)] bg-card pt-4"
       onClick={() => onOrder(item)}
     >
       <div className="absolute top-2 right-2 z-10">

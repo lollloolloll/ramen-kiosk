@@ -5,7 +5,7 @@ import path from "path";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { items } from "@drizzle/schema";
+import { items, rentalRecords, waitingQueue } from "@drizzle/schema";
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
 
 export async function getItems(includeDeleted = false) {
@@ -21,8 +21,33 @@ export async function getItems(includeDeleted = false) {
 }
 
 export async function getAllItems() {
-  const data = await db.select().from(items);
-  return data;
+  const allItems = await db.select().from(items);
+
+  const itemsWithStatusAndWaitingCount = await Promise.all(
+    allItems.map(async (item) => {
+      // Calculate status
+      const rented = await db
+        .select()
+        .from(rentalRecords)
+        .where(and(eq(rentalRecords.itemsId, item.id), eq(rentalRecords.isReturned, false)));
+
+      const status = rented.length > 0 ? "RENTED" : "AVAILABLE";
+
+      // Calculate waitingCount
+      const waitingCount = await db
+        .select()
+        .from(waitingQueue)
+        .where(eq(waitingQueue.itemId, item.id));
+
+      return {
+        ...item,
+        status,
+        waitingCount: waitingCount.length,
+      };
+    })
+  );
+
+  return itemsWithStatusAndWaitingCount;
 }
 
 export async function addItem(formData: FormData) {

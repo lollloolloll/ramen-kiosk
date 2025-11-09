@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Item } from "@/app/(admin)/admin/items/columns";
 import { rentItem } from "@/lib/actions/rental";
+import { addToWaitingList } from "@/lib/actions/waiting";
 import {
   findUserByNameAndPhone,
   createGeneralUser,
@@ -47,7 +48,7 @@ interface RentalDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Step = "identification" | "register" | "success";
+type Step = "identification" | "register" | "success" | "waitingSuccess";
 
 const identificationSchema = z
   .object({
@@ -83,6 +84,10 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
+
+  const isRentedMode = item?.status === "RENTED";
+  const estimatedWaitingTime = (item?.waitingCount ?? 0) * 15; // 팀당 예상 대기시간 15분
 
   // 생년월일 상태
   const [birthYear, setBirthYear] = useState<string>();
@@ -157,7 +162,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
 
   // Success 화면 카운트다운 및 자동 종료
   useEffect(() => {
-    if (step === "success") {
+    if (step === "success" || step === "waitingSuccess") {
       setCountdown(5);
       const timer = setInterval(() => {
         setCountdown((prev) => {
@@ -184,7 +189,11 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         values.phoneNumber
       );
       if (user) {
-        await handleRental(user.id, values.maleCount, values.femaleCount);
+        if (isRentedMode) {
+          await handleWaiting(user.id);
+        } else {
+          await handleRental(user.id, values.maleCount, values.femaleCount);
+        }
       } else {
         toast.info("등록된 사용자가 아닙니다. 신규 등록을 진행해주세요.");
         setStep("register");
@@ -206,8 +215,12 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         throw new Error(result.error);
       }
       if (result.user) {
-        const { maleCount, femaleCount } = identificationForm.getValues();
-        await handleRental(result.user.id, maleCount, femaleCount);
+        if (isRentedMode) {
+          await handleWaiting(result.user.id);
+        } else {
+          const { maleCount, femaleCount } = identificationForm.getValues();
+          await handleRental(result.user.id, maleCount, femaleCount);
+        }
       }
     } catch (error) {
       toast.error(
@@ -243,6 +256,28 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
   };
 
+  const handleWaiting = async (userId: number) => {
+    if (!item) {
+      toast.error("아이템 정보가 없습니다.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await addToWaitingList(userId, item.id);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      setWaitingPosition(result.waitingPosition ?? null);
+      setStep("waitingSuccess");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "대기열 등록에 실패했습니다."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const closeDialog = () => {
     onOpenChange(false);
   };
@@ -256,6 +291,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const resetDialog = () => {
     setStep("identification");
     setCountdown(5);
+    setWaitingPosition(null);
     identificationForm.reset();
     registerForm.reset();
     setBirthYear(undefined);
@@ -303,11 +339,16 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
             >
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
-                  아이템 대여
+                  {isRentedMode ? "대기열 등록" : "아이템 대여"}
                 </DialogTitle>
                 <DialogDescription>
-                  '{item.name}'을(를) 대여하려면 이름과 휴대폰 번호를
-                  입력하세요.
+                  {isRentedMode
+                    ? `현재 '${item.name}'은(는) 대여 중입니다. ${
+                        item.waitingCount > 0
+                          ? `현재 ${item.waitingCount}팀이 대기 중이며, 예상 대기 시간은 약 ${estimatedWaitingTime}분입니다.`
+                          : ""
+                      } 대기열에 등록하려면 정보를 입력하세요.`
+                    : `'${item.name}'을(를) 대여하려면 이름과 휴대폰 번호를 입력하세요.`}
                 </DialogDescription>
               </DialogHeader>
               <FormField
@@ -445,7 +486,11 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                     }
                     className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
                   >
-                    {isSubmitting ? "확인 중..." : "대여하기"}
+                    {isSubmitting
+                      ? "처리 중..."
+                      : isRentedMode
+                      ? "대기열 등록하기"
+                      : "대여하기"}
                   </Button>
                 </div>
               </DialogFooter>
@@ -701,7 +746,11 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                   disabled={isSubmitting || isButtonDisabled}
                   className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
                 >
-                  {isSubmitting ? "등록 중..." : "등록 및 대여"}
+                  {isSubmitting
+                    ? "등록 중..."
+                    : isRentedMode
+                    ? "등록 및 대기"
+                    : "등록 및 대여"}
                 </Button>
               </DialogFooter>
             </form>
@@ -826,6 +875,44 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               <p className="text-xs text-muted-foreground mt-2">
                 {countdown}초 후 자동으로 닫힙니다
               </p>
+            </div>
+          </div>
+        );
+      case "waitingSuccess":
+        return (
+          <div
+            className="flex flex-col items-center justify-center py-12 px-8 text-center relative"
+            key="waitingSuccess"
+          >
+            <div className="relative z-10 space-y-6">
+              <DialogTitle className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
+                대기열 합류 완료!
+              </DialogTitle>
+              <DialogDescription className="text-lg font-medium text-foreground leading-relaxed">
+                예약 리스트에 올랐어!
+              </DialogDescription>
+
+              <div className="my-8">
+                <p className="text-base text-muted-foreground">너의 순서는</p>
+                <p className="text-8xl font-black text-[oklch(0.7_0.18_350)] animate-pulse">
+                  {waitingPosition}번째
+                </p>
+              </div>
+
+              <p className="text-base text-foreground">
+                네 차례가 되면 알려줄게!
+                <br />
+                다른 거 구경하고 있어도 괜찮아 😉
+              </p>
+
+              <DialogFooter className="mt-6">
+                <Button
+                  onClick={handleSuccessConfirm}
+                  className="w-full h-12 text-lg font-bold bg-gradient-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]"
+                >
+                  확인 ({countdown})
+                </Button>
+              </DialogFooter>
             </div>
           </div>
         );

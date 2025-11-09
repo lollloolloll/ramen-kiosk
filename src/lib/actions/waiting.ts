@@ -21,6 +21,65 @@ import {
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+export async function addToWaitingList(userId: number, itemId: number) {
+  try {
+    // 1. 아이템 및 사용자 정보 조회
+    const [item, user] = await Promise.all([
+      db.query.items.findFirst({ where: eq(items.id, itemId) }),
+      db.query.generalUsers.findFirst({
+        where: eq(generalUsers.id, userId),
+      }),
+    ]);
+
+    if (!item || !user) {
+      throw new Error("아이템 또는 사용자 정보를 찾을 수 없습니다.");
+    }
+
+    // 2. 이미 대기열에 있는지 확인
+    const existingWaiting = await db.query.waitingQueue.findFirst({
+      where: and(
+        eq(waitingQueue.userId, userId),
+        eq(waitingQueue.itemId, itemId)
+      ),
+    });
+
+    if (existingWaiting) {
+      throw new Error("이미 해당 아이템의 대기열에 등록되어 있습니다.");
+    }
+
+    // 3. 대기열에 추가
+    await db.insert(waitingQueue).values({
+      userId,
+      itemId,
+      requestDate: Math.floor(Date.now() / 1000),
+    });
+
+    // 4. 현재 대기 순번 계산
+    const waitingCountResult = await db
+      .select({ value: count() })
+      .from(waitingQueue)
+      .where(eq(waitingQueue.itemId, itemId));
+
+    const waitingPosition = waitingCountResult[0].value;
+
+    revalidatePath("/(kiosk)/kiosk");
+    revalidatePath("/admin/waitings");
+
+    return {
+      success: true,
+      message: "대기열에 성공적으로 등록되었습니다.",
+      waitingPosition,
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "대기열 등록 중 오류가 발생했습니다.",
+    };
+  }
+}
+
 export async function getWaitingQueueEntries(filters: {
   page?: number;
   per_page?: number;

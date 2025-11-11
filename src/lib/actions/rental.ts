@@ -105,10 +105,6 @@ export async function rentItem(
       }
     }
 
-    // 5. 재고 확인
-    if (rentedCount > 0) {
-      throw new Error("이미 다른 사람이 대여 중인 아이템입니다.");
-    }
 
     // 6. 대여 기록 삽입
     const rentalDate = Math.floor(Date.now() / 1000);

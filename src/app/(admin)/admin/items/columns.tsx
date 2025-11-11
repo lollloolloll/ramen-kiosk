@@ -99,14 +99,7 @@ export const columns: ColumnDef<Item>[] = [
       return <Switch checked={isChecked} onCheckedChange={handleToggle} />;
     },
   },
-  {
-    accessorKey: "isTimeLimited",
-    header: "대여 제한 여부",
-    cell: ({ row }) => {
-      const isTimeLimited = row.original.isTimeLimited;
-      return <span>{isTimeLimited ? "예" : "아니오"}</span>;
-    },
-  },
+
   {
     id: "actions",
     cell: ({ row }) => {

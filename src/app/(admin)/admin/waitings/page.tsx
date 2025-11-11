@@ -2,13 +2,21 @@ import { getWaitingQueueEntries } from "@/lib/actions/waiting";
 import { getActiveRentalsWithWaitCount } from "@/lib/actions/rental";
 import { WaitingPageClient } from "./WaitingPageClient";
 
-export default async function WaitingPage({
-  searchParams,
-}: {
-  searchParams?: { page?: string; per_page?: string };
-}) {
-  const page = parseInt(searchParams?.page || "1");
-  const per_page = parseInt(searchParams?.per_page || "10");
+interface WaitingPageProps {
+  params?: Promise<{ [key: string]: string | string[] }>;
+  searchParams?: Promise<{ page?: string; per_page?: string }>;
+}
+
+export default async function WaitingPage({ searchParams }: WaitingPageProps) {
+  const params = await searchParams;
+  const page = parseInt(
+    Array.isArray(params?.page) ? params?.page[0] : params?.page || "1"
+  );
+  const per_page = parseInt(
+    Array.isArray(params?.per_page)
+      ? params?.per_page[0]
+      : params?.per_page || "10"
+  );
 
   const [waitingResult, activeRentalsResult] = await Promise.all([
     getWaitingQueueEntries({ page, per_page }),

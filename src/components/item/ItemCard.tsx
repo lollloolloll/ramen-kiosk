@@ -11,8 +11,10 @@ interface ItemCardProps {
 }
 
 export function ItemCard({ item, onOrder }: ItemCardProps) {
-  const isRented = item.status === "RENTED";
-  const waitingCount = item.waitingCount;
+  // 사용자 요청에 따라 항상 '대여 가능'으로 표시
+  const isRented = false;
+  // 대기열 로직 제거 요청에 따라 waitingCount 표시 제거
+  // const waitingCount = item.waitingCount;
 
   return (
     <Card
@@ -21,9 +23,8 @@ export function ItemCard({ item, onOrder }: ItemCardProps) {
       onClick={() => onOrder(item)}
     >
       <div className="absolute top-2 right-2 z-10">
-        <Badge variant={isRented ? "rented" : "available"}>
-          {isRented ? "대여 중" : "대여 가능"}
-          {waitingCount > 0 && ` (${waitingCount}팀 대기)`}
+        <Badge variant={"available"}>
+          대여 가능
         </Badge>
       </div>
       {/* 이미지 영역: 이제 정상적으로 상단에 위치 */}

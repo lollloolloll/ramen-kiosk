@@ -183,55 +183,6 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="isTimeLimited"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">시간제 대여</FormLabel>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {isTimeLimited && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="rentalTimeMinutes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>대여 시간 (분)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="ex) 30" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="maxRentalsPerUser"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>사용자별 최대 대여 횟수</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="ex) 3" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
-            )}
-
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "수정 중..." : "수정"}

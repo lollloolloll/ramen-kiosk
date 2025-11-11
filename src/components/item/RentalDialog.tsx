@@ -11,7 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Item } from "@/app/(admin)/admin/items/columns";
 import { rentItem, checkUserRentalStatus } from "@/lib/actions/rental";
-import { addToWaitingList } from "@/lib/actions/waiting";
+// 사용자 요청에 따라 대기열 관련 로직 제거
+// import { addToWaitingList } from "@/lib/actions/waiting";
 import {
   findUserByNameAndPhone,
   createGeneralUser,
@@ -84,11 +85,12 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(5);
-  const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
-
-  const isRentedMode = item?.status === "RENTED";
-  const estimatedWaitingTime =
-    ((item?.waitingCount ?? 0) + (isRentedMode ? 1 : 0)) * 15;
+  // 사용자 요청에 따라 waitingPosition 상태 제거
+  // const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
+  // 사용자 요청에 따라 isRentedMode 및 대기열 관련 로직 제거
+  // const isRentedMode = item?.status === "RENTED";
+  // const estimatedWaitingTime =
+  //   ((item?.waitingCount ?? 0) + (isRentedMode ? 1 : 0)) * 15;
 
   const [birthYear, setBirthYear] = useState<string>();
   const [birthMonth, setBirthMonth] = useState<string>();
@@ -157,7 +159,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   }, [schoolLevel, schoolName, registerForm]);
 
   useEffect(() => {
-    if (step === "success" || step === "waitingSuccess") {
+    if (step === "success") { // waitingSuccess 조건 제거
       setCountdown(5);
       const timer = setInterval(() => {
         setCountdown((prev) => {
@@ -185,24 +187,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         values.phoneNumber
       );
       if (user) {
-        const status = await checkUserRentalStatus(user.id, item.id);
-        if (status.error) {
-          throw new Error(status.error);
-        }
-        if (status.isRenting) {
-          toast.error("이미 대여 중인 아이템입니다.");
-          return;
-        }
-        if (status.isWaiting) {
-          toast.error("이미 대기열에 등록된 아이템입니다.");
-          return;
-        }
-
-        if (isRentedMode) {
-          await handleWaiting(user.id);
-        } else {
-          await handleRental(user.id, values.maleCount, values.femaleCount);
-        }
+        // 사용자 요청에 따라 대여 상태 및 대기열 확인 로직 제거, 항상 대여 진행
+        await handleRental(user.id, values.maleCount, values.femaleCount);
       } else {
         toast.info("등록된 사용자가 아닙니다. 신규 등록을 진행해주세요.");
         setStep("register");
@@ -228,12 +214,9 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         throw new Error(result.error);
       }
       if (result.user) {
-        if (isRentedMode) {
-          await handleWaiting(result.user.id);
-        } else {
-          const { maleCount, femaleCount } = identificationForm.getValues();
-          await handleRental(result.user.id, maleCount, femaleCount);
-        }
+        // 사용자 요청에 따라 대여 상태 및 대기열 확인 로직 제거, 항상 대여 진행
+        const { maleCount, femaleCount } = identificationForm.getValues();
+        await handleRental(result.user.id, maleCount, femaleCount);
       }
     } catch (error) {
       toast.error(
@@ -269,27 +252,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
   };
 
-  const handleWaiting = async (userId: number) => {
-    if (!item) {
-      toast.error("아이템 정보가 없습니다.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const result = await addToWaitingList(userId, item.id);
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      setWaitingPosition(result.waitingPosition ?? null);
-      setStep("waitingSuccess");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "대기열 등록에 실패했습니다."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const closeDialog = () => {
     onOpenChange(false);
@@ -304,7 +266,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const resetDialog = () => {
     setStep("identification");
     setCountdown(5);
-    setWaitingPosition(null);
+    // 사용자 요청에 따라 waitingPosition 상태 제거
+    // setWaitingPosition(null);
     identificationForm.reset();
     registerForm.reset();
     setBirthYear(undefined);
@@ -352,54 +315,13 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
             >
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
-                  {isRentedMode ? "대기열 등록" : "아이템 대여"}
+                  아이템 대여
                 </DialogTitle>
                 <DialogDescription>
-                  {isRentedMode
-                    ? `현재 '${item.name}'은(는) 대여 중입니다.`
-                    : `'${item.name}'을(를) 대여하려면 이름과 휴대폰 번호를 입력하세요.`}
+                  `'${item.name}'을(를) 대여하려면 이름과 휴대폰 번호를 입력하세요.`
                 </DialogDescription>
               </DialogHeader>
 
-              {/* 대기자 명단 카드 */}
-              {isRentedMode && (
-                <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse" />
-                      <span className="text-sm font-semibold text-foreground">
-                        현재 대기 현황
-                      </span>
-                    </div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      예상 대기시간 {estimatedWaitingTime}분
-                    </span>
-                  </div>
-
-                  <div className="flex items-baseline gap-2">
-                    <div className="flex items-baseline">
-                      <span className="text-sm text-muted-foreground mr-1">
-                        사용중
-                      </span>
-                      <span className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
-                        1
-                      </span>
-                      <span className="text-sm text-muted-foreground">팀</span>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="text-sm text-muted-foreground mr-1">
-                        대기
-                      </span>
-                      <span className="text-3xl font-black text-[oklch(0.7_0.18_350)]">
-                        {item.waitingCount}
-                      </span>
-                      <span className="text-sm text-muted-foreground">팀</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)]"></div>
-                </div>
-              )}
 
               <FormField
                 control={identificationForm.control}
@@ -536,11 +458,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                     }
                     className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
                   >
-                    {isSubmitting
-                      ? "처리 중..."
-                      : isRentedMode
-                      ? "대기열 등록하기"
-                      : "대여하기"}
+                    {isSubmitting ? "처리 중..." : "대여하기"}
                   </Button>
                 </div>
               </DialogFooter>
@@ -791,17 +709,13 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 >
                   뒤로
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || isButtonDisabled}
-                  className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
-                >
-                  {isSubmitting
-                    ? "등록 중..."
-                    : isRentedMode
-                    ? "등록 및 대기"
-                    : "등록 및 대여"}
-                </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || isButtonDisabled}
+                    className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                  >
+                    {isSubmitting ? "등록 중..." : "등록 및 대여"}
+                  </Button>
               </DialogFooter>
             </form>
           </Form>
@@ -921,37 +835,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
           </div>
         );
       case "waitingSuccess":
-        return (
-          <div
-            className="flex flex-col items-center justify-center py-12 px-8 text-center relative"
-            key="waitingSuccess"
-          >
-            <div className="relative z-10 space-y-6">
-              <DialogTitle className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
-                대기열 합류 완료!
-              </DialogTitle>
-              <DialogDescription className="text-lg font-medium text-foreground leading-relaxed">
-                예약 리스트에 올랐어!
-              </DialogDescription>
-
-              <div className="my-8">
-                <p className="text-base text-muted-foreground">너의 순서는</p>
-                <p className="text-8xl font-black text-[oklch(0.7_0.18_350)] animate-pulse">
-                  {waitingPosition}번째
-                </p>
-              </div>
-
-              <DialogFooter className="mt-6">
-                <Button
-                  onClick={handleSuccessConfirm}
-                  className="w-full h-12 text-lg font-bold bg-gradient-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]"
-                >
-                  확인 ({countdown})
-                </Button>
-              </DialogFooter>
-            </div>
-          </div>
-        );
+        // 사용자 요청에 따라 대기열 관련 로직 제거
+        return null; // 또는 다른 대체 UI
     }
   };
 

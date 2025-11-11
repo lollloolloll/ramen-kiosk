@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Item } from "@/app/(admin)/admin/items/columns";
-import { rentItem } from "@/lib/actions/rental";
+import { rentItem, checkUserRentalStatus } from "@/lib/actions/rental";
 import { addToWaitingList } from "@/lib/actions/waiting";
 import {
   findUserByNameAndPhone,
@@ -87,7 +87,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
 
   const isRentedMode = item?.status === "RENTED";
-  const estimatedWaitingTime = (item?.waitingCount ?? 0) * 15;
+  const estimatedWaitingTime =
+    ((item?.waitingCount ?? 0) + (isRentedMode ? 1 : 0)) * 15;
 
   const [birthYear, setBirthYear] = useState<string>();
   const [birthMonth, setBirthMonth] = useState<string>();
@@ -176,6 +177,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const handleIdentificationSubmit = async (
     values: IdentificationFormValues
   ) => {
+    if (!item) return;
     setIsSubmitting(true);
     try {
       const user = await findUserByNameAndPhone(
@@ -183,6 +185,19 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         values.phoneNumber
       );
       if (user) {
+        const status = await checkUserRentalStatus(user.id, item.id);
+        if (status.error) {
+          throw new Error(status.error);
+        }
+        if (status.isRenting) {
+          toast.error("이미 대여 중인 아이템입니다.");
+          return;
+        }
+        if (status.isWaiting) {
+          toast.error("이미 대기열에 등록된 아이템입니다.");
+          return;
+        }
+
         if (isRentedMode) {
           await handleWaiting(user.id);
         } else {
@@ -195,7 +210,11 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         registerForm.setValue("phoneNumber", values.phoneNumber);
       }
     } catch (error) {
-      toast.error("사용자 확인 중 오류가 발생했습니다.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "사용자 확인 중 오류가 발생했습니다."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -343,49 +362,42 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               </DialogHeader>
 
               {/* 대기자 명단 카드 */}
-              {isRentedMode && item.waitingCount > 0 && (
+              {isRentedMode && (
                 <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse" />
                       <span className="text-sm font-semibold text-foreground">
-                        현재 대기 중
+                        현재 대기 현황
                       </span>
                     </div>
                     <span className="text-xs font-medium text-muted-foreground">
-                      예상 {estimatedWaitingTime}분
+                      예상 대기시간 {estimatedWaitingTime}분
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-3xl font-black text-[oklch(0.7_0.18_350)]">
-                      {item.waitingCount}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      팀이 줄 서 있어요
-                    </span>
+                  <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline">
+                      <span className="text-sm text-muted-foreground mr-1">
+                        사용중
+                      </span>
+                      <span className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
+                        1
+                      </span>
+                      <span className="text-sm text-muted-foreground">팀</span>
+                    </div>
+                    <div className="flex items-baseline">
+                      <span className="text-sm text-muted-foreground mr-1">
+                        대기
+                      </span>
+                      <span className="text-3xl font-black text-[oklch(0.7_0.18_350)]">
+                        {item.waitingCount}
+                      </span>
+                      <span className="text-sm text-muted-foreground">팀</span>
+                    </div>
                   </div>
 
-                  <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)]">
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      네 차례가 되면 알려드릴게요! 다른 거 구경하면서 기다려도
-                      돼요 😊
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {isRentedMode && item.waitingCount === 0 && (
-                <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)]" />
-                    <span className="text-sm font-semibold text-foreground">
-                      첫 번째 대기자가 되세요!
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    지금 등록하면 가장 먼저 이용할 수 있어요
-                  </p>
+                  <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)]"></div>
                 </div>
               )}
 
@@ -928,12 +940,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                   {waitingPosition}번째
                 </p>
               </div>
-
-              <p className="text-base text-foreground">
-                네 차례가 되면 알려줄게!
-                <br />
-                다른 거 구경하고 있어도 괜찮아 😉
-              </p>
 
               <DialogFooter className="mt-6">
                 <Button

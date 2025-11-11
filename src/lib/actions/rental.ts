@@ -105,34 +105,9 @@ export async function rentItem(
       }
     }
 
-    // 5. 재고 확인 및 대기자 등록 로직
+    // 5. 재고 확인
     if (rentedCount > 0) {
-      // [추가] 사용자가 이미 해당 아이템의 대기열에 있는지 확인
-      const existingWaiting = await db
-        .select()
-        .from(waitingQueue)
-        .where(
-          and(eq(waitingQueue.itemId, itemId), eq(waitingQueue.userId, userId))
-        )
-        .get();
-
-      if (existingWaiting) {
-        return {
-          success: true,
-          message: "이미 대기열에 등록되어 있습니다.",
-        };
-      }
-
-      // 아이템이 이미 대여 중이므로 대기열에 추가
-      await db.insert(waitingQueue).values({
-        itemId: itemId,
-        userId: userId,
-        requestDate: Math.floor(Date.now() / 1000),
-      });
-      return {
-        success: true,
-        message: "아이템이 대여 중입니다. 대기열에 추가되었습니다.",
-      };
+      throw new Error("이미 다른 사람이 대여 중인 아이템입니다.");
     }
 
     // 6. 대여 기록 삽입
@@ -1047,10 +1022,7 @@ export async function getActiveRentalsWithWaitCount() {
         eq(rentalRecords.itemsId, waitCountSubquery.itemId)
       )
       .where(
-        and(
-          eq(items.isTimeLimited, true),
-          eq(rentalRecords.isReturned, false)
-        )
+        and(eq(items.isTimeLimited, true), eq(rentalRecords.isReturned, false))
       );
 
     return { success: true, data: activeRentals };
@@ -1112,6 +1084,49 @@ export async function extendRentalTime(rentalRecordId: number) {
         error instanceof Error
           ? error.message
           : "대여 시간 연장 중 오류가 발생했습니다.",
+    };
+  }
+}
+
+export async function checkUserRentalStatus(userId: number, itemId: number) {
+  try {
+    // Check if the user is currently renting the item
+    const currentRental = await db
+      .select({ id: rentalRecords.id })
+      .from(rentalRecords)
+      .where(
+        and(
+          eq(rentalRecords.userId, userId),
+          eq(rentalRecords.itemsId, itemId),
+          eq(rentalRecords.isReturned, false)
+        )
+      )
+      .get();
+
+    if (currentRental) {
+      return { isRenting: true, isWaiting: false, error: null };
+    }
+
+    // Check if the user is in the waiting queue for the item
+    const waitingEntry = await db
+      .select({ id: waitingQueue.id })
+      .from(waitingQueue)
+      .where(
+        and(eq(waitingQueue.userId, userId), eq(waitingQueue.itemId, itemId))
+      )
+      .get();
+
+    if (waitingEntry) {
+      return { isRenting: false, isWaiting: true, error: null };
+    }
+
+    return { isRenting: false, isWaiting: false, error: null };
+  } catch (error) {
+    console.error("Error checking user rental status:", error);
+    return {
+      isRenting: false,
+      isWaiting: false,
+      error: "사용자 대여 상태 확인 중 오류가 발생했습니다.",
     };
   }
 }

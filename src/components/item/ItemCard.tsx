@@ -11,7 +11,7 @@ interface ItemCardProps {
 }
 
 export function ItemCard({ item, onOrder }: ItemCardProps) {
-  const isRented = item.status === "RENTED";
+  const isRented = item.isTimeLimited ? item.status === "RENTED" : false;
   const waitingCount = item.waitingCount;
 
   return (

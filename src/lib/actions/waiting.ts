@@ -35,6 +35,11 @@ export async function addToWaitingList(userId: number, itemId: number) {
       throw new Error("아이템 또는 사용자 정보를 찾을 수 없습니다.");
     }
 
+    // 시간제 대여 아이템인지 확인
+    if (!item.isTimeLimited) {
+      throw new Error("이 아이템은 대기열을 지원하지 않습니다.");
+    }
+
     // 2. 이미 대기열에 있는지 확인
     const existingWaiting = await db.query.waitingQueue.findFirst({
       where: and(

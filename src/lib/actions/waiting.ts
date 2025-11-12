@@ -279,3 +279,36 @@ export async function cancelWaitingEntry(entryId: number) {
     };
   }
 }
+
+export async function getWaitingListByItemId(itemId: number) {
+  try {
+    const waitingList = await db
+      .select({
+        id: waitingQueue.id,
+        userId: waitingQueue.userId,
+        requestDate: waitingQueue.requestDate,
+        userName: generalUsers.name,
+        userPhone: generalUsers.phoneNumber,
+      })
+      .from(waitingQueue)
+      .leftJoin(generalUsers, eq(waitingQueue.userId, generalUsers.id))
+      .where(eq(waitingQueue.itemId, itemId))
+      .orderBy(asc(waitingQueue.requestDate));
+
+    return {
+      success: true,
+      data: waitingList.map((entry, index) => ({
+        ...entry,
+        position: index + 1,
+      })),
+    };
+  } catch (error) {
+    console.error("Error fetching waiting list by item id:", error);
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "대기자 명단을 불러오는 데 실패했습니다.",
+    };
+  }
+}

@@ -11,7 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Item } from "@/app/(admin)/admin/items/columns";
 import { rentItem, checkUserRentalStatus } from "@/lib/actions/rental";
-import { addToWaitingList } from "@/lib/actions/waiting";
+import {
+  addToWaitingList,
+  getWaitingListByItemId,
+} from "@/lib/actions/waiting";
 import {
   findUserByNameAndPhone,
   createGeneralUser,
@@ -85,6 +88,18 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
+  const [showWaitingList, setShowWaitingList] = useState(false);
+  const [waitingList, setWaitingList] = useState<
+    Array<{
+      id: number;
+      userId: number | null;
+      requestDate: number | null;
+      userName: string | null;
+      userPhone: string | null;
+      position: number;
+    }>
+  >([]);
+  const [isLoadingWaitingList, setIsLoadingWaitingList] = useState(false);
 
   const isRentedMode = item?.status === "RENTED";
   const estimatedWaitingTime =
@@ -305,6 +320,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     setStep("identification");
     setCountdown(5);
     setWaitingPosition(null);
+    setShowWaitingList(false);
+    setWaitingList([]);
     identificationForm.reset();
     registerForm.reset();
     setBirthYear(undefined);
@@ -313,6 +330,30 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     setSchoolLevel("");
     setSchoolName("");
     setYearSelectOpen(false);
+  };
+
+  const handleWaitingListClick = async () => {
+    if (!item) return;
+    if (showWaitingList) {
+      setShowWaitingList(false);
+      return;
+    }
+    setIsLoadingWaitingList(true);
+    try {
+      const result = await getWaitingListByItemId(item.id);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.data) {
+        setWaitingList(result.data);
+        setShowWaitingList(true);
+      }
+    } catch (error) {
+      toast.error("대기자 명단을 불러오는 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoadingWaitingList(false);
+    }
   };
 
   const years = useMemo(() => {
@@ -363,41 +404,98 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
 
               {/* 대기자 명단 카드 */}
               {isRentedMode && (
-                <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse" />
-                      <span className="text-sm font-semibold text-foreground">
-                        현재 대기 현황
+                <div className="space-y-3">
+                  <div
+                    className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:bg-gradient-to-br hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
+                    onClick={handleWaitingListClick}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse" />
+                        <span className="text-sm font-semibold text-foreground">
+                          현재 대기 현황
+                        </span>
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        예상 대기시간 {estimatedWaitingTime}분
                       </span>
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      예상 대기시간 {estimatedWaitingTime}분
-                    </span>
+
+                    <div className="flex items-baseline gap-2">
+                      <div className="flex items-baseline">
+                        <span className="text-sm text-muted-foreground mr-1">
+                          사용중
+                        </span>
+                        <span className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
+                          1
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          팀
+                        </span>
+                      </div>
+                      <div className="flex items-baseline">
+                        <span className="text-sm text-muted-foreground mr-1">
+                          대기
+                        </span>
+                        <span className="text-3xl font-black text-[oklch(0.7_0.18_350)]">
+                          {item.waitingCount}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          팀
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)] flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        클릭하여 대기자 명단 보기
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {showWaitingList ? "▲" : "▼"}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-baseline gap-2">
-                    <div className="flex items-baseline">
-                      <span className="text-sm text-muted-foreground mr-1">
-                        사용중
-                      </span>
-                      <span className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
-                        1
-                      </span>
-                      <span className="text-sm text-muted-foreground">팀</span>
+                  {/* 대기자 명단 목록 */}
+                  {showWaitingList && (
+                    <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-background p-4 space-y-2 max-h-[300px] overflow-y-auto">
+                      {isLoadingWaitingList ? (
+                        <div className="text-center py-4 text-sm text-muted-foreground">
+                          로딩 중...
+                        </div>
+                      ) : waitingList.length === 0 ? (
+                        <div className="text-center py-4 text-sm text-muted-foreground">
+                          대기자가 없습니다.
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-xs font-semibold text-muted-foreground mb-2 pb-2 border-b">
+                            대기자 명단
+                          </div>
+                          {waitingList.map((entry) => (
+                            <div
+                              key={entry.id}
+                              className="flex items-center justify-between p-2 rounded-md bg-[oklch(0.75_0.12_165/0.05)] hover:bg-[oklch(0.75_0.12_165/0.1)] transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-6 h-6 rounded-full bg-[oklch(0.7_0.18_350)] flex items-center justify-center text-white text-xs font-bold">
+                                  {entry.position}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium text-foreground">
+                                    {entry.userName || "알 수 없음"}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {entry.userPhone || ""}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
                     </div>
-                    <div className="flex items-baseline">
-                      <span className="text-sm text-muted-foreground mr-1">
-                        대기
-                      </span>
-                      <span className="text-3xl font-black text-[oklch(0.7_0.18_350)]">
-                        {item.waitingCount}
-                      </span>
-                      <span className="text-sm text-muted-foreground">팀</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)]"></div>
+                  )}
                 </div>
               )}
 

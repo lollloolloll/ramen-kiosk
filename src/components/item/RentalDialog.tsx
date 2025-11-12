@@ -101,9 +101,10 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   >([]);
   const [isLoadingWaitingList, setIsLoadingWaitingList] = useState(false);
 
-  const isRentedMode = item?.status === "RENTED";
+  const isRentedMode = item?.isTimeLimited ? item?.status === "RENTED" : false;
   const estimatedWaitingTime =
-    ((item?.waitingCount ?? 0) + (isRentedMode ? 1 : 0)) * 15;
+    (item?.waitingCount ?? 0) +
+    (isRentedMode ? 1 : 0) * (item?.rentalTimeMinutes ?? 0);
 
   const [birthYear, setBirthYear] = useState<string>();
   const [birthMonth, setBirthMonth] = useState<string>();

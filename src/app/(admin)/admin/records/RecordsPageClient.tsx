@@ -45,11 +45,13 @@ export function RecordsPageClient({
   return (
     <div>
       <div className="mb-8">
-        <DataTable columns={columns} data={records} onRowClick={handleRowClick} />
+        <DataTable
+          columns={columns}
+          data={records}
+          onRowClick={handleRowClick}
+        />
       </div>
-
       <Pagination page={page} per_page={per_page} total_count={total_count} />
-
       {selectedUserForHistory && (
         <Dialog
           open={isRentalHistoryDialogOpen}

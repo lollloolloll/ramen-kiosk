@@ -933,13 +933,42 @@ export async function exportRentalRecordsToExcel(
     // 헤더 설정
     worksheet.columns = [
       { header: "ID", key: "id", width: 10 },
-      { header: "대여 날짜", key: "rentalDate", width: 20 },
+      { header: "대여 날짜", key: "rentalDate", width: 25 },
       { header: "사용자 이름", key: "userName", width: 15 },
       { header: "아이템 이름", key: "itemName", width: 20 },
       { header: "아이템 카테고리", key: "itemCategory", width: 15 },
       { header: "남자 인원", key: "maleCount", width: 10 },
       { header: "여자 인원", key: "femaleCount", width: 10 },
     ];
+
+    // 헤더 스타일 적용
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD3D3D3" }, // 회색
+      };
+      cell.font = {
+        bold: true,
+      };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+    });
+
+    // 모든 데이터 셀에 가운데 정렬 적용
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 0) {
+        // 헤더 행 제외
+        row.eachCell((cell) => {
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: "center",
+          };
+        });
+      }
+    });
 
     // 데이터 추가
     data.forEach((record) => {

@@ -215,6 +215,35 @@ export async function exportGeneralUsersToExcel() {
       { header: "개인정보동의", key: "personalInfoConsent", width: 15 },
     ];
 
+    // 헤더 스타일 적용
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD3D3D3" }, // 회색
+      };
+      cell.font = {
+        bold: true,
+      };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+    });
+
+    // 모든 데이터 셀에 가운데 정렬 적용
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 0) {
+        // 헤더 행 제외
+        row.eachCell((cell) => {
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: "center",
+          };
+        });
+      }
+    });
+
     allUsers.forEach((user) => {
       worksheet.addRow({
         id: user.id,

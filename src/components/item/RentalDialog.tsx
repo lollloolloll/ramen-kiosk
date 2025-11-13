@@ -215,7 +215,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         }
 
         if (isRentedMode) {
-          await handleWaiting(user.id);
+          await handleWaiting(user.id, values.maleCount, values.femaleCount);
         } else {
           await handleRental(user.id, values.maleCount, values.femaleCount);
         }
@@ -244,10 +244,10 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
         throw new Error(result.error);
       }
       if (result.user) {
+        const { maleCount, femaleCount } = identificationForm.getValues();
         if (isRentedMode) {
-          await handleWaiting(result.user.id);
+          await handleWaiting(result.user.id, maleCount, femaleCount);
         } else {
-          const { maleCount, femaleCount } = identificationForm.getValues();
           await handleRental(result.user.id, maleCount, femaleCount);
         }
       }
@@ -285,14 +285,18 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
   };
 
-  const handleWaiting = async (userId: number) => {
+  const handleWaiting = async (
+    userId: number,
+    maleCount: number,
+    femaleCount: number
+  ) => {
     if (!item) {
       toast.error("아이템 정보가 없습니다.");
       return;
     }
     setIsSubmitting(true);
     try {
-      const result = await addToWaitingList(userId, item.id);
+      const result = await addToWaitingList(userId, item.id, maleCount, femaleCount);
       if (result.error) {
         throw new Error(result.error);
       }
@@ -407,7 +411,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               {isRentedMode && (
                 <div className="space-y-3">
                   <div
-                    className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:bg-gradient-to-br hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
+                    className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-linear-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:bg-linear-to-br hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
                     onClick={handleWaitingListClick}
                   >
                     <div className="flex items-center justify-between">
@@ -911,7 +915,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
             className="flex flex-col items-center justify-center py-12 px-8 text-center relative overflow-hidden"
             key="success"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)] animate-pulse" />
+            <div className="absolute inset-0 bg-linear-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)] animate-pulse" />
 
             <div className="absolute top-4 left-1/4 text-4xl animate-bounce">
               ✨
@@ -941,7 +945,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               </div>
 
               <div className="space-y-2">
-                <DialogTitle className="text-3xl font-black bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
+                <DialogTitle className="text-3xl font-black bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
                   대여 완료!
                 </DialogTitle>
                 <div className="text-5xl font-bold text-[oklch(0.75_0.12_165)]">
@@ -998,7 +1002,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-black bg-gradient-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
+                  <span className="text-3xl font-black bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
                     {countdown}
                   </span>
                 </div>
@@ -1007,7 +1011,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               <DialogFooter className="mt-6">
                 <Button
                   onClick={handleSuccessConfirm}
-                  className="w-full h-12 text-lg font-bold bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  className="w-full h-12 text-lg font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
                   확인 ✓
                 </Button>
@@ -1043,7 +1047,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
               <DialogFooter className="mt-6">
                 <Button
                   onClick={handleSuccessConfirm}
-                  className="w-full h-12 text-lg font-bold bg-gradient-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]"
+                  className="w-full h-12 text-lg font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]"
                 >
                   확인 ({countdown})
                 </Button>

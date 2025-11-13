@@ -114,4 +114,6 @@ export const waitingQueue = sqliteTable("waiting_queue", {
   requestDate: integer("request_date")
     .default(sql`(CURRENT_TIMESTAMP)`)
     .notNull(),
+  maleCount: integer("male_count").default(0).notNull(),
+  femaleCount: integer("female_count").default(0).notNull(),
 });

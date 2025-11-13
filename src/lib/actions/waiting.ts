@@ -21,7 +21,12 @@ import {
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function addToWaitingList(userId: number, itemId: number) {
+export async function addToWaitingList(
+  userId: number,
+  itemId: number,
+  maleCount: number,
+  femaleCount: number
+) {
   try {
     // 1. 아이템 및 사용자 정보 조회
     const [item, user] = await Promise.all([
@@ -57,6 +62,8 @@ export async function addToWaitingList(userId: number, itemId: number) {
       userId,
       itemId,
       requestDate: Math.floor(Date.now() / 1000),
+      maleCount,
+      femaleCount,
     });
 
     // 4. 현재 대기 순번 계산

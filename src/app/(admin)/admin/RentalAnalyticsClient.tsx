@@ -512,43 +512,42 @@ export function RentalAnalyticsClient({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>인원수별 인기 품목</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-[300px]" />
-            ) : (
-              analyticsData.peopleCountItemStats?.map((stat) => (
-                <div key={stat.peopleCount} className="mb-6">
-                  <div className="font-semibold">{stat.peopleCount}인 대여</div>
-                  <Table className="table-fixed">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-16">순위</TableHead>
-                        <TableHead className="w-auto">품목명</TableHead>
-                        <TableHead className="w-24">대여수</TableHead>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {loading ? (
+          <Skeleton className="h-[300px] lg:col-span-2" />
+        ) : (
+          analyticsData.peopleCountItemStats?.map((stat) => (
+            <Card key={stat.peopleCount}>
+              <CardHeader>
+                <CardTitle>{stat.peopleCount}인 대여 인기 품목</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table className="table-fixed">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">순위</TableHead>
+                      <TableHead className="w-auto">품목명</TableHead>
+                      <TableHead className="w-20 text-right">대여수</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stat.items.slice(0, 5).map((item, idx) => (
+                      <TableRow key={item.itemId}>
+                        <TableCell className="w-12">{idx + 1}</TableCell>
+                        <TableCell className="w-auto truncate">
+                          {item.itemName}
+                        </TableCell>
+                        <TableCell className="w-20 text-right">
+                          {item.rentals}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {stat.items.slice(0, 5).map((item, idx) => (
-                        <TableRow key={item.itemId}>
-                          <TableCell className="w-16">{idx + 1}</TableCell>
-                          <TableCell className="w-auto truncate">
-                            {item.itemName}
-                          </TableCell>
-                          <TableCell className="w-24">{item.rentals}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );

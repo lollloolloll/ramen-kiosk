@@ -1,7 +1,11 @@
 {
   "version": "6",
   "dialect": "sqlite",
+<<<<<<< HEAD
   "id": "8d4dd5a7-738c-4a0a-8764-b03be4a2511b",
+=======
+  "id": "0f511c87-2dd8-45f8-b3d2-6d3f5970e1ad",
+>>>>>>> 3ea31b2 (chore: update database schema by removing obsolete snapshot files and adding new fields to enhance rental management functionality)
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "general_users": {
@@ -146,6 +150,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+<<<<<<< HEAD
         },
         "enable_participant_tracking": {
           "name": "enable_participant_tracking",
@@ -154,6 +159,8 @@
           "notNull": true,
           "autoincrement": false,
           "default": false
+=======
+>>>>>>> 3ea31b2 (chore: update database schema by removing obsolete snapshot files and adding new fields to enhance rental management functionality)
         }
       },
       "indexes": {},

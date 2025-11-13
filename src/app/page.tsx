@@ -8,18 +8,18 @@ import { PromotionSlider } from "@/components/PromotionSlider";
 // 홍보물 데이터 (실제로는 관리자 페이지에서 관리하거나 API에서 가져올 수 있습니다)
 const PROMOTION_ITEMS = [
   // 예시 데이터 - 실제로는 데이터베이스나 설정 파일에서 가져와야 합니다
-  // {
-  //   id: "1",
-  //   type: "video",
-  //   url: "/promotions/video1.mp4",
-  //   title: "홍보 영상 1",
-  // },
-  // {
-  //   id: "2",
-  //   type: "image",
-  //   url: "/promotions/image1.jpg",
-  //   title: "홍보 이미지 1",
-  // },
+  {
+    id: "1",
+    type: "video" as const,
+    url: "/promotions/video1.mp4",
+    title: "홍보 영상 1",
+  },
+  {
+    id: "2",
+    type: "image" as const,
+    url: "/promotions/image1.jpg",
+    title: "홍보 이미지 1",
+  },
 ];
 
 // 비활성 시간 설정 (밀리초)

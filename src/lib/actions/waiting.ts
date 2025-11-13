@@ -297,7 +297,8 @@ export async function getWaitingListByItemId(itemId: number) {
         userId: waitingQueue.userId,
         requestDate: waitingQueue.requestDate,
         userName: generalUsers.name,
-        userPhone: generalUsers.phoneNumber,
+        maleCount: waitingQueue.maleCount,
+        femaleCount: waitingQueue.femaleCount,
       })
       .from(waitingQueue)
       .leftJoin(generalUsers, eq(waitingQueue.userId, generalUsers.id))

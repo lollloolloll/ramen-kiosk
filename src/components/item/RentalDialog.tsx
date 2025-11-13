@@ -95,7 +95,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       userId: number | null;
       requestDate: number | null;
       userName: string | null;
-      userPhone: string | null;
+      maleCount: number;
+      femaleCount: number;
       position: number;
     }>
   >([]);
@@ -496,7 +497,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                                     {entry.userName || "알 수 없음"}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    {entry.userPhone || ""}
+                                    남 {entry.maleCount}명, 여 {entry.femaleCount}명
                                   </span>
                                 </div>
                               </div>

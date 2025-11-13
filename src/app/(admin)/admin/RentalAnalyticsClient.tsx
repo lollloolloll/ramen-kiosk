@@ -485,22 +485,24 @@ export function RentalAnalyticsClient({
             {loading ? (
               <Skeleton className="h-[300px]" />
             ) : (
-              <Table>
+              <Table className="table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>순위</TableHead>
-                    <TableHead>학교명</TableHead>
-                    <TableHead>대여수</TableHead>
-                    <TableHead>이용자</TableHead>
+                    <TableHead className="w-16">순위</TableHead>
+                    <TableHead className="w-auto">학교명</TableHead>
+                    <TableHead className="w-24">대여수</TableHead>
+                    <TableHead className="w-24">이용자</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {analyticsData.schoolRankings?.map((row, idx) => (
                     <TableRow key={row.school}>
-                      <TableCell>{idx + 1}</TableCell>
-                      <TableCell>{row.school}</TableCell>
-                      <TableCell>{row.totalRentals}</TableCell>
-                      <TableCell>{row.uniqueUsers}</TableCell>
+                      <TableCell className="w-16">{idx + 1}</TableCell>
+                      <TableCell className="w-auto truncate">
+                        {row.school}
+                      </TableCell>
+                      <TableCell className="w-24">{row.totalRentals}</TableCell>
+                      <TableCell className="w-24">{row.uniqueUsers}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -522,20 +524,22 @@ export function RentalAnalyticsClient({
               analyticsData.peopleCountItemStats?.map((stat) => (
                 <div key={stat.peopleCount} className="mb-6">
                   <div className="font-semibold">{stat.peopleCount}인 대여</div>
-                  <Table>
+                  <Table className="table-fixed">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>순위</TableHead>
-                        <TableHead>품목명</TableHead>
-                        <TableHead>대여수</TableHead>
+                        <TableHead className="w-16">순위</TableHead>
+                        <TableHead className="w-auto">품목명</TableHead>
+                        <TableHead className="w-24">대여수</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {stat.items.slice(0, 5).map((item, idx) => (
                         <TableRow key={item.itemId}>
-                          <TableCell>{idx + 1}</TableCell>
-                          <TableCell>{item.itemName}</TableCell>
-                          <TableCell>{item.rentals}</TableCell>
+                          <TableCell className="w-16">{idx + 1}</TableCell>
+                          <TableCell className="w-auto truncate">
+                            {item.itemName}
+                          </TableCell>
+                          <TableCell className="w-24">{item.rentals}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

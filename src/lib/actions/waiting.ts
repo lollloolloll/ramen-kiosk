@@ -28,6 +28,7 @@ export async function addToWaitingList(
   maleCount: number,
   femaleCount: number
 ) {
+  await processExpiredRentals();
   try {
     // 1. 아이템 및 사용자 정보 조회
     const [item, user] = await Promise.all([
@@ -97,8 +98,6 @@ export async function getWaitingQueueEntries(filters: {
   page?: number;
   per_page?: number;
 }) {
-  await processExpiredRentals();
-
   try {
     const { page = 1, per_page = 10 } = filters;
     const offset = (page - 1) * per_page;
@@ -150,6 +149,7 @@ export async function getWaitingQueueEntries(filters: {
   }
 }
 export async function grantWaitingEntry(entryId: number) {
+  await processExpiredRentals();
   try {
     // 1. 대기열 항목 조회
     const entry = await db.query.waitingQueue.findFirst({

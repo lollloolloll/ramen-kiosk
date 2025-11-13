@@ -28,6 +28,7 @@ export async function rentItem(
   maleCount: number,
   femaleCount: number
 ) {
+  await processExpiredRentals();
   try {
     // 1. 대여할 아이템 정보 조회
     const itemToRent = await db
@@ -147,6 +148,7 @@ export async function rentItem(
   }
 }
 export async function returnItem(rentalRecordId: number) {
+  await processExpiredRentals();
   try {
     const [returnedRecord] = await db
       .update(rentalRecords)
@@ -1057,20 +1059,30 @@ async function processNextInQueue(itemId: number) {
   const itemInfo = await db.query.items.findFirst({
     where: eq(items.id, itemId),
   });
+
   if (!itemInfo || !itemInfo.isTimeLimited) {
     // 시간제 아이템이 아니면 처리할 필요 없음
     return;
   }
 
-  while (true) {
+  // 최대 시도 횟수 제한 (안전장치)
+  let maxAttempts = 100;
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    attempts++;
+
     const nextUserEntry = await db.query.waitingQueue.findFirst({
       where: eq(waitingQueue.itemId, itemId),
       orderBy: [asc(waitingQueue.requestDate)],
     });
 
-    if (!nextUserEntry) break; // 대기자 없으면 종료
+    if (!nextUserEntry) {
+      // 더 이상 대기자 없음
+      break;
+    }
 
-    // ... (returnItem에 있던 횟수 제한 검증 및 자동 대여 로직 그대로 복사)
+    // 1. 횟수 제한 체크
     let isEligible = true;
     if (itemInfo.maxRentalsPerUser) {
       const today = new Date();
@@ -1092,19 +1104,23 @@ async function processNextInQueue(itemId: number) {
           )
         );
 
-      if (result.value >= itemInfo.maxRentalsPerUser) {
+      // SQLite count 결과를 명시적으로 Number로 변환
+      if (Number(result?.value || 0) >= itemInfo.maxRentalsPerUser) {
         isEligible = false;
       }
     }
 
     if (isEligible) {
-      // ... (자동 대여 처리 로직)
+      // 2. 사용자 정보 조회
       const userToRent = await db.query.generalUsers.findFirst({
         where: eq(generalUsers.id, nextUserEntry.userId),
       });
+
       if (userToRent) {
+        // 3. 자동 대여 처리
         const rentalDate = Math.floor(Date.now() / 1000);
-        let returnDueDate = rentalDate + (itemInfo.rentalTimeMinutes || 0) * 60;
+        const returnDueDate =
+          rentalDate + (itemInfo.rentalTimeMinutes || 0) * 60;
 
         await db.insert(rentalRecords).values({
           userId: nextUserEntry.userId,
@@ -1119,16 +1135,39 @@ async function processNextInQueue(itemId: number) {
           maleCount: nextUserEntry.maleCount,
           femaleCount: nextUserEntry.femaleCount,
         });
+
+        // 대기열에서 제거
         await db
           .delete(waitingQueue)
           .where(eq(waitingQueue.id, nextUserEntry.id));
-        break; // 처리 완료 후 종료
+
+        // 대여 완료, 더 이상 처리 불필요
+        break;
+      } else {
+        // 사용자 정보가 없는 경우 (삭제된 사용자)
+        // 대기열에서만 제거하고 다음 대기자 확인
+        await db
+          .delete(waitingQueue)
+          .where(eq(waitingQueue.id, nextUserEntry.id));
+
+        console.warn(
+          `User ${nextUserEntry.userId} not found, removed from waiting queue`
+        );
+        // continue로 다음 대기자 시도
       }
     } else {
-      // 횟수 초과자는 대기열에서 제거
+      // 횟수 초과자는 대기열에서 제거하고 다음 대기자 확인
       await db
         .delete(waitingQueue)
         .where(eq(waitingQueue.id, nextUserEntry.id));
+
+      // continue로 다음 대기자 시도
     }
+  }
+
+  if (attempts >= maxAttempts) {
+    console.error(
+      `processNextInQueue exceeded max attempts for item ${itemId}`
+    );
   }
 }

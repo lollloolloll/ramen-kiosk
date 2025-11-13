@@ -20,6 +20,7 @@ import {
   countDistinct,
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { processExpiredRentals } from "./rental";
 
 export async function addToWaitingList(
   userId: number,
@@ -96,6 +97,8 @@ export async function getWaitingQueueEntries(filters: {
   page?: number;
   per_page?: number;
 }) {
+  await processExpiredRentals();
+
   try {
     const { page = 1, per_page = 10 } = filters;
     const offset = (page - 1) * per_page;

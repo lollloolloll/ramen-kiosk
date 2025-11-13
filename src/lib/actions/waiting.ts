@@ -20,7 +20,7 @@ import {
   countDistinct,
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { processExpiredRentals } from "./rental";
+import { triggerExpiredRentalsCheck } from "./rental";
 
 export async function addToWaitingList(
   userId: number,
@@ -28,7 +28,7 @@ export async function addToWaitingList(
   maleCount: number,
   femaleCount: number
 ) {
-  await processExpiredRentals();
+  await triggerExpiredRentalsCheck();
   try {
     // 1. 아이템 및 사용자 정보 조회
     const [item, user] = await Promise.all([
@@ -149,7 +149,7 @@ export async function getWaitingQueueEntries(filters: {
   }
 }
 export async function grantWaitingEntry(entryId: number) {
-  await processExpiredRentals();
+  await triggerExpiredRentalsCheck();
   try {
     // 1. 대기열 항목 조회
     const entry = await db.query.waitingQueue.findFirst({

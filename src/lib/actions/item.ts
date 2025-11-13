@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { items, rentalRecords, waitingQueue } from "@drizzle/schema";
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
+import { processAndMutateExpiredRentals } from "./rental";
 export async function getAllItemsForAdmin() {
   // where 필터링 없이 모든 아이템을 가져옵니다.
   const allItems = await db.select().from(items);
@@ -51,6 +52,7 @@ export async function getAllItemsForAdmin() {
 }
 
 export async function getAllItems() {
+  await processAndMutateExpiredRentals();
   const allItems = await db
     .select()
     .from(items)

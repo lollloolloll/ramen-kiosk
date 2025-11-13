@@ -28,7 +28,7 @@ export async function rentItem(
   maleCount: number,
   femaleCount: number
 ) {
-  await processExpiredRentals();
+  await triggerExpiredRentalsCheck();
   try {
     // 1. 대여할 아이템 정보 조회
     const itemToRent = await db
@@ -148,7 +148,7 @@ export async function rentItem(
   }
 }
 export async function returnItem(rentalRecordId: number) {
-  await processExpiredRentals();
+  await processAndMutateExpiredRentals();
   try {
     const [returnedRecord] = await db
       .update(rentalRecords)
@@ -182,12 +182,22 @@ export async function returnItem(rentalRecordId: number) {
     };
   }
 }
-export async function processExpiredRentals(): Promise<void> {
+/**
+ * [내부 사용 주의] DB의 만료된 대여 기록을 처리하지만, 캐시는 갱신하지 않습니다.
+ * 렌더링 중에 안전하게 호출할 수 있습니다. (예: getAllItems)
+ * 서버 액션에서는 이 함수 대신 triggerExpiredRentalsCheck를 사용하세요.
+ * @returns {Promise<boolean>} DB 변경 여부
+ */
+export async function processAndMutateExpiredRentals(): Promise<boolean> {
   try {
     const now = Math.floor(Date.now() / 1000);
 
     const expiredRentals = await db
-      .select()
+      .select({
+        id: rentalRecords.id,
+        itemsId: rentalRecords.itemsId,
+        returnDueDate: rentalRecords.returnDueDate,
+      })
       .from(rentalRecords)
       .where(
         and(
@@ -197,12 +207,13 @@ export async function processExpiredRentals(): Promise<void> {
         )
       );
 
-    // 처리할 항목이 없으면 조용히 함수를 종료합니다.
     if (expiredRentals.length === 0) {
-      return;
+      return false; // 변경된 내용이 없음을 알림
     }
 
-    console.log(`Processing ${expiredRentals.length} expired rentals...`); // 서버 로그에는 기록을 남겨 디버깅에 활용
+    console.log(
+      `Silently processing ${expiredRentals.length} expired rentals...`
+    );
 
     for (const record of expiredRentals) {
       await db
@@ -219,13 +230,23 @@ export async function processExpiredRentals(): Promise<void> {
       }
     }
 
-    // revalidatePath는 UI를 갱신해야 하므로 그대로 둡니다.
-    revalidatePath("/", "layout");
-
-    // 성공 메시지를 반환하지 않습니다.
+    return true; // 변경된 내용이 있음을 알림
   } catch (error) {
-    // UI에 에러를 보여주는 대신, 서버에만 로그를 남깁니다.
-    console.error("Error during silent processing of expired rentals:", error);
+    console.error("Error during silent mutation of expired rentals:", error);
+    return false;
+  }
+}
+
+// [신규] 2. revalidatePath만 담당하는 "알림용" 래퍼 함수 (서버 액션용)
+/**
+ * 만료된 대여를 확인하고, 변경사항이 있으면 캐시(revalidatePath)까지 갱신합니다.
+ * **반드시 서버 액션 안에서만 사용하세요.**
+ */
+export async function triggerExpiredRentalsCheck() {
+  const hasChanges = await processAndMutateExpiredRentals();
+  // DB에 변경이 있었을 때만 revalidate를 실행하여 불필요한 캐시 초기화를 방지
+  if (hasChanges) {
+    revalidatePath("/", "layout");
   }
 }
 // src/lib/actions/rental.ts

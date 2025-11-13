@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 # root로 실행되는 부분
@@ -23,4 +23,4 @@ echo "Tables in database:"
 sqlite3 "$DB_FILE" ".tables"
 
 echo "Starting Next.js..."
-exec su-exec nextjs node server.js
+exec gosu nextjs node server.js

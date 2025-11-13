@@ -1,45 +1,48 @@
-# 1️⃣ Dependencies stage
-FROM node:22-alpine AS deps
-RUN apk add --no-cache libc6-compat python3 make g++
+# 1️⃣ Builder stage
+FROM node:22-slim AS builder
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3 make g++ sqlite3 && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+COPY package.json package-lock.json* ./
+RUN npm ci
 
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+# Tailwind CSS와 lightningcss 관련 패키지 재설치
+RUN npm install --force \
+    lightningcss \
+    @tailwindcss/postcss \
+    @tailwindcss/node \
+    @tailwindcss/oxide
 
-# 2️⃣ Builder stage
-FROM node:22-alpine AS builder
-RUN apk add --no-cache python3 make g++ sqlite
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 RUN mkdir -p /app/data && sqlite3 /app/data/local.db "VACUUM;"
 RUN npm run build
 
-# 3️⃣ Runner stage
-FROM node:22-alpine AS runner
+# Runner stage는 동일...
+
+# 2️⃣ Runner stage
+FROM node:22-slim AS runner
 WORKDIR /app
 
-RUN apk add --no-cache sqlite su-exec tzdata
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    sqlite3 gosu && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV TZ=Asia/Seoul
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 --ingroup nodejs nextjs && \
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs nextjs && \
     mkdir -p /app/data /app/public/uploads .next && \
     chown -R nextjs:nodejs /app/data /app/public .next
 
 COPY .env.production /app/.env.production
 COPY package.json package-lock.json* ./
 COPY drizzle.config.ts ./
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/drizzle ./drizzle
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -47,9 +50,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Windows CRLF 라인엔딩 방지 및 실행권한 부여
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
-# ⭐ uploads 폴더 권한 미리 설정
 RUN chown -R nextjs:nodejs /app/public/uploads
 
 USER nextjs

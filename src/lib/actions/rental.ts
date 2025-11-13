@@ -547,6 +547,8 @@ export async function getRentalAnalytics(filters: {
         itemName: items.name,
         itemId: items.id,
         itemCategory: items.category,
+        maleCount: rentalRecords.maleCount,
+        femaleCount: rentalRecords.femaleCount,
         peopleCount: sql<number>`${rentalRecords.maleCount} + ${rentalRecords.femaleCount}`,
       })
       .from(rentalRecords)
@@ -682,20 +684,18 @@ export async function getRentalAnalytics(filters: {
       hourStats[date.getHours()].count++;
     });
 
-    const genderCounts = { male: 0, female: 0, other: 0 };
-    records.forEach((r) => {
-      if (r.gender) {
-        if (r.gender === "남" || r.gender.toLowerCase() === "male")
-          genderCounts.male++;
-        else if (r.gender === "여" || r.gender.toLowerCase() === "female")
-          genderCounts.female++;
-        else genderCounts.other++;
-      }
-    });
+    const genderCounts = records.reduce(
+      (acc, r) => {
+        acc.male += r.maleCount || 0;
+        acc.female += r.femaleCount || 0;
+        return acc;
+      },
+      { male: 0, female: 0 }
+    );
+
     const genderStats = [
       { name: "남성", value: genderCounts.male },
       { name: "여성", value: genderCounts.female },
-      { name: "기타", value: genderCounts.other },
     ].filter((g) => g.value > 0);
 
     const schoolCounts: {

@@ -1,33 +1,46 @@
 // src/app/(admin)/admin/page.tsx
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/db";
-import { getRentalAnalytics, getAllItemNames, getAvailableRentalYears } from "@/lib/actions/rental";
+import {
+  getRentalAnalytics,
+  getAllItemNames,
+  getAvailableRentalYears,
+} from "@/lib/actions/rental";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RentalAnalyticsClient } from "./RentalAnalyticsClient";
 import { items, rentalRecords } from "@drizzle/schema";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 
 export default async function AdminDashboardPage() {
   const initialFilters = {
     year: new Date().getFullYear().toString(),
-    month: 'all',
-    ageGroup: 'all',
-    category: 'all',
+    month: "all",
+    ageGroup: "all",
+    category: "all",
   };
 
   const initialData = await getRentalAnalytics(initialFilters);
-  
-  const categoryResult = await db.selectDistinct({ category: items.category }).from(items);
-  const categories = categoryResult.map(c => c.category).filter(Boolean);
 
-  const { success: yearsSuccess, data: availableYearsData } = await getAvailableRentalYears();
-  const availableYears = yearsSuccess && availableYearsData ? availableYearsData : [];
+  const categoryResult = await db
+    .selectDistinct({ category: items.category })
+    .from(items)
+    .where(eq(items.isDeleted, false));
+  const categories = categoryResult.map((c) => c.category).filter(Boolean);
 
-  const allItems = await db.query.items.findMany();
+  const { success: yearsSuccess, data: availableYearsData } =
+    await getAvailableRentalYears();
+  const availableYears =
+    yearsSuccess && availableYearsData ? availableYearsData : [];
+
+  const allItems = await db.query.items.findMany({
+    where: eq(items.isDeleted, false),
+  });
   const allUsers = await db.query.generalUsers.findMany();
-  const totalRentalsResult = await db.select({ count: sql<number>`count(*)` }).from(rentalRecords);
+  const totalRentalsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(rentalRecords);
 
   const itemTypesCount = allItems.length;
   const totalRentals = totalRentalsResult[0].count;

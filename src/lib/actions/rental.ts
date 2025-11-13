@@ -22,7 +22,6 @@ import {
 import { revalidatePath } from "next/cache";
 import { Workbook } from "exceljs";
 import { AnalyticsData } from "@/lib/types/analytics";
-
 export async function rentItem(
   userId: number,
   itemId: number,
@@ -30,7 +29,7 @@ export async function rentItem(
   femaleCount: number
 ) {
   try {
-    // 1. 대여할 아이템 정보 조회 (시간제 대여 관련 속성 포함)
+    // 1. 대여할 아이템 정보 조회
     const itemToRent = await db
       .select({
         id: items.id,
@@ -63,59 +62,59 @@ export async function rentItem(
       throw new Error("사용자 정보를 찾을 수 없습니다.");
     }
 
-    // 3. 현재 대여 중인 아이템 수 확인 (재고 대신 사용)
-    const currentRentals = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(rentalRecords)
-      .where(
-        and(
-          eq(rentalRecords.itemsId, itemId),
-          eq(rentalRecords.isReturned, false)
-        )
-      )
-      .get();
-
-    const rentedCount = currentRentals?.count || 0;
-
-    // 4. 사용자별 최대 대여 횟수 제한 확인 (시간제 대여 아이템에만 적용, 하루 기준)
-    if (itemToRent.isTimeLimited && itemToRent.maxRentalsPerUser) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const startOfDay = Math.floor(today.getTime() / 1000);
-
-      const endOfDay = new Date(today);
-      endOfDay.setHours(23, 59, 59, 999);
-      const endOfDayTimestamp = Math.floor(endOfDay.getTime() / 1000);
-
-      const userDailyRentals = await db
-        .select({ count: sql<number>`count(*)` })
+    // [핵심 수정] 3. 시간제 아이템에만 적용되는 검증 로직
+    if (itemToRent.isTimeLimited) {
+      // 3-1. 재고 확인: 현재 대여 중인 기록이 있는지 확인
+      const currentRental = await db
+        .select({ id: rentalRecords.id })
         .from(rentalRecords)
         .where(
           and(
-            eq(rentalRecords.userId, userId),
             eq(rentalRecords.itemsId, itemId),
-            gte(rentalRecords.rentalDate, startOfDay),
-            lte(rentalRecords.rentalDate, endOfDayTimestamp)
+            eq(rentalRecords.isReturned, false)
           )
         )
+        .limit(1)
         .get();
 
-      if ((userDailyRentals?.count || 0) >= itemToRent.maxRentalsPerUser) {
-        throw new Error("오늘 해당 아이템의 최대 대여 횟수를 초과했습니다.");
+      if (currentRental) {
+        throw new Error("이미 다른 사람이 대여 중인 아이템입니다.");
+      }
+
+      // 3-2. 사용자별 최대 대여 횟수 제한 확인 (하루 기준)
+      if (itemToRent.maxRentalsPerUser) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startOfDay = Math.floor(today.getTime() / 1000);
+        const endOfDay = new Date(today);
+        endOfDay.setHours(23, 59, 59, 999);
+        const endOfDayTimestamp = Math.floor(endOfDay.getTime() / 1000);
+
+        const [userDailyRentals] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(rentalRecords)
+          .where(
+            and(
+              eq(rentalRecords.userId, userId),
+              eq(rentalRecords.itemsId, itemId),
+              gte(rentalRecords.rentalDate, startOfDay),
+              lte(rentalRecords.rentalDate, endOfDayTimestamp)
+            )
+          );
+
+        if ((userDailyRentals?.count || 0) >= itemToRent.maxRentalsPerUser) {
+          throw new Error("오늘 해당 아이템의 최대 대여 횟수를 초과했습니다.");
+        }
       }
     }
+    // 일반 아이템(isTimeLimited: false)은 위의 모든 검증 로직을 건너뜁니다.
 
-    // 5. 재고 확인
-    if (rentedCount > 0) {
-      throw new Error("이미 다른 사람이 대여 중인 아이템입니다.");
-    }
-
-    // 6. 대여 기록 삽입
+    // 4. 대여 기록 삽입
     const rentalDate = Math.floor(Date.now() / 1000);
     let returnDueDate: number | undefined = undefined;
 
     if (itemToRent.isTimeLimited && itemToRent.rentalTimeMinutes) {
-      returnDueDate = rentalDate + itemToRent.rentalTimeMinutes * 60; // 분을 초로 변환
+      returnDueDate = rentalDate + itemToRent.rentalTimeMinutes * 60;
     }
 
     await db.insert(rentalRecords).values({
@@ -129,7 +128,7 @@ export async function rentItem(
       itemName: itemToRent.name,
       itemCategory: itemToRent.category,
       returnDueDate: returnDueDate,
-      isReturned: false, // 새로 대여하는 아이템은 반납되지 않은 상태
+      isReturned: false,
     });
 
     revalidatePath("/");
@@ -1119,27 +1118,39 @@ export async function extendRentalTime(rentalRecordId: number) {
     };
   }
 }
-
 export async function checkUserRentalStatus(userId: number, itemId: number) {
   try {
-    // Check if the user is currently renting the item
-    const currentRental = await db
-      .select({ id: rentalRecords.id })
-      .from(rentalRecords)
-      .where(
-        and(
-          eq(rentalRecords.userId, userId),
-          eq(rentalRecords.itemsId, itemId),
-          eq(rentalRecords.isReturned, false)
-        )
-      )
-      .get();
+    const item = await db.query.items.findFirst({
+      where: eq(items.id, itemId),
+      columns: { isTimeLimited: true },
+    });
 
-    if (currentRental) {
-      return { isRenting: true, isWaiting: false, error: null };
+    if (!item) {
+      return {
+        isRenting: false,
+        isWaiting: false,
+        error: "아이템 정보를 찾을 수 없습니다.",
+      };
     }
 
-    // Check if the user is in the waiting queue for the item
+    if (item.isTimeLimited) {
+      const currentRental = await db
+        .select({ id: rentalRecords.id })
+        .from(rentalRecords)
+        .where(
+          and(
+            eq(rentalRecords.userId, userId),
+            eq(rentalRecords.itemsId, itemId),
+            eq(rentalRecords.isReturned, false)
+          )
+        )
+        .get();
+
+      if (currentRental) {
+        return { isRenting: true, isWaiting: false, error: null };
+      }
+    }
+
     const waitingEntry = await db
       .select({ id: waitingQueue.id })
       .from(waitingQueue)

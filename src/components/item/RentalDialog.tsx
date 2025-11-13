@@ -101,7 +101,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   >([]);
   const [isLoadingWaitingList, setIsLoadingWaitingList] = useState(false);
 
-  const isRentedMode = item?.isTimeLimited ? item?.status === "RENTED" : false;
+  const isRentedMode = item?.isTimeLimited && item?.status === "RENTED";
   const estimatedWaitingTime =
     (item?.waitingCount ?? 0) +
     (isRentedMode ? 1 : 0) * (item?.rentalTimeMinutes ?? 0);
@@ -296,7 +296,12 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }
     setIsSubmitting(true);
     try {
-      const result = await addToWaitingList(userId, item.id, maleCount, femaleCount);
+      const result = await addToWaitingList(
+        userId,
+        item.id,
+        maleCount,
+        femaleCount
+      );
       if (result.error) {
         throw new Error(result.error);
       }

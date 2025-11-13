@@ -7,42 +7,88 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { items, rentalRecords, waitingQueue } from "@drizzle/schema";
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
-
-export async function getItems(includeDeleted = false) {
-  if (includeDeleted) {
-    const data = await db.select().from(items);
-    return data;
-  }
-  const data = await db
-    .select()
-    .from(items)
-    .where(and(eq(items.isHidden, false), eq(items.isDeleted, false)));
-  return data;
-}
-
-export async function getAllItems() {
+export async function getAllItemsForAdmin() {
+  // where 필터링 없이 모든 아이템을 가져옵니다.
   const allItems = await db.select().from(items);
 
+  // status와 waitingCount를 계산하는 로직은 동일합니다.
+  // 관리자 페이지에서도 이 정보가 필요하기 때문입니다.
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
-      // Calculate status
-      const rented = await db
-        .select()
-        .from(rentalRecords)
-        .where(and(eq(rentalRecords.itemsId, item.id), eq(rentalRecords.isReturned, false)));
+      let status: "RENTED" | "AVAILABLE";
 
-      const status: "RENTED" | "AVAILABLE" = rented.length > 0 ? "RENTED" : "AVAILABLE";
+      if (item.isTimeLimited) {
+        const rented = await db
+          .select({ id: rentalRecords.id })
+          .from(rentalRecords)
+          .where(
+            and(
+              eq(rentalRecords.itemsId, item.id),
+              eq(rentalRecords.isReturned, false)
+            )
+          )
+          .limit(1)
+          .get();
+        status = rented ? "RENTED" : "AVAILABLE";
+      } else {
+        status = "AVAILABLE";
+      }
 
-      // Calculate waitingCount
-      const waitingCount = await db
-        .select()
+      const waitingEntries = await db
+        .select({ id: waitingQueue.id })
         .from(waitingQueue)
         .where(eq(waitingQueue.itemId, item.id));
 
       return {
         ...item,
         status,
-        waitingCount: waitingCount.length,
+        waitingCount: waitingEntries.length,
+      };
+    })
+  );
+
+  return itemsWithStatusAndWaitingCount;
+}
+
+export async function getAllItems() {
+  const allItems = await db
+    .select()
+    .from(items)
+    .where(and(eq(items.isHidden, false), eq(items.isDeleted, false)));
+
+  const itemsWithStatusAndWaitingCount = await Promise.all(
+    allItems.map(async (item) => {
+      let status: "RENTED" | "AVAILABLE";
+
+      if (item.isTimeLimited) {
+        // 시간제 아이템: isReturned가 false인 기록이 있으면 'RENTED'
+        const rented = await db
+          .select({ id: rentalRecords.id })
+          .from(rentalRecords)
+          .where(
+            and(
+              eq(rentalRecords.itemsId, item.id),
+              eq(rentalRecords.isReturned, false)
+            )
+          )
+          .limit(1)
+          .get();
+        status = rented ? "RENTED" : "AVAILABLE";
+      } else {
+        // 일반 아이템: 항상 'AVAILABLE'
+        status = "AVAILABLE";
+      }
+
+      // 대기자 수 계산
+      const waitingEntries = await db
+        .select({ id: waitingQueue.id })
+        .from(waitingQueue)
+        .where(eq(waitingQueue.itemId, item.id));
+
+      return {
+        ...item,
+        status,
+        waitingCount: waitingEntries.length,
       };
     })
   );

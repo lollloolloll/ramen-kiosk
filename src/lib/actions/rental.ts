@@ -247,6 +247,8 @@ export async function returnItem(rentalRecordId: number) {
           itemName: itemInfo.name,
           itemCategory: itemInfo.category,
           isReturned: false,
+          maleCount: nextUserEntry.maleCount,
+          femaleCount: nextUserEntry.femaleCount,
         });
 
         await db
@@ -362,7 +364,7 @@ export async function getAvailableRentalYears() {
     const yearsSet = new Set<number>();
     allDatesResult.forEach((record) => {
       if (record.rentalDate) {
-        const year = new Date(record.rentalDate * 1000).getUTCFullYear();
+        const year = new Date(record.rentalDate * 1000).getFullYear();
         if (!isNaN(year)) {
           yearsSet.add(year);
         }
@@ -420,15 +422,16 @@ export async function getRentalRecords(
     }
     if (filters.startDate) {
       const [year, month, day] = filters.startDate.split("-").map(Number);
-      const startOfDay = new Date(Date.UTC(year, month - 1, day));
+      const startOfDay = new Date(year, month - 1, day);
+      startOfDay.setHours(0, 0, 0, 0);
       whereConditions.push(
         gte(rentalRecords.rentalDate, Math.floor(startOfDay.getTime() / 1000))
       );
     }
     if (filters.endDate) {
       const [year, month, day] = filters.endDate.split("-").map(Number);
-      const date = new Date(Date.UTC(year, month - 1, day));
-      date.setUTCHours(23, 59, 59, 999);
+      const date = new Date(year, month - 1, day);
+      date.setHours(23, 59, 59, 999);
       whereConditions.push(
         lte(rentalRecords.rentalDate, Math.floor(date.getTime() / 1000))
       );
@@ -612,15 +615,15 @@ export async function getRentalAnalytics(filters: {
     }
 
     const startMonth = month === "all" ? 0 : parseInt(month) - 1;
-    const startDate = new Date(Date.UTC(yearNum, startMonth, 1));
+    const startDate = new Date(yearNum, startMonth, 1);
     const endDate = new Date(startDate);
     if (month === "all") {
-      endDate.setUTCFullYear(yearNum + 1);
+      endDate.setFullYear(yearNum + 1);
     } else {
-      endDate.setUTCMonth(startMonth + 1);
+      endDate.setMonth(startMonth + 1);
     }
-    endDate.setUTCDate(0);
-    endDate.setUTCHours(23, 59, 59, 999);
+    endDate.setDate(0);
+    endDate.setHours(23, 59, 59, 999);
 
     const startTimestamp = Math.floor(startDate.getTime() / 1000);
     const endTimestamp = Math.floor(endDate.getTime() / 1000);

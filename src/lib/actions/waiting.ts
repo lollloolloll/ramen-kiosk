@@ -112,6 +112,8 @@ export async function getWaitingQueueEntries(filters: {
         userName: generalUsers.name,
         rentalTimeMinutes: items.rentalTimeMinutes,
         maxRentalsPerUser: items.maxRentalsPerUser,
+        maleCount: waitingQueue.maleCount,
+        femaleCount: waitingQueue.femaleCount,
       })
       .from(waitingQueue)
       .leftJoin(items, eq(waitingQueue.itemId, items.id))
@@ -224,8 +226,8 @@ export async function grantWaitingEntry(entryId: number) {
       userId: entry.userId,
       itemsId: entry.itemId,
       rentalDate: rentalDate,
-      maleCount: 0, // 수동 승인 시 인원수는 기본값으로 설정
-      femaleCount: 0,
+      maleCount: entry.maleCount,
+      femaleCount: entry.femaleCount,
       userName: userToRent.name,
       userPhone: userToRent.phoneNumber,
       itemName: itemToRent.name,

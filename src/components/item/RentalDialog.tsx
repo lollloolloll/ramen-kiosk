@@ -109,6 +109,7 @@ export function RentalDialog({
   >([]);
   const [isLoadingWaitingList, setIsLoadingWaitingList] = useState(false);
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
+  const [tempConsent, setTempConsent] = useState(false);
 
   const isRentedMode = item?.isTimeLimited && item?.status === "RENTED";
   const estimatedWaitingTime = useMemo(() => {
@@ -369,6 +370,7 @@ export function RentalDialog({
     setSchoolName("");
     setYearSelectOpen(false);
     setIsConsentModalOpen(false);
+    setTempConsent(false);
   };
 
   const handleWaitingListClick = async () => {
@@ -397,10 +399,16 @@ export function RentalDialog({
 
   const handleOpenConsentModal = () => {
     if (consentFile) {
+      setTempConsent(registerForm.getValues("personalInfoConsent"));
       setIsConsentModalOpen(true);
     } else {
       toast.error("동의서 파일을 불러올 수 없습니다.");
     }
+  };
+
+  const handleConsentConfirm = () => {
+    registerForm.setValue("personalInfoConsent", tempConsent);
+    setIsConsentModalOpen(false);
   };
 
   const years = useMemo(() => {
@@ -914,39 +922,35 @@ export function RentalDialog({
                 )}
               />
 
-              {/* 개선된 동의서 섹션 */}
+              {/* 동의서 섹션 - 클릭하면 모달 오픈 */}
               <FormField
                 control={registerForm.control}
                 name="personalInfoConsent"
                 render={({ field }) => (
-                  <FormItem className="rounded-lg border-2 border-dashed border-[oklch(0.75_0.12_165/0.3)] p-4 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
+                  <FormItem
+                    className="rounded-lg border-2 border-dashed border-[oklch(0.75_0.12_165/0.3)] p-4 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] cursor-pointer hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
+                    onClick={handleOpenConsentModal}
+                  >
                     <div className="flex items-start gap-3">
-                      <FormControl>
+                      <div className="mt-1">
                         <Checkbox
                           checked={field.value}
-                          onCheckedChange={field.onChange}
-                          className="mt-1"
+                          className="pointer-events-none"
                         />
-                      </FormControl>
+                      </div>
                       <div className="flex-1 space-y-2">
-                        <FormLabel className="text-base font-semibold leading-none">
+                        <FormLabel className="text-base font-semibold leading-none cursor-pointer">
                           개인정보 수집 및 이용 동의 (선택)
                         </FormLabel>
                         <FormDescription className="text-sm leading-relaxed">
                           동의 시 맞춤형 서비스 제공에 활용될 수 있습니다.
                           <br />
                           동의하지 않아도 서비스 이용이 가능합니다.
+                          <br />
+                          <span className="text-[oklch(0.75_0.12_165)] font-medium">
+                            클릭하여 동의서 확인 및 선택
+                          </span>
                         </FormDescription>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleOpenConsentModal}
-                          className="mt-2 gap-2 border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
-                        >
-                          <FileText className="w-4 h-4" />
-                          동의서 보기
-                        </Button>
                       </div>
                     </div>
                   </FormItem>
@@ -1146,11 +1150,9 @@ export function RentalDialog({
       <Dialog open={isConsentModalOpen} onOpenChange={setIsConsentModalOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)]">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-2xl font-bold text-[oklch(0.75_0.12_165)]">
-                개인정보 수집 및 이용 동의서
-              </DialogTitle>
-            </div>
+            <DialogTitle className="text-2xl font-bold text-[oklch(0.75_0.12_165)]">
+              개인정보 수집 및 이용 동의서
+            </DialogTitle>
           </DialogHeader>
 
           <div className="flex-1 overflow-auto p-6 bg-muted/5">
@@ -1167,7 +1169,7 @@ export function RentalDialog({
               <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <iframe
                   src={`${consentFile.url}#toolbar=0`}
-                  className="w-full h-[calc(90vh-200px)] border-0"
+                  className="w-full h-[calc(90vh-300px)] border-0"
                   title="개인정보 수집 및 이용 동의서"
                 />
               </div>
@@ -1213,14 +1215,38 @@ export function RentalDialog({
             )}
           </div>
 
-          <div className="px-6 py-4 border-t bg-muted/30">
-            <Button
-              onClick={() => setIsConsentModalOpen(false)}
-              variant="outline"
-              className="w-full border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
-            >
-              닫기
-            </Button>
+          {/* 동의 체크박스 및 확인 버튼 */}
+          <div className="px-6 py-4 border-t bg-muted/30 space-y-4">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={tempConsent}
+                onCheckedChange={(checked) =>
+                  setTempConsent(checked as boolean)
+                }
+                id="consent-check"
+              />
+              <label
+                htmlFor="consent-check"
+                className="text-sm font-medium leading-none cursor-pointer"
+              >
+                동의함
+              </label>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setIsConsentModalOpen(false)}
+                variant="outline"
+                className="flex-1 border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleConsentConfirm}
+                className="flex-1 bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+              >
+                확인
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

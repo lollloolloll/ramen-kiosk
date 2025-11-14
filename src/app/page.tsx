@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PromotionSlider } from "@/components/PromotionSlider";
+import { processAndMutateExpiredRentals } from "@/lib/actions/rental";
 
 // 홍보물 데이터
 const PROMOTION_ITEMS = [
@@ -114,6 +115,10 @@ export default function Home() {
       setShowPromotion(true);
     }, INACTIVITY_TIMEOUT);
   };
+  const handleLazyCheck = async () => {
+    console.log("Triggering lazy check from promotion screen...");
+    await processAndMutateExpiredRentals();
+  };
 
   return (
     <>
@@ -206,6 +211,7 @@ export default function Home() {
           onClose={handleClosePromotion}
           autoPlay={true}
           autoPlayInterval={5000}
+          onLazyCheck={handleLazyCheck}
         />
       )}
     </>

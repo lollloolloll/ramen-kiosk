@@ -15,7 +15,8 @@ interface PromotionSliderProps {
   items: PromotionItem[];
   onClose?: () => void;
   autoPlay?: boolean;
-  autoPlayInterval?: number; // milliseconds
+  autoPlayInterval?: number;
+  onLazyCheck?: () => Promise<void>; // lazyCheck 함수 prop 추가
 }
 
 export function PromotionSlider({
@@ -23,11 +24,23 @@ export function PromotionSlider({
   onClose,
   autoPlay = true,
   autoPlayInterval = 5000,
+  onLazyCheck,
 }: PromotionSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasRunLazyCheck = useRef(false);
+
+  // 홍보물이 나타날 때 한 번만 lazyCheck 실행
+  useEffect(() => {
+    if (!hasRunLazyCheck.current && onLazyCheck) {
+      onLazyCheck().catch((err) =>
+        console.error("LazyCheck on mount failed:", err)
+      );
+      hasRunLazyCheck.current = true;
+    }
+  }, [onLazyCheck]);
 
   // 자동 슬라이드
   useEffect(() => {
@@ -77,8 +90,28 @@ export function PromotionSlider({
     }
   };
 
-  const handleSlideClick = () => {
-    setIsPlaying((prev) => !prev);
+  // 🆕 슬라이드 클릭 시: 닫기 + LazyCheck + Fullscreen
+  const handleSlideClick = async () => {
+    // 1. LazyCheck 실행 (비동기, non-blocking)
+    if (onLazyCheck) {
+      onLazyCheck().catch((err) =>
+        console.error("LazyCheck on click failed:", err)
+      );
+    }
+
+    // 2. 홍보물 닫기
+    if (onClose) {
+      onClose();
+    }
+
+    // 3. Fullscreen 진입
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (err) {
+      console.log("Fullscreen request failed:", err);
+    }
   };
 
   if (items.length === 0) {
@@ -125,7 +158,7 @@ export function PromotionSlider({
         </Button>
       )}
 
-      {/* 슬라이드 컨텐츠 */}
+      {/* 슬라이드 컨텐츠 - 클릭 시 닫기 + Fullscreen */}
       <div
         className="w-full h-full flex items-center justify-center cursor-pointer"
         onClick={handleSlideClick}
@@ -161,7 +194,8 @@ export function PromotionSlider({
           {items.map((_, index) => (
             <button
               key={index}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation(); // 슬라이드 클릭 이벤트 전파 방지
                 setCurrentIndex(index);
                 setIsPlaying(false);
                 if (intervalRef.current) {
@@ -179,14 +213,7 @@ export function PromotionSlider({
         </div>
       )}
 
-      {/* 재생/일시정지 표시 */}
-      {!isPlaying && items.length > 1 && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-          <div className="bg-black/50 rounded-full p-4">
-            <div className="w-0 h-0 border-l-[20px] border-l-white border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent ml-1" />
-          </div>
-        </div>
-      )}
+      {/* 재생/일시정지 표시 제거 (더 이상 필요 없음) */}
     </div>
   );
 }

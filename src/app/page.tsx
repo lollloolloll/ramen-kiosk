@@ -5,9 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PromotionSlider } from "@/components/PromotionSlider";
 
-// 홍보물 데이터 (실제로는 관리자 페이지에서 관리하거나 API에서 가져올 수 있습니다)
+// 홍보물 데이터
 const PROMOTION_ITEMS = [
-  // 예시 데이터 - 실제로는 데이터베이스나 설정 파일에서 가져와야 합니다
   {
     id: "1",
     type: "video" as const,
@@ -23,34 +22,41 @@ const PROMOTION_ITEMS = [
 ];
 
 // 비활성 시간 설정 (밀리초)
-const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10분 (20분으로 변경하려면 20 * 60 * 1000)
+const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10분
 
 export default function Home() {
-  const [showPromotion, setShowPromotion] = useState(false);
+  const [showPromotion, setShowPromotion] = useState(true);
   const [hasShownInitialPromotion, setHasShownInitialPromotion] =
     useState(false);
   const lastActivityRef = useRef<number>(Date.now());
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 사용자 활동 감지
-  useEffect(() => {
-    const handleActivity = () => {
-      lastActivityRef.current = Date.now();
+  // 타이머 리셋 함수 (홍보물은 닫지 않음)
+  const resetInactivityTimer = () => {
+    lastActivityRef.current = Date.now();
 
-      // 홍보물이 표시 중이면 닫기
-      if (showPromotion) {
-        setShowPromotion(false);
-      }
+    // 기존 타이머 제거
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
 
-      // 타이머 리셋
-      if (inactivityTimerRef.current) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-
-      // 새로운 타이머 설정
+    // 홍보물이 표시 중이 아닐 때만 새 타이머 설정
+    if (!showPromotion) {
       inactivityTimerRef.current = setTimeout(() => {
         setShowPromotion(true);
       }, INACTIVITY_TIMEOUT);
+    }
+  };
+
+  // 사용자 활동 감지
+  useEffect(() => {
+    const handleActivity = () => {
+      // 홍보물이 표시 중이면 활동 감지 무시
+      if (showPromotion) {
+        return;
+      }
+
+      resetInactivityTimer();
     };
 
     // 다양한 이벤트 리스너 등록
@@ -94,16 +100,16 @@ export default function Home() {
     };
   }, [showPromotion, hasShownInitialPromotion]);
 
+  // 홍보물 닫기 핸들러
   const handleClosePromotion = () => {
     setShowPromotion(false);
     lastActivityRef.current = Date.now();
 
-    // 타이머 리셋
+    // 새로운 타이머 설정
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
 
-    // 새로운 타이머 설정
     inactivityTimerRef.current = setTimeout(() => {
       setShowPromotion(true);
     }, INACTIVITY_TIMEOUT);
@@ -172,9 +178,9 @@ export default function Home() {
           </div>
 
           {/* 안내 텍스트 */}
-          <p className="text-sm text-muted-foreground animate-pulse">
+          {/* <p className="text-sm text-muted-foreground animate-pulse">
             화면을 터치하여 시작하세요
-          </p>
+          </p> */}
         </div>
 
         {/* 하단 장식 */}

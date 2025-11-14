@@ -531,7 +531,7 @@ export function RentalDialog({
                                     {entry.userName || "알 수 없음"}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    남 {entry.maleCount}명, 여{" "}
+                                    남: {entry.maleCount}명, 여:{" "}
                                     {entry.femaleCount}명
                                   </span>
                                 </div>
@@ -1166,7 +1166,7 @@ export function RentalDialog({
             {consentFile && consentFile.type === "pdf" && (
               <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <iframe
-                  src={consentFile.url}
+                  src={`${consentFile.url}#toolbar=0`}
                   className="w-full h-[calc(90vh-200px)] border-0"
                   title="개인정보 수집 및 이용 동의서"
                 />

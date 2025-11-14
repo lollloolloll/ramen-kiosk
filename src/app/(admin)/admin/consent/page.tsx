@@ -62,9 +62,12 @@ export default function ConsentPage() {
 
   const handleDelete = async (fileName: string) => {
     try {
-      const response = await fetch(`/api/uploads/consent?fileName=${fileName}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/uploads/consent?fileName=${fileName}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (response.ok) {
         toast.success("File deleted successfully.");
@@ -82,14 +85,18 @@ export default function ConsentPage() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Consent Management</h3>
-        <p className="text-sm text-muted-foreground">
-          Manage user consent forms.
+        <p className="text-sm text-muted-foreground pt-4">
+          지원 형식: .jpg, .jpeg, .png, .webp, .gif, .pdf 파일은 하나만 업로드
+          해주세요.
         </p>
       </div>
       <Separator />
       <div className="space-y-4">
         <div>
-          <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="file-upload"
+            className="block text-sm font-medium text-gray-700"
+          >
             Upload Consent Form (PDF/Image)
           </label>
           <div className="mt-1 flex items-center space-x-2">
@@ -101,11 +108,22 @@ export default function ConsentPage() {
           <h4 className="text-md font-medium">Uploaded Consent Forms</h4>
           <ul className="mt-2 space-y-2">
             {uploadedFiles.map((file) => (
-              <li key={file} className="flex items-center justify-between p-2 border rounded-md">
-                <a href={`/uploads/consent/${file}`} target="_blank" rel="noopener noreferrer">
+              <li
+                key={file}
+                className="flex items-center justify-between p-2 border rounded-md"
+              >
+                <a
+                  href={`/uploads/consent/${file}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {file}
                 </a>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(file)}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(file)}
+                >
                   Delete
                 </Button>
               </li>

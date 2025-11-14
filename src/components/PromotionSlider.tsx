@@ -122,18 +122,6 @@ export function PromotionSlider({
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-      {/* 닫기 버튼 */}
-      {onClose && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="absolute top-4 right-4 z-50 text-white hover:bg-white/20 rounded-full"
-        >
-          <X className="w-6 h-6" />
-        </Button>
-      )}
-
       {/* 이전 버튼 */}
       {items.length > 1 && (
         <Button

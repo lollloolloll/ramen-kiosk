@@ -9,41 +9,44 @@ import { items, rentalRecords, waitingQueue } from "@drizzle/schema";
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
 import { processAndMutateExpiredRentals } from "./rental";
 export async function getAllItemsForAdmin() {
-  // where 필터링 없이 모든 아이템을 가져옵니다.
   const allItems = await db.select().from(items);
 
-  // status와 waitingCount를 계산하는 로직은 동일합니다.
-  // 관리자 페이지에서도 이 정보가 필요하기 때문입니다.
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
       let status: "RENTED" | "AVAILABLE";
+      let returnDueDate: number | null = null;
 
       if (item.isTimeLimited) {
-        const rented = await db
-          .select({ id: rentalRecords.id })
-          .from(rentalRecords)
-          .where(
-            and(
-              eq(rentalRecords.itemsId, item.id),
-              eq(rentalRecords.isReturned, false)
-            )
-          )
-          .limit(1)
-          .get();
-        status = rented ? "RENTED" : "AVAILABLE";
+        const currentRental = await db.query.rentalRecords.findFirst({
+          where: and(
+            eq(rentalRecords.itemsId, item.id),
+            eq(rentalRecords.isReturned, false)
+          ),
+          orderBy: [desc(rentalRecords.rentalDate)],
+        });
+
+        if (currentRental) {
+          status = "RENTED";
+          returnDueDate = currentRental.returnDueDate;
+        } else {
+          status = "AVAILABLE";
+        }
       } else {
         status = "AVAILABLE";
       }
 
-      const waitingEntries = await db
-        .select({ id: waitingQueue.id })
+      const waitingCountResult = await db
+        .select({ value: count() })
         .from(waitingQueue)
         .where(eq(waitingQueue.itemId, item.id));
+
+      const waitingCount = waitingCountResult[0]?.value || 0;
 
       return {
         ...item,
         status,
-        waitingCount: waitingEntries.length,
+        waitingCount,
+        returnDueDate,
       };
     })
   );
@@ -90,7 +93,7 @@ export async function getAllItems() {
         .from(waitingQueue)
         .where(eq(waitingQueue.itemId, item.id));
 
-      const waitingCount = waitingCountResult[0].value;
+      const waitingCount = waitingCountResult[0]?.value || 0;
 
       return {
         ...item,

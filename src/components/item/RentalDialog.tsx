@@ -44,11 +44,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FileText } from "lucide-react";
 
 interface RentalDialogProps {
   item: Item | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  consentFile: { url: string; type: "pdf" | "image" | "doc" } | null;
 }
 
 type Step = "identification" | "register" | "success" | "waitingSuccess";
@@ -82,7 +84,12 @@ const formatPhoneNumber = (value: string) => {
   )}-${phoneNumber.slice(7, 11)}`;
 };
 
-export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
+export function RentalDialog({
+  item,
+  open,
+  onOpenChange,
+  consentFile,
+}: RentalDialogProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("identification");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,6 +108,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     }>
   >([]);
   const [isLoadingWaitingList, setIsLoadingWaitingList] = useState(false);
+  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
 
   const isRentedMode = item?.isTimeLimited && item?.status === "RENTED";
   const estimatedWaitingTime = useMemo(() => {
@@ -111,10 +119,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     const waitingCount = item.waitingCount ?? 0;
     const rentalTime = item.rentalTimeMinutes;
 
-    // 1. 내 앞의 대기열로 인한 대기 시간 (분)
     const waitingTimeForQueue = waitingCount * rentalTime;
 
-    // 2. 현재 대여 중인 아이템의 남은 시간 (분)
     let remainingTimeForCurrentRental = 0;
     if (item.status === "RENTED" && item.returnDueDate) {
       const nowInSeconds = Math.floor(Date.now() / 1000);
@@ -125,7 +131,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       }
     }
 
-    // 3. 총 예상 대기 시간
     return remainingTimeForCurrentRental + waitingTimeForQueue;
   }, [item]);
 
@@ -363,6 +368,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
     setSchoolLevel("");
     setSchoolName("");
     setYearSelectOpen(false);
+    setIsConsentModalOpen(false);
   };
 
   const handleWaitingListClick = async () => {
@@ -386,6 +392,14 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
       toast.error("대기자 명단을 불러오는 중 오류가 발생했습니다.");
     } finally {
       setIsLoadingWaitingList(false);
+    }
+  };
+
+  const handleOpenConsentModal = () => {
+    if (consentFile) {
+      setIsConsentModalOpen(true);
+    } else {
+      toast.error("동의서 파일을 불러올 수 없습니다.");
     }
   };
 
@@ -435,7 +449,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                 </DialogDescription>
               </DialogHeader>
 
-              {/* 대기자 명단 카드 */}
               {isRentedMode && (
                 <div className="space-y-3">
                   <div
@@ -489,7 +502,6 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                     </div>
                   </div>
 
-                  {/* 대기자 명단 목록 */}
                   {showWaitingList && (
                     <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-background p-4 space-y-2 max-h-[300px] overflow-y-auto">
                       {isLoadingWaitingList ? (
@@ -519,7 +531,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                                     {entry.userName || "알 수 없음"}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    남 {entry.maleCount}명, 여{entry.femaleCount}명
+                                    남 {entry.maleCount}명, 여{" "}
+                                    {entry.femaleCount}명
                                   </span>
                                 </div>
                               </div>
@@ -709,7 +722,13 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                       이름<span className="text-[oklch(0.7_0.18_350)]">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="홍길동" {...field} />
+                      <Input
+                        placeholder="홍길동"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.replace(/\s/g, ""))
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -772,8 +791,8 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                           }}
                           className={
                             field.value === "여"
-                              ? "bg-[oklch(0.7_0.18_350)] hover:bg-[oklch(0.68_0.18_350)] text-white"
-                              : "border-[oklch(0.7_0.18_350/0.3)] hover:bg-[oklch(0.7_0.18_350/0.1)]"
+                              ? " bg-[oklch(0.7_0.18_350)] hover:bg-[oklch(0.68_0.18_350)] text-white"
+                              : " border-[oklch(0.7_0.18_350/0.3)] hover:bg-[oklch(0.7_0.18_350/0.1)]"
                           }
                         >
                           여
@@ -883,7 +902,9 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                         <Input
                           placeholder="학교 이름 (예: 선덕, 자운)"
                           value={schoolName}
-                          onChange={(e) => setSchoolName(e.target.value)}
+                          onChange={(e) =>
+                            setSchoolName(e.target.value.replace(/\s/g, ""))
+                          }
                           disabled={!schoolLevel || schoolLevel === "해당없음"}
                         />
                       </FormControl>
@@ -892,27 +913,46 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                   </FormItem>
                 )}
               />
+
+              {/* 개선된 동의서 섹션 */}
               <FormField
                 control={registerForm.control}
                 name="personalInfoConsent"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[oklch(0.75_0.12_165/0.2)] p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>개인정보 수집 및 이용 동의 (선택)</FormLabel>
-                      <FormDescription>
-                        동의 시 맞춤형 서비스 제공에 활용될 수 있습니다.
-                        동의하지 않아도 서비스 이용이 가능합니다.
-                      </FormDescription>
+                  <FormItem className="rounded-lg border-2 border-dashed border-[oklch(0.75_0.12_165/0.3)] p-4 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
+                    <div className="flex items-start gap-3">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="mt-1"
+                        />
+                      </FormControl>
+                      <div className="flex-1 space-y-2">
+                        <FormLabel className="text-base font-semibold leading-none">
+                          개인정보 수집 및 이용 동의 (선택)
+                        </FormLabel>
+                        <FormDescription className="text-sm leading-relaxed">
+                          동의 시 맞춤형 서비스 제공에 활용될 수 있습니다.
+                          <br />
+                          동의하지 않아도 서비스 이용이 가능합니다.
+                        </FormDescription>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleOpenConsentModal}
+                          className="mt-2 gap-2 border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
+                        >
+                          <FileText className="w-4 h-4" />
+                          동의서 보기
+                        </Button>
+                      </div>
                     </div>
                   </FormItem>
                 )}
               />
+
               <DialogFooter className="gap-2">
                 <Button
                   type="button"
@@ -1087,18 +1127,103 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) {
-          resetDialog();
-        }
-        onOpenChange(isOpen);
-      }}
-    >
-      <DialogContent onInteractOutside={(e) => e.preventDefault()}>
-        {renderStep()}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            resetDialog();
+          }
+          onOpenChange(isOpen);
+        }}
+      >
+        <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+          {renderStep()}
+        </DialogContent>
+      </Dialog>
+
+      {/* 동의서 모달 */}
+      <Dialog open={isConsentModalOpen} onOpenChange={setIsConsentModalOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)]">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-2xl font-bold text-[oklch(0.75_0.12_165)]">
+                개인정보 수집 및 이용 동의서
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto p-6 bg-muted/5">
+            {!consentFile && (
+              <div className="flex flex-col items-center justify-center py-16 space-y-4">
+                <FileText className="w-16 h-16 text-muted-foreground/50" />
+                <p className="text-lg text-muted-foreground">
+                  동의서 파일을 불러올 수 없습니다.
+                </p>
+              </div>
+            )}
+
+            {consentFile && consentFile.type === "pdf" && (
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <iframe
+                  src={consentFile.url}
+                  className="w-full h-[calc(90vh-200px)] border-0"
+                  title="개인정보 수집 및 이용 동의서"
+                />
+              </div>
+            )}
+
+            {consentFile && consentFile.type === "image" && (
+              <div className="flex justify-center">
+                <img
+                  src={consentFile.url}
+                  alt="개인정보 수집 및 이용 동의서"
+                  className="max-w-full h-auto rounded-lg shadow-md"
+                />
+              </div>
+            )}
+
+            {consentFile && consentFile.type === "doc" && (
+              <div className="flex flex-col items-center justify-center space-y-6 py-16">
+                <div className="p-6 bg-white rounded-full shadow-lg">
+                  <FileText className="w-16 h-16 text-[oklch(0.75_0.12_165)]" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-lg font-semibold">문서 파일</p>
+                  <p className="text-muted-foreground">
+                    다운로드하여 확인하실 수 있습니다.
+                  </p>
+                </div>
+                <Button
+                  asChild
+                  size="lg"
+                  className="gap-2 bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                >
+                  <a
+                    href={consentFile.url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <FileText className="w-5 h-5" />
+                    동의서 다운로드
+                  </a>
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="px-6 py-4 border-t bg-muted/30">
+            <Button
+              onClick={() => setIsConsentModalOpen(false)}
+              variant="outline"
+              className="w-full border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
+            >
+              닫기
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

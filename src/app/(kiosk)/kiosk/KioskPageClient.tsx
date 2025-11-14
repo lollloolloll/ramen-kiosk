@@ -9,9 +9,10 @@ import { RentalDialog } from "@/components/item/RentalDialog";
 
 interface KioskPageClientProps {
   items: Item[];
+  consentFile: { url: string; type: "pdf" | "image" | "doc" } | null;
 }
 
-export function KioskPageClient({ items }: KioskPageClientProps) {
+export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -67,6 +68,7 @@ export function KioskPageClient({ items }: KioskPageClientProps) {
           item={selectedItem}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
+          consentFile={consentFile}
         />
       </div>
     </div>

@@ -399,7 +399,8 @@ export function RentalDialog({
 
   const handleOpenConsentModal = () => {
     if (consentFile) {
-      setTempConsent(registerForm.getValues("personalInfoConsent"));
+      const currentConsent = registerForm.getValues("personalInfoConsent");
+      setTempConsent(currentConsent === true);
       setIsConsentModalOpen(true);
     } else {
       toast.error("동의서 파일을 불러올 수 없습니다.");
@@ -927,18 +928,21 @@ export function RentalDialog({
                 control={registerForm.control}
                 name="personalInfoConsent"
                 render={({ field }) => (
-                  <FormItem
-                    className="rounded-lg border-2 border-dashed border-[oklch(0.75_0.12_165/0.3)] p-4 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] cursor-pointer hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
-                    onClick={handleOpenConsentModal}
-                  >
+                  <FormItem className="rounded-lg border-2 border-dashed border-[oklch(0.75_0.12_165/0.3)] p-4 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
                     <div className="flex items-start gap-3">
                       <div className="mt-1">
                         <Checkbox
                           checked={field.value}
-                          className="pointer-events-none"
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked === true);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
                         />
                       </div>
-                      <div className="flex-1 space-y-2">
+                      <div
+                        className="flex-1 space-y-2 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={handleOpenConsentModal}
+                      >
                         <FormLabel className="text-base font-semibold leading-none cursor-pointer">
                           개인정보 수집 및 이용 동의 (선택)
                         </FormLabel>
@@ -1220,9 +1224,9 @@ export function RentalDialog({
             <div className="flex items-center gap-3">
               <Checkbox
                 checked={tempConsent}
-                onCheckedChange={(checked) =>
-                  setTempConsent(checked as boolean)
-                }
+                onCheckedChange={(checked) => {
+                  setTempConsent(checked === true);
+                }}
                 id="consent-check"
               />
               <label

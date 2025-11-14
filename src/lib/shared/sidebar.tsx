@@ -44,7 +44,7 @@ export function Sidebar() {
       <Button
         variant={isOperationActive ? "secondary" : "ghost"}
         onClick={() => setShowOperationLinks(!showOperationLinks)}
-        className="justify-center relative"
+        className="justify-center relative cursor-pointer"
       >
         Operation
         {showOperationLinks ? (

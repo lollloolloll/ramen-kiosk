@@ -26,8 +26,9 @@ type BaseItem = typeof items.$inferSelect;
 
 // 2. API 응답에 포함될, 계산된 추가 속성을 정의합니다.
 interface ItemComputedFields {
-  status: "AVAILABLE" | "RENTED";
+  status: "RENTED" | "AVAILABLE";
   waitingCount: number;
+  returnDueDate: number | null;
 }
 
 // 3. 기본 타입과 계산된 속성을 결합(&)하여 최종 Item 타입을 만듭니다.

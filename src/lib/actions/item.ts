@@ -2,7 +2,7 @@
 
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { items, rentalRecords, waitingQueue } from "@drizzle/schema";
@@ -61,36 +61,42 @@ export async function getAllItems() {
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
       let status: "RENTED" | "AVAILABLE";
+      let returnDueDate: number | null = null; // ADDED: 반납 예정 시간 저장 변수
 
       if (item.isTimeLimited) {
-        // 시간제 아이템: isReturned가 false인 기록이 있으면 'RENTED'
-        const rented = await db
-          .select({ id: rentalRecords.id })
-          .from(rentalRecords)
-          .where(
-            and(
-              eq(rentalRecords.itemsId, item.id),
-              eq(rentalRecords.isReturned, false)
-            )
-          )
-          .limit(1)
-          .get();
-        status = rented ? "RENTED" : "AVAILABLE";
+        // CHANGED: isReturned가 false인 가장 최근 기록을 조회합니다.
+        // id 뿐만 아니라 returnDueDate도 가져옵니다.
+        const currentRental = await db.query.rentalRecords.findFirst({
+          where: and(
+            eq(rentalRecords.itemsId, item.id),
+            eq(rentalRecords.isReturned, false)
+          ),
+          orderBy: [desc(rentalRecords.rentalDate)], // 가장 최근 대여 기록 확인
+        });
+
+        if (currentRental) {
+          status = "RENTED";
+          returnDueDate = currentRental.returnDueDate; // ADDED: 조회된 반납 예정 시간을 할당합니다.
+        } else {
+          status = "AVAILABLE";
+        }
       } else {
-        // 일반 아이템: 항상 'AVAILABLE'
         status = "AVAILABLE";
       }
 
-      // 대기자 수 계산
-      const waitingEntries = await db
-        .select({ id: waitingQueue.id })
+      // OPTIMIZED: 대기자 수를 더 효율적으로 계산합니다.
+      const waitingCountResult = await db
+        .select({ value: count() })
         .from(waitingQueue)
         .where(eq(waitingQueue.itemId, item.id));
+
+      const waitingCount = waitingCountResult[0].value;
 
       return {
         ...item,
         status,
-        waitingCount: waitingEntries.length,
+        waitingCount, // 계산된 대기자 수
+        returnDueDate, // ADDED: 최종 반환 객체에 returnDueDate를 포함합니다.
       };
     })
   );

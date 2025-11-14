@@ -103,9 +103,31 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
   const [isLoadingWaitingList, setIsLoadingWaitingList] = useState(false);
 
   const isRentedMode = item?.isTimeLimited && item?.status === "RENTED";
-  const estimatedWaitingTime =
-    (item?.waitingCount ?? 0) +
-    (isRentedMode ? 1 : 0) * (item?.rentalTimeMinutes ?? 0);
+  const estimatedWaitingTime = useMemo(() => {
+    if (!item || !item.isTimeLimited || !item.rentalTimeMinutes) {
+      return 0;
+    }
+
+    const waitingCount = item.waitingCount ?? 0;
+    const rentalTime = item.rentalTimeMinutes;
+
+    // 1. 내 앞의 대기열로 인한 대기 시간 (분)
+    const waitingTimeForQueue = waitingCount * rentalTime;
+
+    // 2. 현재 대여 중인 아이템의 남은 시간 (분)
+    let remainingTimeForCurrentRental = 0;
+    if (item.status === "RENTED" && item.returnDueDate) {
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      const remainingSeconds = item.returnDueDate - nowInSeconds;
+
+      if (remainingSeconds > 0) {
+        remainingTimeForCurrentRental = Math.ceil(remainingSeconds / 60);
+      }
+    }
+
+    // 3. 총 예상 대기 시간
+    return remainingTimeForCurrentRental + waitingTimeForQueue;
+  }, [item]);
 
   const [birthYear, setBirthYear] = useState<string>();
   const [birthMonth, setBirthMonth] = useState<string>();
@@ -497,7 +519,7 @@ export function RentalDialog({ item, open, onOpenChange }: RentalDialogProps) {
                                     {entry.userName || "알 수 없음"}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    남 {entry.maleCount}명, 여 {entry.femaleCount}명
+                                    남 {entry.maleCount}명, 여{entry.femaleCount}명
                                   </span>
                                 </div>
                               </div>

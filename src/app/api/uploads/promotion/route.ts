@@ -13,7 +13,34 @@ const ALLOWED_FILE_TYPES = [
   "video/quicktime",
 ];
 
+// 확장자 기반 검증 (MIME 타입이 정확하지 않을 수 있으므로)
+const ALLOWED_EXTENSIONS = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".mp4",
+  ".webm",
+  ".mov",
+  ".avi",
+  ".mkv",
+];
+
 const uploadDir = path.join(process.cwd(), "public/uploads/promotion");
+
+// 파일 확장자 확인 함수
+function hasAllowedExtension(fileName: string): boolean {
+  const ext = path.extname(fileName).toLowerCase();
+  return ALLOWED_EXTENSIONS.includes(ext);
+}
+
+// 파일명 sanitization (경로 탐색 공격 방지)
+function sanitizeFileName(fileName: string): string {
+  // 경로 구분자 제거 및 위험한 문자 제거
+  const sanitized = path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, "_");
+  return sanitized || "uploaded_file";
+}
 
 // 큰 파일 업로드를 위한 설정
 export const runtime = "nodejs";
@@ -26,11 +53,21 @@ export async function POST(req: NextRequest) {
     const files = formData.getAll("files") as File[];
 
     for (const file of files) {
-      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      // 확장자 기반 검증 (더 안전함)
+      if (!hasAllowedExtension(file.name)) {
         return NextResponse.json(
-          { success: false, error: `File type not allowed: ${file.type}` },
+          {
+            success: false,
+            error: `File extension not allowed: ${path.extname(file.name)}`,
+          },
           { status: 400 }
         );
+      }
+
+      // MIME 타입 검증 (선택적, 빈 문자열이거나 허용된 타입이면 통과)
+      if (file.type && !ALLOWED_FILE_TYPES.includes(file.type)) {
+        // MIME 타입이 제공되었지만 허용 목록에 없으면 경고만 (확장자 검증이 더 중요)
+        console.warn(`MIME type mismatch: ${file.type} for file ${file.name}`);
       }
 
       if (file.size > MAX_FILE_SIZE) {
@@ -40,8 +77,26 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // 파일명 sanitization 및 중복 처리
+      const sanitizedFileName = sanitizeFileName(file.name);
+      let finalFileName = sanitizedFileName;
+      let counter = 1;
+
+      // 파일명 중복 시 번호 추가
+      while (
+        await fs
+          .access(path.join(uploadDir, finalFileName))
+          .then(() => true)
+          .catch(() => false)
+      ) {
+        const ext = path.extname(sanitizedFileName);
+        const nameWithoutExt = path.basename(sanitizedFileName, ext);
+        finalFileName = `${nameWithoutExt}_${counter}${ext}`;
+        counter++;
+      }
+
       const buffer = Buffer.from(await file.arrayBuffer());
-      await fs.writeFile(path.join(uploadDir, file.name), buffer);
+      await fs.writeFile(path.join(uploadDir, finalFileName), buffer);
     }
 
     return NextResponse.json({ success: true });

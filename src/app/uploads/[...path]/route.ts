@@ -18,6 +18,16 @@ function getContentType(filePath: string): string {
       return "image/webp";
     case ".gif":
       return "image/gif";
+    case ".mp4":
+      return "video/mp4";
+    case ".webm":
+      return "video/webm";
+    case ".mov":
+      return "video/quicktime";
+    case ".avi":
+      return "video/x-msvideo";
+    case ".mkv":
+      return "video/x-matroska";
     default:
       return "application/octet-stream";
   }

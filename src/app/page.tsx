@@ -6,21 +6,19 @@ import { Button } from "@/components/ui/button";
 import { PromotionSlider } from "@/components/PromotionSlider";
 import { processAndMutateExpiredRentals } from "@/lib/actions/rental";
 
-// 홍보물 데이터
-const PROMOTION_ITEMS = [
-  {
-    id: "1",
-    type: "video" as const,
-    url: "/promotions/video1.mp4",
-    title: "홍보 영상 1",
-  },
-  {
-    id: "2",
-    type: "image" as const,
-    url: "/promotions/image1.jpg",
-    title: "홍보 이미지 1",
-  },
-];
+interface PromotionItem {
+  id: string;
+  type: "video" | "image";
+  url: string;
+  title?: string;
+}
+
+// 파일 확장자로 타입 구분
+function getFileType(fileName: string): "video" | "image" {
+  const ext = fileName.toLowerCase().split(".").pop();
+  const videoExts = ["mp4", "webm", "mov", "avi", "mkv"];
+  return videoExts.includes(ext || "") ? "video" : "image";
+}
 
 // 비활성 시간 설정 (밀리초)
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10분
@@ -29,6 +27,7 @@ export default function Home() {
   const [showPromotion, setShowPromotion] = useState(true);
   const [hasShownInitialPromotion, setHasShownInitialPromotion] =
     useState(false);
+  const [promotionItems, setPromotionItems] = useState<PromotionItem[]>([]);
   const lastActivityRef = useRef<number>(Date.now());
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -48,6 +47,31 @@ export default function Home() {
       }, INACTIVITY_TIMEOUT);
     }
   };
+
+  // 업로드된 홍보물 파일 목록 가져오기
+  useEffect(() => {
+    const fetchPromotionFiles = async () => {
+      try {
+        const response = await fetch("/api/uploads/promotion");
+        if (response.ok) {
+          const data = await response.json();
+          const items: PromotionItem[] = (data.files || []).map(
+            (fileName: string, index: number) => ({
+              id: `promo-${index}-${fileName}`,
+              type: getFileType(fileName),
+              url: `/uploads/promotion/${fileName}`,
+              title: fileName,
+            })
+          );
+          setPromotionItems(items);
+        }
+      } catch (error) {
+        console.error("Error fetching promotion files:", error);
+      }
+    };
+
+    fetchPromotionFiles();
+  }, []);
 
   // 사용자 활동 감지
   useEffect(() => {
@@ -80,7 +104,7 @@ export default function Home() {
     }, INACTIVITY_TIMEOUT);
 
     // 처음 앱 킬 때 홍보물 표시 (한 번만)
-    if (PROMOTION_ITEMS.length > 0 && !hasShownInitialPromotion) {
+    if (promotionItems.length > 0 && !hasShownInitialPromotion) {
       const hasSeenPromotion = sessionStorage.getItem(
         "hasSeenInitialPromotion"
       );
@@ -99,7 +123,7 @@ export default function Home() {
         clearTimeout(inactivityTimerRef.current);
       }
     };
-  }, [showPromotion, hasShownInitialPromotion]);
+  }, [showPromotion, hasShownInitialPromotion, promotionItems.length]);
 
   // 홍보물 닫기 핸들러
   const handleClosePromotion = () => {
@@ -205,9 +229,9 @@ export default function Home() {
       </div>
 
       {/* 홍보물 슬라이드 */}
-      {showPromotion && PROMOTION_ITEMS.length > 0 && (
+      {showPromotion && promotionItems.length > 0 && (
         <PromotionSlider
-          items={PROMOTION_ITEMS}
+          items={promotionItems}
           onClose={handleClosePromotion}
           autoPlay={true}
           autoPlayInterval={5000}

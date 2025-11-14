@@ -2,10 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB (비디오 파일을 위해 증가)
+const ALLOWED_FILE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+];
 
 const uploadDir = path.join(process.cwd(), "public/uploads/promotion");
+
+// 큰 파일 업로드를 위한 설정
+export const runtime = "nodejs";
+export const maxDuration = 300; // 5분 (비디오 파일 업로드 시간 고려)
 
 export async function POST(req: NextRequest) {
   try {

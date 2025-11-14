@@ -64,9 +64,12 @@ export default function PromotionPage() {
 
   const handleDelete = async (fileName: string) => {
     try {
-      const response = await fetch(`/api/uploads/promotion?fileName=${fileName}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/uploads/promotion?fileName=${fileName}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (response.ok) {
         toast.success("File deleted successfully.");
@@ -91,11 +94,19 @@ export default function PromotionPage() {
       <Separator />
       <div className="space-y-4">
         <div>
-          <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="file-upload"
+            className="block text-sm font-medium text-gray-700"
+          >
             Upload Files (Images/Videos)
           </label>
           <div className="mt-1 flex items-center space-x-2">
-            <Input id="file-upload" type="file" multiple onChange={handleFileChange} />
+            <Input
+              id="file-upload"
+              type="file"
+              multiple
+              onChange={handleFileChange}
+            />
             <Button onClick={handleUpload}>Upload</Button>
           </div>
         </div>
@@ -103,11 +114,22 @@ export default function PromotionPage() {
           <h4 className="text-md font-medium">Uploaded Promotions</h4>
           <ul className="mt-2 space-y-2">
             {uploadedFiles.map((file) => (
-              <li key={file} className="flex items-center justify-between p-2 border rounded-md">
-                <a href={`/uploads/promo/${file}`} target="_blank" rel="noopener noreferrer">
+              <li
+                key={file}
+                className="flex items-center justify-between p-2 border rounded-md"
+              >
+                <a
+                  href={`/uploads/promotion/${file}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {file}
                 </a>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(file)}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(file)}
+                >
                   Delete
                 </Button>
               </li>

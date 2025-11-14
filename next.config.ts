@@ -8,6 +8,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  serverActions: {
+    bodySizeLimit: "50mb", // 비디오 파일 업로드를 위해 증가
+  },
   async rewrites() {
     return [
       {

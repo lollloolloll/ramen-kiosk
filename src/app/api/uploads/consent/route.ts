@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
 const uploadDir = path.join(process.cwd(), "public/uploads/consent");
 
 export async function POST(req: NextRequest) {
@@ -12,6 +15,20 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ success: false, error: "No file provided." }, { status: 400 });
+    }
+
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { success: false, error: `File type not allowed: ${file.type}` },
+        { status: 400 }
+      );
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, error: `File size exceeds limit: ${file.name}` },
+        { status: 400 }
+      );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());

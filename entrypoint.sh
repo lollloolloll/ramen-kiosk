@@ -2,7 +2,7 @@
 set -e
 
 # root로 실행되는 부분
-mkdir -p /app/data /app/public/uploads
+mkdir -p /app/data /app/public/uploads/promotion /app/public/uploads/consent
 chown -R nextjs:nodejs /app/data /app/public/uploads
 chmod -R 777 /app/public/uploads
 

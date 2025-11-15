@@ -87,8 +87,9 @@ export default function PromotionPage() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Promotion Management</h3>
-        <p className="text-sm text-muted-foreground">
-          Manage promotional content and campaigns.
+        <p className="text-sm text-muted-foreground pt-4">
+          ".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm", ".mov",
+          ".avi", ".mkv",
         </p>
       </div>
       <Separator />

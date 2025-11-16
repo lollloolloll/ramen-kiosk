@@ -88,8 +88,8 @@ export default function PromotionPage() {
       <div>
         <h3 className="text-lg font-medium">Promotion Management</h3>
         <p className="text-sm text-muted-foreground pt-4">
-          ".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm", ".mov",
-          ".avi", ".mkv",
+          지원 형식: ".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm",
+          ".mov", ".avi", ".mkv",
         </p>
       </div>
       <Separator />

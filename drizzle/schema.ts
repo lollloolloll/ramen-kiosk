@@ -117,3 +117,12 @@ export const waitingQueue = sqliteTable("waiting_queue", {
   maleCount: integer("male_count").default(0).notNull(),
   femaleCount: integer("female_count").default(0).notNull(),
 });
+
+export const rentalRecordPeople = sqliteTable("rental_record_people", {
+  id: integer().primaryKey({ autoIncrement: true }).notNull(),
+  rentalRecordId: integer("rental_record_id")
+    .notNull()
+    .references(() => rentalRecords.id, { onDelete: "cascade" }),
+  name: text().notNull(),
+  gender: text().notNull(), // 'M' 또는 'F'
+});

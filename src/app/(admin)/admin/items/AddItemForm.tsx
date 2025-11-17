@@ -73,6 +73,7 @@ const formSchema = z.object({
     .positive("최대 대여 횟수는 양의 정수여야 합니다.")
     .optional()
     .or(z.literal("").transform(() => undefined)), // 빈 문자열을 undefined로 처리
+  enableParticipantTracking: z.boolean().default(false).optional(),
 });
 
 export function AddItemForm() {

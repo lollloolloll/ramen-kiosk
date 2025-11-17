@@ -64,7 +64,7 @@ const identificationSchema = z
     participants: z
       .array(
         z.object({
-          name: z.string().optional().default(""),
+          name: z.string().min(1, "이름을 입력해주세요."),
           gender: z.enum(["남", "여"]),
         })
       )
@@ -265,6 +265,18 @@ export function RentalDialog({
     values: IdentificationFormValues
   ) => {
     if (!item) return;
+
+    // enableParticipantTracking이 true일 때만 참여자 이름 필수 검증
+    if (item.enableParticipantTracking && values.participants) {
+      const hasEmptyName = values.participants.some(
+        (p) => !p.name || p.name.trim().length === 0
+      );
+      if (hasEmptyName) {
+        toast.error("모든 참여자의 이름을 입력해주세요.");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const user = await findUserByNameAndPhone(
@@ -732,12 +744,10 @@ export function RentalDialog({
                       <Users className="w-4 h-4" />
                       함께하는 친구들 이름
                     </FormLabel>
-                    <span className="text-xs text-muted-foreground">
-                      선택사항
-                    </span>
+                    <span className="text-xs text-muted-foreground">필수</span>
                   </div>
                   <FormDescription className="text-xs">
-                    참여하는 친구들의 이름을 입력해주세요. 비워두셔도 됩니다.
+                    참여하는 친구들의 이름을 모두 입력해주세요. {/* ← 수정 */}
                   </FormDescription>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 max-h-48 overflow-y-auto pr-2 bg-muted/20 p-3 rounded-lg">
                     {fields.map((field, index) => {
@@ -761,10 +771,11 @@ export function RentalDialog({
                               <FormControl>
                                 <Input
                                   {...nameField}
-                                  placeholder="이름 입력 (선택)"
+                                  placeholder="이름 입력"
                                   className="h-9"
                                 />
                               </FormControl>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />

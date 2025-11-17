@@ -13,7 +13,6 @@ interface PromotionItem {
   title?: string;
 }
 
-// 파일 확장자로 타입 구분
 function getFileType(fileName: string): "video" | "image" {
   const ext = fileName.toLowerCase().split(".").pop();
   const videoExts = ["mp4", "webm", "mov", "avi", "mkv"];
@@ -21,7 +20,6 @@ function getFileType(fileName: string): "video" | "image" {
 }
 // 비활성 시간 설정 (밀리초)
 //const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 1분
-
 const INACTIVITY_TIMEOUT = 1 * 5 * 1000; // 5초
 
 export default function Home() {
@@ -32,7 +30,37 @@ export default function Home() {
   const lastActivityRef = useRef<number>(Date.now());
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 타이머 리셋 함수 (홍보물은 닫지 않음)
+  // 🆕 kiosk에서 리다이렉트된 경우 검증 후 홍보물 표시
+  useEffect(() => {
+    const promotionFlag = sessionStorage.getItem("showPromotionOnHome");
+
+    if (promotionFlag) {
+      try {
+        const payload = JSON.parse(promotionFlag);
+        const now = Date.now();
+
+        // 타임스탬프 검증: TTL 내에 있는지 확인
+        if (
+          payload.show &&
+          payload.timestamp &&
+          now - payload.timestamp < payload.ttl
+        ) {
+          console.log("Valid promotion flag from kiosk - showing promotion");
+          sessionStorage.removeItem("showPromotionOnHome");
+          setShowPromotion(true);
+          return; // 초기 홍보물 로직 스킵
+        } else {
+          console.log("Expired promotion flag - ignoring");
+          sessionStorage.removeItem("showPromotionOnHome");
+        }
+      } catch (e) {
+        console.error("Invalid promotion flag format:", e);
+        sessionStorage.removeItem("showPromotionOnHome");
+      }
+    }
+  }, []);
+
+  // 타이머 리셋 함수
   const resetInactivityTimer = () => {
     lastActivityRef.current = Date.now();
 
@@ -81,7 +109,6 @@ export default function Home() {
       if (showPromotion) {
         return;
       }
-
       resetInactivityTimer();
     };
 
@@ -140,6 +167,7 @@ export default function Home() {
       setShowPromotion(true);
     }, INACTIVITY_TIMEOUT);
   };
+
   const handleLazyCheck = async () => {
     console.log("Triggering lazy check from promotion screen...");
     await processAndMutateExpiredRentals();
@@ -206,11 +234,6 @@ export default function Home() {
               <Link href="/kiosk">😎 놀 준비 완료!</Link>
             </Button>
           </div>
-
-          {/* 안내 텍스트 */}
-          {/* <p className="text-sm text-muted-foreground animate-pulse">
-            화면을 터치하여 시작하세요
-          </p> */}
         </div>
 
         {/* 하단 장식 */}

@@ -22,16 +22,14 @@ interface PromotionItem {
   title?: string;
 }
 
-// 파일 확장자로 타입 구분
 function getFileType(fileName: string): "video" | "image" {
   const ext = fileName.toLowerCase().split(".").pop();
   const videoExts = ["mp4", "webm", "mov", "avi", "mkv"];
   return videoExts.includes(ext || "") ? "video" : "image";
 }
 
-// 비활성 시간 설정 (밀리초)
-// const INACTIVITY_TIMEOUT = 30 * 1000; // 30초
-const INACTIVITY_TIMEOUT = 5 * 1000; // 테스트용 5초
+const INACTIVITY_TIMEOUT = 30 * 1000; // 30초
+// const INACTIVITY_TIMEOUT = 5 * 1000; // 테스트용 5초
 
 export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
   const router = useRouter();
@@ -71,36 +69,35 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
   const resetInactivityTimer = () => {
     console.log("Resetting inactivity timer");
 
-    // 기존 타이머 제거
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
 
-    // 다이얼로그가 열려있으면 타이머 설정 안 함
     if (isDialogOpen) {
       console.log("Dialog is open, not setting timer");
       return;
     }
 
-    // 타이머 설정
     inactivityTimerRef.current = setTimeout(() => {
-      console.log("Inactivity timeout - showing promotion");
-      setShowPromotion(true);
+      console.log(
+        "Inactivity timeout - redirecting to home with promotion flag"
+      );
+
+      // 🆕 홍보물 표시 플래그 설정 후 리다이렉트
+      sessionStorage.setItem("showPromotionOnHome", "true");
+      router.push("/");
     }, INACTIVITY_TIMEOUT);
   };
 
   // 사용자 활동 감지
   useEffect(() => {
     const handleActivity = () => {
-      // 홍보물이 표시 중이거나 다이얼로그가 열려있으면 활동 감지 무시
       if (showPromotion || isDialogOpen) {
         return;
       }
-
       resetInactivityTimer();
     };
 
-    // 다양한 이벤트 리스너 등록
     const events = [
       "mousedown",
       "mousemove",
@@ -114,7 +111,6 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
       window.addEventListener(event, handleActivity, { passive: true });
     });
 
-    // 초기 타이머 설정
     resetInactivityTimer();
 
     return () => {
@@ -127,34 +123,15 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
     };
   }, [showPromotion, isDialogOpen]);
 
-  // 홍보물이 표시되면 리다이렉트 타이머 시작
-  useEffect(() => {
-    if (showPromotion) {
-      console.log("Promotion shown, starting redirect timer");
-
-      const redirectTimer = setTimeout(() => {
-        console.log("Redirecting to home");
-        router.push("/");
-      }, INACTIVITY_TIMEOUT);
-
-      return () => {
-        console.log("Cleaning up redirect timer");
-        clearTimeout(redirectTimer);
-      };
-    }
-  }, [showPromotion, router]);
-
   // 다이얼로그 상태 변경 감지
   useEffect(() => {
     if (isDialogOpen) {
       console.log("Dialog opened, clearing timer");
-      // 다이얼로그가 열리면 타이머 정지
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
       }
     } else if (!showPromotion) {
       console.log("Dialog closed, restarting timer");
-      // 다이얼로그가 닫히고 홍보물도 없으면 타이머 재시작
       resetInactivityTimer();
     }
   }, [isDialogOpen, showPromotion]);
@@ -163,8 +140,6 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
   const handleClosePromotion = () => {
     console.log("Promotion closed by user");
     setShowPromotion(false);
-
-    // 새로운 비활성 타이머 시작
     resetInactivityTimer();
   };
 
@@ -184,7 +159,6 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
     <>
       <div className="min-h-screen bg-gradient-to-br from-[oklch(0.75_0.12_165/0.15)] via-[oklch(0.7_0.18_350/0.15)] to-[oklch(0.7_0.18_350/0.15)]">
         <div className="container mx-auto px-6 py-10">
-          {/* 홈 버튼과 제목 */}
           <div className="mb-12 flex items-center justify-between relative">
             <Link
               href="/"
@@ -201,7 +175,6 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
               </h1>
               <div className="h-1.5 w-32 mx-auto bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] rounded-full" />
             </div>
-            {/* 우측 여백을 위한 빈 공간 */}
             <div className="w-[180px]" />
           </div>
 
@@ -231,7 +204,6 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
         </div>
       </div>
 
-      {/* 홍보물 슬라이드 */}
       {showPromotion && promotionItems.length > 0 && (
         <PromotionSlider
           items={promotionItems}

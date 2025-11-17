@@ -24,6 +24,11 @@ export const items = sqliteTable("items", {
     .notNull(),
   rentalTimeMinutes: integer("rental_time_minutes"), // 시간제 대여인 경우만 설정 (예: 30)
   maxRentalsPerUser: integer("max_rentals_per_user"), // 시간제 대여인 경우만 설정 (예: 3, 하루 최대 횟수)
+  enableParticipantTracking: integer("enable_participant_tracking", {
+    mode: "boolean",
+  })
+    .default(false)
+    .notNull(),
 });
 
 export const users = sqliteTable(
@@ -124,5 +129,5 @@ export const rentalRecordPeople = sqliteTable("rental_record_people", {
     .notNull()
     .references(() => rentalRecords.id, { onDelete: "cascade" }),
   name: text().notNull(),
-  gender: text().notNull(), // 'M' 또는 'F'
+  gender: text().notNull(), // '남' 또는 '여'
 });

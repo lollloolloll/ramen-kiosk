@@ -85,6 +85,7 @@ export function AddItemForm() {
       isTimeLimited: false,
       rentalTimeMinutes: undefined,
       maxRentalsPerUser: undefined,
+      enableParticipantTracking: false,
     },
   });
 

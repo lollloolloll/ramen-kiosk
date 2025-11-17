@@ -17,6 +17,7 @@ interface PromotionSliderProps {
   autoPlay?: boolean;
   autoPlayInterval?: number;
   onLazyCheck?: () => Promise<void>; // lazyCheck 함수 prop 추가
+  userInteractionTimeout?: number; // 사용자 상호작용 후 자동 재생 재개 시간 (ms)
 }
 
 export function PromotionSlider({
@@ -25,15 +26,36 @@ export function PromotionSlider({
   autoPlay = true,
   autoPlayInterval = 5000, //5초
   onLazyCheck,
+  userInteractionTimeout = 10000, // 10초 (사용자 상호작용 후 자동 재생 재개 시간)
 }: PromotionSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay); // Controls interval-based auto-play
+  const [userInteracted, setUserInteracted] = useState(false); // 사용자 상호작용 여부
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null); // 사용자 상호작용 타이머
   const hasRunLazyCheck = useRef(false);
 
   const currentItem = items[currentIndex];
   const isCurrentItemVideo = currentItem?.type === "video"; // Derived state
+
+  // 사용자 상호작용 후 자동 재생 재개 로직
+  const resetAutoPlayAfterInteraction = () => {
+    setUserInteracted(true); // 사용자 상호작용 발생
+    setIsPlaying(false); // 자동 재생 일시 중지
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    if (interactionTimeoutRef.current) {
+      clearTimeout(interactionTimeoutRef.current);
+    }
+
+    interactionTimeoutRef.current = setTimeout(() => {
+      setUserInteracted(false); // 비활성 상태로 전환
+      setIsPlaying(autoPlay); // 자동 재생 재개 (초기 autoPlay 설정에 따름)
+    }, userInteractionTimeout);
+  };
 
   // 홍보물이 나타날 때 한 번만 lazyCheck 실행
   useEffect(() => {
@@ -52,8 +74,8 @@ export function PromotionSlider({
     }
 
     // Only set interval if autoPlay is enabled, there are multiple items,
-    // and the current item is NOT a video.
-    if (isPlaying && items.length > 1 && !isCurrentItemVideo) {
+    // the current item is NOT a video, and no recent user interaction.
+    if (isPlaying && items.length > 1 && !isCurrentItemVideo && !userInteracted) {
       intervalRef.current = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % items.length);
       }, autoPlayInterval);
@@ -64,7 +86,7 @@ export function PromotionSlider({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isPlaying, items.length, autoPlayInterval, isCurrentItemVideo]); // Add isCurrentItemVideo to dependencies
+  }, [isPlaying, items.length, autoPlayInterval, isCurrentItemVideo, userInteracted]); // Add userInteracted to dependencies
 
   // 비디오 재생 제어
   useEffect(() => {
@@ -85,18 +107,12 @@ export function PromotionSlider({
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-    setIsPlaying(false); // Manual navigation stops auto-play
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
+    resetAutoPlayAfterInteraction(); // 사용자 상호작용 후 자동 재생 재개 로직 호출
   };
 
   const goToNext = () => {
     setCurrentIndex((prev) => (prev + 1) % items.length);
-    setIsPlaying(false); // Manual navigation stops auto-play
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
+    resetAutoPlayAfterInteraction(); // 사용자 상호작용 후 자동 재생 재개 로직 호출
   };
 
   // 🆕 슬라이드 클릭 시: 닫기 + LazyCheck + Fullscreen
@@ -173,6 +189,7 @@ export function PromotionSlider({
             onEnded={() => {
               if (items.length > 1) {
                 setCurrentIndex((prev) => (prev + 1) % items.length);
+                setUserInteracted(false); // 비디오 종료 시 사용자 상호작용 상태 초기화
                 setIsPlaying(autoPlay); // Resume auto-play for the next item if autoPlay is true
               }
             }}
@@ -195,10 +212,7 @@ export function PromotionSlider({
               onClick={(e) => {
                 e.stopPropagation(); // 슬라이드 클릭 이벤트 전파 방지
                 setCurrentIndex(index);
-                setIsPlaying(false); // Manual navigation stops auto-play
-                if (intervalRef.current) {
-                  clearInterval(intervalRef.current);
-                }
+                resetAutoPlayAfterInteraction(); // 사용자 상호작용 후 자동 재생 재개 로직 호출
               }}
               className={`w-3 h-3 rounded-full transition-all ${
                 index === currentIndex

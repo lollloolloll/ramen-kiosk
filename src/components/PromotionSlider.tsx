@@ -23,14 +23,17 @@ export function PromotionSlider({
   items,
   onClose,
   autoPlay = true,
-  autoPlayInterval = 5000,
+  autoPlayInterval = 5000, //5초
   onLazyCheck,
 }: PromotionSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [isPlaying, setIsPlaying] = useState(autoPlay); // Controls interval-based auto-play
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasRunLazyCheck = useRef(false);
+
+  const currentItem = items[currentIndex];
+  const isCurrentItemVideo = currentItem?.type === "video"; // Derived state
 
   // 홍보물이 나타날 때 한 번만 lazyCheck 실행
   useEffect(() => {
@@ -42,9 +45,15 @@ export function PromotionSlider({
     }
   }, [onLazyCheck]);
 
-  // 자동 슬라이드
+  // 자동 슬라이드 (이미지일 경우에만 작동)
   useEffect(() => {
-    if (isPlaying && items.length > 1) {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    // Only set interval if autoPlay is enabled, there are multiple items,
+    // and the current item is NOT a video.
+    if (isPlaying && items.length > 1 && !isCurrentItemVideo) {
       intervalRef.current = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % items.length);
       }, autoPlayInterval);
@@ -55,7 +64,7 @@ export function PromotionSlider({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isPlaying, items.length, autoPlayInterval]);
+  }, [isPlaying, items.length, autoPlayInterval, isCurrentItemVideo]); // Add isCurrentItemVideo to dependencies
 
   // 비디오 재생 제어
   useEffect(() => {
@@ -76,7 +85,7 @@ export function PromotionSlider({
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-    setIsPlaying(false);
+    setIsPlaying(false); // Manual navigation stops auto-play
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
@@ -84,7 +93,7 @@ export function PromotionSlider({
 
   const goToNext = () => {
     setCurrentIndex((prev) => (prev + 1) % items.length);
-    setIsPlaying(false);
+    setIsPlaying(false); // Manual navigation stops auto-play
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
@@ -118,7 +127,7 @@ export function PromotionSlider({
     return null;
   }
 
-  const currentItem = items[currentIndex];
+  // currentItem is already defined above
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
@@ -158,12 +167,13 @@ export function PromotionSlider({
             }}
             src={currentItem.url}
             className="max-w-full max-h-full object-contain"
-            loop
+            loop={false} // Video should not loop if it's controlling slide advancement
             muted
             playsInline
             onEnded={() => {
               if (items.length > 1) {
                 setCurrentIndex((prev) => (prev + 1) % items.length);
+                setIsPlaying(autoPlay); // Resume auto-play for the next item if autoPlay is true
               }
             }}
           />
@@ -185,7 +195,7 @@ export function PromotionSlider({
               onClick={(e) => {
                 e.stopPropagation(); // 슬라이드 클릭 이벤트 전파 방지
                 setCurrentIndex(index);
-                setIsPlaying(false);
+                setIsPlaying(false); // Manual navigation stops auto-play
                 if (intervalRef.current) {
                   clearInterval(intervalRef.current);
                 }

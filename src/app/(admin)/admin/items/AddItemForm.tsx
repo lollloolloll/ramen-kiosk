@@ -17,6 +17,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
@@ -96,6 +97,11 @@ export function AddItemForm() {
     formData.append("name", values.name);
     formData.append("category", values.category);
     formData.append("isTimeLimited", String(values.isTimeLimited));
+    formData.append(
+      "enableParticipantTracking",
+      String(values.enableParticipantTracking)
+    );
+
     if (values.rentalTimeMinutes !== undefined) {
       formData.append("rentalTimeMinutes", String(values.rentalTimeMinutes));
     }
@@ -218,6 +224,9 @@ export function AddItemForm() {
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
                 <FormLabel className="text-base">시간제 대여</FormLabel>
+                <FormDescription>
+                  시간제 대여 아이템으로 설정합니다
+                </FormDescription>
               </div>
               <FormControl>
                 <Switch
@@ -259,6 +268,29 @@ export function AddItemForm() {
             />
           </>
         )}
+
+        <FormField
+          control={form.control}
+          name="enableParticipantTracking"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  참여자 이름 입력 여부
+                </FormLabel>
+                <FormDescription>
+                  대여 시 참여자들의 이름을 개별적으로 입력받습니다
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
         <DialogFooter>
           <Button type="submit">아이템 추가</Button>

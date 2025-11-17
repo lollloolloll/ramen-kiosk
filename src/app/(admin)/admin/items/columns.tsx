@@ -109,6 +109,14 @@ export const columns: ColumnDef<Item>[] = [
     },
   },
   {
+    accessorKey: "enableParticipantTracking",
+    header: "대여 인원 추적",
+    cell: ({ row }) => {
+      const enableParticipantTracking = row.original.enableParticipantTracking;
+      return <span>{enableParticipantTracking ? "예" : "아니오"}</span>;
+    },
+  },
+  {
     id: "actions",
     cell: ({ row }) => {
       const item = row.original;

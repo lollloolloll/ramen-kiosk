@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -45,6 +46,7 @@ const updateItemClientSchema = z.object({
     .positive("최대 대여 횟수는 양의 정수여야 합니다.")
     .optional()
     .or(z.literal("").transform(() => undefined)),
+  enableParticipantTracking: z.boolean().default(false).optional(),
 });
 
 type UpdateItemSchema = z.infer<typeof updateItemClientSchema>;
@@ -66,6 +68,7 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
       isTimeLimited: item.isTimeLimited || false,
       rentalTimeMinutes: item.rentalTimeMinutes ?? undefined,
       maxRentalsPerUser: item.maxRentalsPerUser ?? undefined,
+      enableParticipantTracking: item.enableParticipantTracking || false,
     },
   });
 
@@ -77,6 +80,10 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
     formData.append("name", values.name);
     formData.append("category", values.category);
     formData.append("isTimeLimited", String(values.isTimeLimited));
+    formData.append(
+      "enableParticipantTracking",
+      String(values.enableParticipantTracking ?? false)
+    );
     if (values.rentalTimeMinutes !== undefined) {
       formData.append("rentalTimeMinutes", String(values.rentalTimeMinutes));
     }
@@ -231,6 +238,28 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
                 />
               </>
             )}
+            <FormField
+              control={form.control}
+              name="enableParticipantTracking"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      참여자 이름 입력 여부
+                    </FormLabel>
+                    <FormDescription>
+                      대여 시 참여자들의 이름을 개별적으로 입력받습니다
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>

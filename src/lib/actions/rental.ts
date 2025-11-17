@@ -19,6 +19,8 @@ import {
   like,
   count,
   countDistinct,
+  or,
+  inArray,
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { Workbook } from "exceljs";
@@ -349,7 +351,20 @@ export async function getRentalRecords(
 
     const whereConditions = [];
     if (filters.username) {
-      whereConditions.push(like(generalUsers.name, `%${filters.username}%`));
+      const participantRecordIds = db
+        .selectDistinct({ recordId: rentalRecordPeople.rentalRecordId })
+        .from(rentalRecordPeople)
+        .where(like(rentalRecordPeople.name, `%${filters.username}%`));
+
+      whereConditions.push(
+        or(
+          like(
+            sql`COALESCE(${generalUsers.name}, ${rentalRecords.userName})`,
+            `%${filters.username}%`
+          ),
+          inArray(rentalRecords.id, participantRecordIds)
+        )
+      );
     }
     if (filters.startDate) {
       const [year, month, day] = filters.startDate.split("-").map(Number);

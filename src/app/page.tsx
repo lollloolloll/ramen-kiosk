@@ -29,9 +29,41 @@ export default function Home() {
   const [promotionItems, setPromotionItems] = useState<PromotionItem[]>([]);
   const lastActivityRef = useRef<number>(Date.now());
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasCheckedKioskFlag = useRef(false); // 🆕 플래그 체크 여부
 
-  // 🆕 kiosk에서 리다이렉트된 경우 검증 후 홍보물 표시
+  // 업로드된 홍보물 파일 목록 가져오기 (먼저 실행)
   useEffect(() => {
+    const fetchPromotionFiles = async () => {
+      try {
+        const response = await fetch("/api/uploads/promotion");
+        if (response.ok) {
+          const data = await response.json();
+          const items: PromotionItem[] = (data.files || []).map(
+            (fileName: string, index: number) => ({
+              id: `promo-${index}-${fileName}`,
+              type: getFileType(fileName),
+              url: `/uploads/promotion/${fileName}`,
+              title: fileName,
+            })
+          );
+          setPromotionItems(items);
+          console.log(`Loaded ${items.length} promotion items`);
+        }
+      } catch (error) {
+        console.error("Error fetching promotion files:", error);
+      }
+    };
+
+    fetchPromotionFiles();
+  }, []);
+
+  // 🆕 promotionItems 로드 후 kiosk 플래그 확인
+  useEffect(() => {
+    // 이미 체크했거나 아이템이 없으면 스킵
+    if (hasCheckedKioskFlag.current || promotionItems.length === 0) {
+      return;
+    }
+
     const promotionFlag = sessionStorage.getItem("showPromotionOnHome");
 
     if (promotionFlag) {
@@ -48,6 +80,7 @@ export default function Home() {
           console.log("Valid promotion flag from kiosk - showing promotion");
           sessionStorage.removeItem("showPromotionOnHome");
           setShowPromotion(true);
+          hasCheckedKioskFlag.current = true;
           return; // 초기 홍보물 로직 스킵
         } else {
           console.log("Expired promotion flag - ignoring");
@@ -58,49 +91,24 @@ export default function Home() {
         sessionStorage.removeItem("showPromotionOnHome");
       }
     }
-  }, []);
+
+    hasCheckedKioskFlag.current = true;
+  }, [promotionItems]); // promotionItems가 로드되면 실행
 
   // 타이머 리셋 함수
   const resetInactivityTimer = () => {
     lastActivityRef.current = Date.now();
 
-    // 기존 타이머 제거
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
 
-    // 홍보물이 표시 중이 아닐 때만 새 타이머 설정
     if (!showPromotion) {
       inactivityTimerRef.current = setTimeout(() => {
         setShowPromotion(true);
       }, INACTIVITY_TIMEOUT);
     }
   };
-
-  // 업로드된 홍보물 파일 목록 가져오기
-  useEffect(() => {
-    const fetchPromotionFiles = async () => {
-      try {
-        const response = await fetch("/api/uploads/promotion");
-        if (response.ok) {
-          const data = await response.json();
-          const items: PromotionItem[] = (data.files || []).map(
-            (fileName: string, index: number) => ({
-              id: `promo-${index}-${fileName}`,
-              type: getFileType(fileName),
-              url: `/uploads/promotion/${fileName}`,
-              title: fileName,
-            })
-          );
-          setPromotionItems(items);
-        }
-      } catch (error) {
-        console.error("Error fetching promotion files:", error);
-      }
-    };
-
-    fetchPromotionFiles();
-  }, []);
 
   // 사용자 활동 감지
   useEffect(() => {
@@ -126,13 +134,19 @@ export default function Home() {
       window.addEventListener(event, handleActivity, { passive: true });
     });
 
-    // 초기 타이머 설정
-    inactivityTimerRef.current = setTimeout(() => {
-      setShowPromotion(true);
-    }, INACTIVITY_TIMEOUT);
+    // 🆕 kiosk 플래그가 없을 때만 비활성 타이머 시작
+    if (!sessionStorage.getItem("showPromotionOnHome")) {
+      inactivityTimerRef.current = setTimeout(() => {
+        setShowPromotion(true);
+      }, INACTIVITY_TIMEOUT);
+    }
 
     // 처음 앱 킬 때 홍보물 표시 (한 번만)
-    if (promotionItems.length > 0 && !hasShownInitialPromotion) {
+    if (
+      promotionItems.length > 0 &&
+      !hasShownInitialPromotion &&
+      !sessionStorage.getItem("showPromotionOnHome")
+    ) {
       const hasSeenPromotion = sessionStorage.getItem(
         "hasSeenInitialPromotion"
       );

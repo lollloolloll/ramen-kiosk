@@ -28,8 +28,8 @@ function getFileType(fileName: string): "video" | "image" {
   return videoExts.includes(ext || "") ? "video" : "image";
 }
 
-const INACTIVITY_TIMEOUT = 30 * 1000; // 30초
-// const INACTIVITY_TIMEOUT = 5 * 1000; // 테스트용 5초
+// const INACTIVITY_TIMEOUT = 30 * 1000; // 30초
+const INACTIVITY_TIMEOUT = 5 * 1000; // 테스트용 5초
 
 export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
   const router = useRouter();
@@ -84,7 +84,15 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
       );
 
       // 🆕 홍보물 표시 플래그 설정 후 리다이렉트
-      sessionStorage.setItem("showPromotionOnHome", "true");
+      const promotionPayload = {
+        show: true,
+        timestamp: Date.now(),
+        ttl: 5000, // 5초의 유효기간. 리다이렉트 직후에만 유효하도록 설정
+      };
+      sessionStorage.setItem(
+        "showPromotionOnHome",
+        JSON.stringify(promotionPayload)
+      );
       router.push("/");
     }, INACTIVITY_TIMEOUT);
   };

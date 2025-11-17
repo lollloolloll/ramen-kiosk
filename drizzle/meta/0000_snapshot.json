@@ -62,6 +62,13 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "consent_file_path": {
+          "name": "consent_file_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -243,12 +250,42 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "user_name": {
+          "name": "user_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "user_phone": {
+          "name": "user_phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "items_id": {
           "name": "items_id",
           "type": "integer",
           "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "item_name": {
+          "name": "item_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "item_category": {
+          "name": "item_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "notNull": false,
           "autoincrement": false
         },
@@ -314,10 +351,51 @@
         },
         "is_manual_return": {
           "name": "is_manual_return",
+        "male_count": {
+          "name": "male_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
+          "default": 0
+        },
+        "female_count": {
+          "name": "female_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "return_due_date": {
+          "name": "return_due_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_returned": {
+          "name": "is_returned",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "return_date": {
+          "name": "return_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_manual_return": {
+          "name": "is_manual_return",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
           "default": false
         }
       },
@@ -334,6 +412,7 @@
             "id"
           ],
           "onDelete": "set null",
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "rental_records_items_id_items_id_fk": {
@@ -346,6 +425,7 @@
           "columnsTo": [
             "id"
           ],
+          "onDelete": "set null",
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -397,6 +477,88 @@
         }
       },
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "waiting_queue": {
+      "name": "waiting_queue",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "item_id": {
+          "name": "item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "request_date": {
+          "name": "request_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(CURRENT_TIMESTAMP)"
+        },
+        "male_count": {
+          "name": "male_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "female_count": {
+          "name": "female_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "waiting_queue_item_id_items_id_fk": {
+          "name": "waiting_queue_item_id_items_id_fk",
+          "tableFrom": "waiting_queue",
+          "tableTo": "items",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "waiting_queue_user_id_general_users_id_fk": {
+          "name": "waiting_queue_user_id_general_users_id_fk",
+          "tableFrom": "waiting_queue",
+          "tableTo": "general_users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

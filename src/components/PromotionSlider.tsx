@@ -16,33 +16,42 @@ interface PromotionSliderProps {
   onClose?: () => void;
   autoPlay?: boolean;
   autoPlayInterval?: number;
-  onLazyCheck?: () => Promise<void>; // lazyCheck 함수 prop 추가
-  userInteractionTimeout?: number; // 사용자 상호작용 후 자동 재생 재개 시간 (ms)
+  onLazyCheck?: () => Promise<void>;
+  userInteractionTimeout?: number;
 }
 
 export function PromotionSlider({
   items,
   onClose,
   autoPlay = true,
-  autoPlayInterval = 5000, //5초
+  autoPlayInterval = 5000,
   onLazyCheck,
-  userInteractionTimeout = 10000, // 10초 (사용자 상호작용 후 자동 재생 재개 시간)
+  userInteractionTimeout = 10000,
 }: PromotionSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(autoPlay); // Controls interval-based auto-play
-  const [userInteracted, setUserInteracted] = useState(false); // 사용자 상호작용 여부
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [userInteracted, setUserInteracted] = useState(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null); // 사용자 상호작용 타이머
-  const hasRunLazyCheck = useRef(false);
+  const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentItem = items[currentIndex];
-  const isCurrentItemVideo = currentItem?.type === "video"; // Derived state
+  const isCurrentItemVideo = currentItem?.type === "video";
+
+  // 🆕 슬라이드 전환 시마다 lazyCheck 실행
+  useEffect(() => {
+    if (onLazyCheck) {
+      console.log(
+        `LazyCheck triggered - Slide ${currentIndex + 1}/${items.length}`
+      );
+      onLazyCheck().catch((err) => console.error("LazyCheck failed:", err));
+    }
+  }, [currentIndex, onLazyCheck]); // currentIndex가 바뀔 때마다 실행
 
   // 사용자 상호작용 후 자동 재생 재개 로직
   const resetAutoPlayAfterInteraction = () => {
-    setUserInteracted(true); // 사용자 상호작용 발생
-    setIsPlaying(false); // 자동 재생 일시 중지
+    setUserInteracted(true);
+    setIsPlaying(false);
 
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -52,31 +61,29 @@ export function PromotionSlider({
     }
 
     interactionTimeoutRef.current = setTimeout(() => {
-      setUserInteracted(false); // 비활성 상태로 전환
-      setIsPlaying(autoPlay); // 자동 재생 재개 (초기 autoPlay 설정에 따름)
+      console.log("User interaction timeout - resuming autoplay");
+      setUserInteracted(false);
+      setIsPlaying(autoPlay);
     }, userInteractionTimeout);
   };
 
-  // 홍보물이 나타날 때 한 번만 lazyCheck 실행
-  useEffect(() => {
-    if (!hasRunLazyCheck.current && onLazyCheck) {
-      onLazyCheck().catch((err) =>
-        console.error("LazyCheck on mount failed:", err)
-      );
-      hasRunLazyCheck.current = true;
-    }
-  }, [onLazyCheck]);
-
-  // 자동 슬라이드 (이미지일 경우에만 작동)
+  // 자동 슬라이드 (이미지일 경우에만)
   useEffect(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
 
-    // Only set interval if autoPlay is enabled, there are multiple items,
-    // the current item is NOT a video, and no recent user interaction.
-    if (isPlaying && items.length > 1 && !isCurrentItemVideo && !userInteracted) {
+    if (
+      isPlaying &&
+      items.length > 1 &&
+      !isCurrentItemVideo &&
+      !userInteracted
+    ) {
+      console.log(
+        `Auto-advance timer started for image (${autoPlayInterval}ms)`
+      );
       intervalRef.current = setInterval(() => {
+        console.log("Auto-advancing to next slide (image timeout)");
         setCurrentIndex((prev) => (prev + 1) % items.length);
       }, autoPlayInterval);
     }
@@ -86,7 +93,13 @@ export function PromotionSlider({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isPlaying, items.length, autoPlayInterval, isCurrentItemVideo, userInteracted]); // Add userInteracted to dependencies
+  }, [
+    isPlaying,
+    items.length,
+    autoPlayInterval,
+    isCurrentItemVideo,
+    userInteracted,
+  ]);
 
   // 비디오 재생 제어
   useEffect(() => {
@@ -94,9 +107,8 @@ export function PromotionSlider({
       const video = videoRefs.current[item.id];
       if (video) {
         if (index === currentIndex && item.type === "video") {
-          video.play().catch(() => {
-            // 자동 재생 실패 시 무시
-          });
+          console.log(`Playing video: ${item.title || item.id}`);
+          video.play().catch(() => {});
         } else {
           video.pause();
           video.currentTime = 0;
@@ -106,30 +118,25 @@ export function PromotionSlider({
   }, [currentIndex, items]);
 
   const goToPrevious = () => {
+    console.log("User clicked previous button");
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-    resetAutoPlayAfterInteraction(); // 사용자 상호작용 후 자동 재생 재개 로직 호출
+    resetAutoPlayAfterInteraction();
   };
 
   const goToNext = () => {
+    console.log("User clicked next button");
     setCurrentIndex((prev) => (prev + 1) % items.length);
-    resetAutoPlayAfterInteraction(); // 사용자 상호작용 후 자동 재생 재개 로직 호출
+    resetAutoPlayAfterInteraction();
   };
 
-  // 🆕 슬라이드 클릭 시: 닫기 + LazyCheck + Fullscreen
+  // 슬라이드 클릭 시: 닫기 + Fullscreen
   const handleSlideClick = async () => {
-    // 1. LazyCheck 실행 (비동기, non-blocking)
-    if (onLazyCheck) {
-      onLazyCheck().catch((err) =>
-        console.error("LazyCheck on click failed:", err)
-      );
-    }
+    console.log("User clicked slide - closing promotion");
 
-    // 2. 홍보물 닫기
     if (onClose) {
       onClose();
     }
 
-    // 3. Fullscreen 진입
     try {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
@@ -142,8 +149,6 @@ export function PromotionSlider({
   if (items.length === 0) {
     return null;
   }
-
-  // currentItem is already defined above
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
@@ -171,7 +176,7 @@ export function PromotionSlider({
         </Button>
       )}
 
-      {/* 슬라이드 컨텐츠 - 클릭 시 닫기 + Fullscreen */}
+      {/* 슬라이드 컨텐츠 */}
       <div
         className="w-full h-full flex items-center justify-center cursor-pointer"
         onClick={handleSlideClick}
@@ -183,14 +188,16 @@ export function PromotionSlider({
             }}
             src={currentItem.url}
             className="max-w-full max-h-full object-contain"
-            loop={false} // Video should not loop if it's controlling slide advancement
+            loop={false}
             muted
             playsInline
             onEnded={() => {
+              console.log("Video ended - advancing to next slide");
               if (items.length > 1) {
                 setCurrentIndex((prev) => (prev + 1) % items.length);
-                setUserInteracted(false); // 비디오 종료 시 사용자 상호작용 상태 초기화
-                setIsPlaying(autoPlay); // Resume auto-play for the next item if autoPlay is true
+                // 동영상 끝난 후 자동재생 상태 복구
+                setUserInteracted(false);
+                setIsPlaying(autoPlay);
               }
             }}
           />
@@ -210,9 +217,12 @@ export function PromotionSlider({
             <button
               key={index}
               onClick={(e) => {
-                e.stopPropagation(); // 슬라이드 클릭 이벤트 전파 방지
+                e.stopPropagation();
+                console.log(
+                  `User clicked indicator - jumping to slide ${index + 1}`
+                );
                 setCurrentIndex(index);
-                resetAutoPlayAfterInteraction(); // 사용자 상호작용 후 자동 재생 재개 로직 호출
+                resetAutoPlayAfterInteraction();
               }}
               className={`w-3 h-3 rounded-full transition-all ${
                 index === currentIndex
@@ -224,8 +234,6 @@ export function PromotionSlider({
           ))}
         </div>
       )}
-
-      {/* 재생/일시정지 표시 제거 (더 이상 필요 없음) */}
     </div>
   );
 }

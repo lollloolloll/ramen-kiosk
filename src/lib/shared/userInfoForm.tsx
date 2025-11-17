@@ -9,18 +9,28 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { getGeneralUserById } from "@/lib/actions/generalUser";
-import { generalUsers } from "@drizzle/schema";
+import { getRentalRecordPeople } from "@/lib/actions/rental";
+import { generalUsers, rentalRecordPeople } from "@drizzle/schema";
+import { Separator } from "@/components/ui/separator";
 
 type GeneralUser = typeof generalUsers.$inferSelect;
+type RentalRecordPerson = typeof rentalRecordPeople.$inferSelect;
 
 interface UserInfoFormProps {
   userId: number | null;
   username: string | null;
   userPhone: string | null;
+  rentalRecordId: number | null;
 }
 
-export function UserInfoForm({ userId, username, userPhone }: UserInfoFormProps) {
+export function UserInfoForm({
+  userId,
+  username,
+  userPhone,
+  rentalRecordId,
+}: UserInfoFormProps) {
   const [user, setUser] = useState<GeneralUser | null>(null);
+  const [participants, setParticipants] = useState<RentalRecordPerson[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,15 +47,23 @@ export function UserInfoForm({ userId, username, userPhone }: UserInfoFormProps)
           setUser(null);
         }
       } else {
-        // userId가 없는 경우 (삭제된 사용자 등), 기본 정보만 표시
         setUser(null);
         setError("사용자 ID를 찾을 수 없습니다.");
       }
       setLoading(false);
     }
 
-    fetchUserData();
-  }, [userId]);
+    async function fetchParticipants() {
+      if (rentalRecordId) {
+        const result = await getRentalRecordPeople(rentalRecordId);
+        if (result.success && result.data) {
+          setParticipants(result.data);
+        }
+      }
+    }
+
+    Promise.all([fetchUserData(), fetchParticipants()]);
+  }, [userId, rentalRecordId]);
 
   return (
     <DialogContent className="sm:max-w-[425px]">
@@ -66,30 +84,52 @@ export function UserInfoForm({ userId, username, userPhone }: UserInfoFormProps)
             <Label htmlFor="phoneNumber" className="text-right">
               전화번호
             </Label>
-            <Input id="phoneNumber" value={user.phoneNumber} readOnly className="col-span-3" />
+            <Input
+              id="phoneNumber"
+              value={user.phoneNumber}
+              readOnly
+              className="col-span-3"
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="gender" className="text-right">
               성별
             </Label>
-            <Input id="gender" value={user.gender} readOnly className="col-span-3" />
+            <Input
+              id="gender"
+              value={user.gender}
+              readOnly
+              className="col-span-3"
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="birthDate" className="text-right">
               생년월일
             </Label>
-            <Input id="birthDate" value={user.birthDate || "-"} readOnly className="col-span-3" />
+            <Input
+              id="birthDate"
+              value={user.birthDate || "-"}
+              readOnly
+              className="col-span-3"
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="school" className="text-right">
               학교
             </Label>
-            <Input id="school" value={user.school || "-"} readOnly className="col-span-3" />
+            <Input
+              id="school"
+              value={user.school || "-"}
+              readOnly
+              className="col-span-3"
+            />
           </div>
         </div>
       ) : (
         <div className="grid gap-4 py-4">
-          <p className="text-center py-4 text-muted-foreground">사용자 정보를 불러올 수 없습니다.</p>
+          <p className="text-center py-4 text-muted-foreground">
+            사용자 정보를 불러올 수 없습니다.
+          </p>
           {username && (
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
@@ -103,11 +143,45 @@ export function UserInfoForm({ userId, username, userPhone }: UserInfoFormProps)
               <Label htmlFor="phoneNumber" className="text-right">
                 전화번호
               </Label>
-              <Input id="phoneNumber" value={userPhone} readOnly className="col-span-3" />
+              <Input
+                id="phoneNumber"
+                value={userPhone}
+                readOnly
+                className="col-span-3"
+              />
             </div>
           )}
           {error && <p className="text-center text-red-500">({error})</p>}
         </div>
+      )}
+
+      {participants.length > 0 && (
+        <>
+          <Separator />
+          <div className="py-4">
+            <h4 className="mb-4 text-center font-semibold">함께 빌린 사람</h4>
+            <div className="grid gap-4">
+              {participants.map((person) => (
+                <div
+                  key={person.id}
+                  className="grid grid-cols-4 items-center gap-4"
+                >
+                  <Label className="text-right">이름</Label>
+                  <Input
+                    value={person.name}
+                    readOnly
+                    className="col-span-2"
+                  />
+                  <Input
+                    value={person.gender}
+                    readOnly
+                    className="col-span-1"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </DialogContent>
   );

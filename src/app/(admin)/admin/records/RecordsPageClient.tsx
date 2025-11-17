@@ -31,13 +31,15 @@ export function RecordsPageClient({
     userId: number | null;
     username: string | null;
     userPhone: string | null;
+    rentalRecordId: number | null;
   } | null>(null);
 
-  const handleRowClick = (record: RentalRecord) => {
+  const handleRowClick = (record: RentalRecord & { id: number }) => {
     setSelectedUserForHistory({
       userId: record.userId || null,
       username: record.userName || null,
       userPhone: record.userPhone || null,
+      rentalRecordId: record.id,
     });
     setIsRentalHistoryDialogOpen(true);
   };
@@ -61,6 +63,7 @@ export function RecordsPageClient({
             userId={selectedUserForHistory.userId}
             username={selectedUserForHistory.username}
             userPhone={selectedUserForHistory.userPhone}
+            rentalRecordId={selectedUserForHistory.rentalRecordId}
           />
         </Dialog>
       )}

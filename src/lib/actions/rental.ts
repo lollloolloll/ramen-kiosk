@@ -1221,3 +1221,16 @@ async function processNextInQueue(itemId: number) {
     );
   }
 }
+
+export async function getRentalRecordPeople(rentalRecordId: number) {
+  try {
+    const people = await db
+      .select()
+      .from(rentalRecordPeople)
+      .where(eq(rentalRecordPeople.rentalRecordId, rentalRecordId));
+    return { success: true, data: people };
+  } catch (error) {
+    console.error("Error fetching rental record people:", error);
+    return { success: false, error: "Failed to fetch rental record people." };
+  }
+}

@@ -24,7 +24,7 @@ export const items = sqliteTable("items", {
     .notNull(),
   rentalTimeMinutes: integer("rental_time_minutes"), // 시간제 대여인 경우만 설정 (예: 30)
   maxRentalsPerUser: integer("max_rentals_per_user"), // 시간제 대여인 경우만 설정 (예: 3, 하루 최대 횟수)
-  enableParticipantTracking: integer("enable_participant_tracking", {
+  enableParticipantTracking: integer("enable_participant_tracking", { //특정 아이템 인원 이름 입력 
     mode: "boolean",
   })
     .default(false)

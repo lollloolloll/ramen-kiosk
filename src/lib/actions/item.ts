@@ -108,65 +108,72 @@ export async function getAllItems() {
 }
 
 export async function addItem(formData: FormData) {
+  // 1. 기본 필드 추출 및 검증
   const name = formData.get("name") as string;
   const category = formData.get("category") as string;
-  const imageFile = formData.get("image") as File;
-  const isTimeLimited = formData.get("isTimeLimited") === "true";
-  const rentalTimeMinutes = formData.get("rentalTimeMinutes")
-    ? parseInt(formData.get("rentalTimeMinutes") as string)
-    : undefined;
-  const maxRentalsPerUser = formData.get("maxRentalsPerUser")
-    ? parseInt(formData.get("maxRentalsPerUser") as string)
-    : undefined;
 
-  if (!name || !category) return { error: "필수 필드를 모두 입력해주세요." };
+  if (!name || !category) {
+    return { error: "필수 필드를 모두 입력해주세요." };
+  }
 
-  let imageUrl: string | undefined;
+  // 2. FormData를 객체로 변환
+  const data = {
+    name,
+    category,
+    isTimeLimited: formData.get("isTimeLimited") === "true",
+    enableParticipantTracking:
+      formData.get("enableParticipantTracking") === "true",
+    rentalTimeMinutes: formData.get("rentalTimeMinutes")
+      ? parseInt(formData.get("rentalTimeMinutes") as string, 10)
+      : undefined,
+    maxRentalsPerUser: formData.get("maxRentalsPerUser")
+      ? parseInt(formData.get("maxRentalsPerUser") as string, 10)
+      : undefined,
+    imageUrl: undefined as string | undefined,
+  };
 
+  // 3. 이미지 처리
+  const imageFile = formData.get("image") as File | null;
   if (imageFile && imageFile.size > 0) {
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     await mkdir(uploadsDir, { recursive: true });
 
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const filename = `${uniqueSuffix}-${imageFile.name}`;
+    // 안전한 파일명 처리 (공백 외에 다른 특수문자도 처리)
+    const safeName = imageFile.name
+      .replace(/\s+/g, "_")
+      .replace(/[^\w\.-]/g, "");
+    const filename = `${uniqueSuffix}-${safeName}`;
     const filePath = path.join(uploadsDir, filename);
 
-    const bytes = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
     try {
+      const bytes = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
       await writeFile(filePath, buffer);
-      imageUrl = `/uploads/${filename}`;
+      data.imageUrl = `/uploads/${filename}`;
     } catch (error) {
       console.error("Failed to write image file:", error);
       return { error: "이미지 파일 저장에 실패했습니다." };
     }
   }
 
-  const data = {
-    name,
-    category,
-    imageUrl,
-    isTimeLimited,
-    rentalTimeMinutes,
-    maxRentalsPerUser,
-  };
-  const validatedData = itemSchema.safeParse(data);
-  if (!validatedData.success) {
-    console.error("Validation error:", validatedData.error);
+  // 4. Zod 유효성 검사
+  const validatedResult = itemSchema.safeParse(data);
+  if (!validatedResult.success) {
+    console.error("Validation error:", validatedResult.error.flatten());
     return { error: "유효하지 않은 데이터입니다." };
   }
 
+  // 5. DB 삽입
   try {
-    await db.insert(items).values(validatedData.data); // <- 여기 insert
-    revalidatePath("/admin/items"); // ISR 업데이트
+    await db.insert(items).values(validatedResult.data);
+    revalidatePath("/admin/items");
     return { success: true };
   } catch (error) {
     console.error("Failed to add item:", error);
     return { error: "아이템 추가에 실패했습니다." };
   }
 }
-
 export async function updateItem(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   const name = formData.get("name") as string;
@@ -174,6 +181,8 @@ export async function updateItem(formData: FormData) {
   const imageFile = formData.get("image") as File;
   const imageUrlFromForm = formData.get("imageUrl") as string;
   const isTimeLimited = formData.get("isTimeLimited") === "true";
+  const enableParticipantTracking =
+    formData.get("enableParticipantTracking") === "true"; // 추가
   const rentalTimeMinutes = formData.get("rentalTimeMinutes")
     ? parseInt(formData.get("rentalTimeMinutes") as string)
     : undefined;
@@ -216,6 +225,7 @@ export async function updateItem(formData: FormData) {
     category?: string;
     imageUrl?: string;
     isTimeLimited?: boolean;
+    enableParticipantTracking?: boolean; // 추가
     rentalTimeMinutes?: number;
     maxRentalsPerUser?: number;
   } = {};
@@ -223,6 +233,7 @@ export async function updateItem(formData: FormData) {
   if (category) dataToUpdate.category = category;
   if (imageUrl) dataToUpdate.imageUrl = imageUrl;
   dataToUpdate.isTimeLimited = isTimeLimited;
+  dataToUpdate.enableParticipantTracking = enableParticipantTracking; // 추가
   if (rentalTimeMinutes) dataToUpdate.rentalTimeMinutes = rentalTimeMinutes;
   if (maxRentalsPerUser) dataToUpdate.maxRentalsPerUser = maxRentalsPerUser;
 

@@ -20,7 +20,7 @@ import {
   createGeneralUser,
 } from "@/lib/actions/generalUser";
 import { toast } from "sonner";
-import { useForm, Resolver } from "react-hook-form";
+import { useForm, useFieldArray, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText } from "lucide-react";
+import { FileText, Users } from "lucide-react";
 
 interface RentalDialogProps {
   item: Item | null;
@@ -61,6 +61,15 @@ const identificationSchema = z
     phoneNumber: z.string().min(1, "휴대폰 번호를 입력해주세요."),
     maleCount: z.number().optional().default(0),
     femaleCount: z.number().optional().default(0),
+    participants: z
+      .array(
+        z.object({
+          name: z.string().optional().default(""),
+          gender: z.enum(["남", "여"]),
+        })
+      )
+      .optional()
+      .default([]),
   })
   .refine((data) => data.maleCount + data.femaleCount > 0, {
     message: "대여 인원은 최소 1명 이상이어야 합니다.",
@@ -148,7 +157,18 @@ export function RentalDialog({
     resolver: zodResolver(
       identificationSchema
     ) as Resolver<IdentificationFormValues>,
-    defaultValues: { name: "", phoneNumber: "", maleCount: 0, femaleCount: 0 },
+    defaultValues: {
+      name: "",
+      phoneNumber: "",
+      maleCount: 0,
+      femaleCount: 0,
+      participants: [],
+    },
+  });
+
+  const { fields, replace } = useFieldArray({
+    control: identificationForm.control,
+    name: "participants",
   });
 
   const registerForm = useForm<GeneralUserFormValues>({
@@ -162,6 +182,28 @@ export function RentalDialog({
       personalInfoConsent: false,
     },
   });
+
+  // 인원 수 변경 감지하여 participants 배열 업데이트
+  const maleCount = identificationForm.watch("maleCount") ?? 0;
+  const femaleCount = identificationForm.watch("femaleCount") ?? 0;
+
+  useEffect(() => {
+    if (!item?.enableParticipantTracking) {
+      replace([]);
+      return;
+    }
+
+    const newParticipants: Array<{ name: string; gender: "남" | "여" }> = [];
+
+    for (let i = 0; i < maleCount; i++) {
+      newParticipants.push({ name: "", gender: "남" });
+    }
+    for (let i = 0; i < femaleCount; i++) {
+      newParticipants.push({ name: "", gender: "여" });
+    }
+
+    replace(newParticipants);
+  }, [maleCount, femaleCount, item?.enableParticipantTracking, replace]);
 
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {
@@ -246,7 +288,12 @@ export function RentalDialog({
         if (isRentedMode) {
           await handleWaiting(user.id, values.maleCount, values.femaleCount);
         } else {
-          await handleRental(user.id, values.maleCount, values.femaleCount);
+          await handleRental(
+            user.id,
+            values.maleCount,
+            values.femaleCount,
+            values.participants
+          );
         }
       } else {
         toast.info("등록된 사용자가 아닙니다. 신규 등록을 진행해주세요.");
@@ -273,11 +320,17 @@ export function RentalDialog({
         throw new Error(result.error);
       }
       if (result.user) {
-        const { maleCount, femaleCount } = identificationForm.getValues();
+        const { maleCount, femaleCount, participants } =
+          identificationForm.getValues();
         if (isRentedMode) {
           await handleWaiting(result.user.id, maleCount, femaleCount);
         } else {
-          await handleRental(result.user.id, maleCount, femaleCount);
+          await handleRental(
+            result.user.id,
+            maleCount,
+            femaleCount,
+            participants
+          );
         }
       }
     } catch (error) {
@@ -292,7 +345,8 @@ export function RentalDialog({
   const handleRental = async (
     userId: number,
     maleCount: number,
-    femaleCount: number
+    femaleCount: number,
+    participants?: Array<{ name: string; gender: "남" | "여" }>
   ) => {
     if (!item) {
       toast.error("아이템 정보가 없습니다.");
@@ -300,7 +354,13 @@ export function RentalDialog({
     }
     setIsSubmitting(true);
     try {
-      const result = await rentItem(userId, item.id, maleCount, femaleCount);
+      const result = await rentItem(
+        userId,
+        item.id,
+        maleCount,
+        femaleCount,
+        participants
+      );
       if (result.error) {
         throw new Error(result.error);
       }
@@ -663,6 +723,57 @@ export function RentalDialog({
                   )}
                 />
               </div>
+
+              {/* 참여자 이름 입력 필드 */}
+              {item.enableParticipantTracking && fields.length > 0 && (
+                <div className="space-y-3 pt-4 border-t border-dashed">
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="flex items-center gap-2 font-semibold">
+                      <Users className="w-4 h-4" />
+                      함께하는 친구들 이름
+                    </FormLabel>
+                    <span className="text-xs text-muted-foreground">
+                      선택사항
+                    </span>
+                  </div>
+                  <FormDescription className="text-xs">
+                    참여하는 친구들의 이름을 입력해주세요. 비워두셔도 됩니다.
+                  </FormDescription>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 max-h-48 overflow-y-auto pr-2 bg-muted/20 p-3 rounded-lg">
+                    {fields.map((field, index) => {
+                      const genderLabel =
+                        field.gender === "남" ? "남자" : "여자";
+                      const genderIndex =
+                        fields
+                          .slice(0, index)
+                          .filter((f) => f.gender === field.gender).length + 1;
+
+                      return (
+                        <FormField
+                          key={field.id}
+                          control={identificationForm.control}
+                          name={`participants.${index}.name`}
+                          render={({ field: nameField }) => (
+                            <FormItem className="relative">
+                              <FormLabel className="text-xs text-muted-foreground absolute -top-2 left-2 bg-background px-1 z-10">
+                                {`${genderLabel} ${genderIndex}`}
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...nameField}
+                                  placeholder="이름 입력 (선택)"
+                                  className="h-9"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <DialogFooter className="gap-2 sm:justify-between">
                 <Button
                   type="button"

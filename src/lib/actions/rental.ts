@@ -6,6 +6,7 @@ import {
   items,
   generalUsers,
   waitingQueue,
+  rentalRecordPeople,
 } from "@drizzle/schema";
 import {
   eq,
@@ -26,7 +27,8 @@ export async function rentItem(
   userId: number,
   itemId: number,
   maleCount: number,
-  femaleCount: number
+  femaleCount: number,
+  participants?: Array<{ name: string; gender: "남" | "여" }>
 ) {
   await triggerExpiredRentalsCheck();
   try {
@@ -39,6 +41,7 @@ export async function rentItem(
         isTimeLimited: items.isTimeLimited,
         rentalTimeMinutes: items.rentalTimeMinutes,
         maxRentalsPerUser: items.maxRentalsPerUser,
+        enableParticipantTracking: items.enableParticipantTracking,
       })
       .from(items)
       .where(and(eq(items.id, itemId), eq(items.isDeleted, false)))
@@ -118,19 +121,45 @@ export async function rentItem(
       returnDueDate = rentalDate + itemToRent.rentalTimeMinutes * 60;
     }
 
-    await db.insert(rentalRecords).values({
-      userId: userId,
-      itemsId: itemId,
-      rentalDate: rentalDate,
-      maleCount: maleCount,
-      femaleCount: femaleCount,
-      userName: userToRent.name,
-      userPhone: userToRent.phoneNumber,
-      itemName: itemToRent.name,
-      itemCategory: itemToRent.category,
-      returnDueDate: returnDueDate,
-      isReturned: false,
-    });
+    const [newRental] = await db
+      .insert(rentalRecords)
+      .values({
+        userId: userId,
+        itemsId: itemId,
+        rentalDate: rentalDate,
+        maleCount: maleCount,
+        femaleCount: femaleCount,
+        userName: userToRent.name,
+        userPhone: userToRent.phoneNumber,
+        itemName: itemToRent.name,
+        itemCategory: itemToRent.category,
+        returnDueDate: returnDueDate,
+        isReturned: false,
+      })
+      .returning({ id: rentalRecords.id });
+
+    // 5. 참여자 정보 저장 (enableParticipantTracking이 true인 경우에만)
+    if (
+      itemToRent.enableParticipantTracking &&
+      participants &&
+      participants.length > 0 &&
+      newRental?.id
+    ) {
+      // 빈 이름은 제외하고 저장
+      const validParticipants = participants.filter(
+        (p) => p.name.trim() !== ""
+      );
+
+      if (validParticipants.length > 0) {
+        await db.insert(rentalRecordPeople).values(
+          validParticipants.map((participant) => ({
+            rentalRecordId: newRental.id,
+            name: participant.name.trim(),
+            gender: participant.gender,
+          }))
+        );
+      }
+    }
 
     revalidatePath("/");
     revalidatePath("/admin/items");

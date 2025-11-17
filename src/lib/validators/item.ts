@@ -15,6 +15,7 @@ export const itemSchema = z.object({
   isTimeLimited: z.boolean().default(false).optional(),
   rentalTimeMinutes: z.number().int().positive().optional(),
   maxRentalsPerUser: z.number().int().positive().optional(),
+  enableParticipantTracking: z.boolean().default(false).optional(),
 });
 
 export const updateItemSchema = z.object({
@@ -35,4 +36,5 @@ export const updateItemSchema = z.object({
   isTimeLimited: z.boolean().optional(),
   rentalTimeMinutes: z.number().int().positive().optional(),
   maxRentalsPerUser: z.number().int().positive().optional(),
+  enableParticipantTracking: z.boolean().default(false).optional(),
 });

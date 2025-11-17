@@ -5,13 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-<<<<<<< HEAD
-      "when": 1763390760727,
-      "tag": "0000_complete_cyclops",
-=======
-      "when": 1763050327411,
-      "tag": "0000_nosy_captain_stacy",
->>>>>>> 3ea31b2 (chore: update database schema by removing obsolete snapshot files and adding new fields to enhance rental management functionality)
+      "when": 1763401379091,
+      "tag": "0000_bitter_leo",
       "breakpoints": true
     }
   ]

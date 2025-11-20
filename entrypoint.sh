@@ -17,7 +17,7 @@ chmod -R 777 /app/data
 
 echo "Running migrations using Drizzle Kit..."
 export DATABASE_URL="file:/app/data/local.db"
-npm run db:migrate
+npm run db:push
 
 echo "Tables in database:"
 sqlite3 "$DB_FILE" ".tables"

@@ -2,6 +2,7 @@
 
 import { Menu, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { signOut } from "next-auth/react";
 import { downloadDatabase } from "@/lib/actions/backup";
 
 interface HeaderProps {
@@ -39,6 +40,15 @@ export function Header({ onMenuClick }: HeaderProps) {
     }
   };
 
+  const handleLogout = async () => {
+    if (!confirm("로그아웃 하시겠습니까?")) return;
+
+    await signOut({
+      callbackUrl: "/login",
+      redirect: true,
+    });
+  };
+
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
       <Button
@@ -68,7 +78,9 @@ export function Header({ onMenuClick }: HeaderProps) {
           백업
         </Button>
         <Button variant="ghost">마이페이지</Button>
-        <Button variant="ghost">로그아웃</Button>
+        <Button variant="ghost" onClick={handleLogout}>
+          로그아웃
+        </Button>
       </div>
     </header>
   );

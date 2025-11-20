@@ -36,7 +36,7 @@ export default function LoginPage() {
       });
     } else {
       toast.success("Login Successful");
-      router.push("/");
+      router.push("/admin");
     }
   };
 
@@ -46,7 +46,10 @@ export default function LoginPage() {
         <h2 className="mb-6 text-center text-2xl font-bold">Login</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label htmlFor="username" className="mb-1 block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="username"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
               Username
             </label>
             <Input
@@ -56,11 +59,16 @@ export default function LoginPage() {
               className={errors.username ? "border-red-500" : ""}
             />
             {errors.username && (
-              <p className="mt-1 text-sm text-red-500">{errors.username.message}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {errors.username.message}
+              </p>
             )}
           </div>
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="password"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
               Password
             </label>
             <Input
@@ -70,7 +78,9 @@ export default function LoginPage() {
               className={errors.password ? "border-red-500" : ""}
             />
             {errors.password && (
-              <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {errors.password.message}
+              </p>
             )}
           </div>
           <Button type="submit" className="w-full" disabled={isSubmitting}>

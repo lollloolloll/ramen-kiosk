@@ -26,7 +26,9 @@ export default function AdminLayout({
   }, [status, router]);
 
   // 인증 상태를 확인하는 동안 깜빡임을 방지하고 싶다면 아래 코드 사용 (선택사항)
-  // if (status === "loading") return <div className="p-10">Loading...</div>;
+  if (status === "loading" || status === "unauthenticated") {
+    return null;
+  }
   const goMain = () => {
     router.push("/");
   };

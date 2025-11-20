@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ArrowLeft } from "lucide-react";
 
 import { loginSchema } from "@/lib/validators/auth";
 
@@ -43,6 +44,15 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative -left-4 -top-4"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span className="sr-only">Go back</span>
+        </Button>
         <h2 className="mb-6 text-center text-2xl font-bold">Login</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>

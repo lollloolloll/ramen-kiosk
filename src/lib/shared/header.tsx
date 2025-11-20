@@ -39,14 +39,15 @@ export function Header({ onMenuClick }: HeaderProps) {
       );
     }
   };
-
   const handleLogout = async () => {
     if (!confirm("로그아웃 하시겠습니까?")) return;
 
-    await signOut({
-      callbackUrl: "/login",
-      redirect: true,
-    });
+    // 1. NextAuth에게 로그아웃 요청 (redirect: false로 자동 이동 막기)
+    await signOut({ redirect: false });
+
+    // 2. 브라우저 강제 새로고침 및 이동
+
+    window.location.href = "/";
   };
 
   return (
@@ -77,7 +78,6 @@ export function Header({ onMenuClick }: HeaderProps) {
         <Button variant="ghost" onClick={handleBackup}>
           백업
         </Button>
-        <Button variant="ghost">마이페이지</Button>
         <Button variant="ghost" onClick={handleLogout}>
           로그아웃
         </Button>

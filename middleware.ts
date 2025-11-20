@@ -6,7 +6,7 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const { nextUrl } = req;
 
-  const protectedRoutes = ["/items", "/records"];
+  const protectedRoutes = ["/items", "/records", "/admin"];
   const authRoutes = ["/login", "/register"];
 
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);

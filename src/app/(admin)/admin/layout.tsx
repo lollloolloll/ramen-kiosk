@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "@/lib/shared/header";
 import { Sidebar } from "@/lib/shared/sidebar";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function AdminLayout({
   children,
@@ -14,7 +15,18 @@ export default function AdminLayout({
 }) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
+  const { status } = useSession();
 
+  useEffect(() => {
+    // "확인 중(loading)"이 아니고 "인증 안됨(unauthenticated)" 상태라면
+    if (status === "unauthenticated") {
+      // 즉시 로그인 페이지로 강제 이동 (캐시 무시)
+      router.replace("/login");
+    }
+  }, [status, router]);
+
+  // 인증 상태를 확인하는 동안 깜빡임을 방지하고 싶다면 아래 코드 사용 (선택사항)
+  // if (status === "loading") return <div className="p-10">Loading...</div>;
   const goMain = () => {
     router.push("/");
   };

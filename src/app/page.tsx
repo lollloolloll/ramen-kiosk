@@ -213,6 +213,7 @@ export default function Home() {
         {/* 관리자 페이지 링크 - 우측 상단 */}
         <Link
           href="/admin"
+          prefetch={false}
           className="absolute top-6 right-6 text-sm text-muted-foreground hover:text-[oklch(0.75_0.12_165)] transition-colors"
         >
           관리자

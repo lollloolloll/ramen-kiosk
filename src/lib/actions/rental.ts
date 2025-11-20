@@ -581,6 +581,7 @@ export async function getRentalAnalytics(filters: {
       whereConditions.push(eq(items.category, category));
     }
 
+    // [수정 1] 쿼리에서 '현재 아이템 정보'뿐만 아니라 '기록된(스냅샷) 아이템 정보'도 가져옵니다.
     const baseQuery = db
       .select({
         rentalDate: rentalRecords.rentalDate,
@@ -588,12 +589,20 @@ export async function getRentalAnalytics(filters: {
         birthDate: generalUsers.birthDate,
         gender: generalUsers.gender,
         school: generalUsers.school,
+
+        // 현재 아이템 테이블 정보 (Join)
         itemName: items.name,
         itemId: items.id,
         itemCategory: items.category,
+
+        // 대여 기록 테이블에 저장된 정보 (스냅샷 - 아이템 삭제 대비)
+        recordItemId: rentalRecords.itemsId,
+        recordItemName: rentalRecords.itemName,
+        recordItemCategory: rentalRecords.itemCategory,
+
         maleCount: rentalRecords.maleCount,
         femaleCount: rentalRecords.femaleCount,
-        peopleCount: sql<number>`${rentalRecords.maleCount} + ${rentalRecords.femaleCount}`,
+        // peopleCount는 JS에서 계산 (SQL 계산 제거하여 null 안전성 확보)
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
@@ -605,7 +614,6 @@ export async function getRentalAnalytics(filters: {
     records = records.map((r) => ({
       ...r,
       school: r.school ?? "기타",
-      peopleCount: r.peopleCount || 0,
     }));
 
     if (ageGroup && ageGroup !== "all") {
@@ -623,15 +631,21 @@ export async function getRentalAnalytics(filters: {
     const totalRentals = records.length;
     const uniqueUsers = new Set(records.map((r) => r.userId)).size;
 
+    // [수정 2] 모든 통계 집계 시 Fallback 로직 적용 (itemId || recordItemId)
     const itemCounts = records.reduce((acc, r) => {
-      if (r.itemId) {
-        acc[r.itemId] = acc[r.itemId] || {
-          id: r.itemId,
-          name: r.itemName,
-          category: r.itemCategory || "Unknown",
+      // items 테이블에 없으면 rentalRecords에 저장된 ID 사용
+      const id = r.itemId || r.recordItemId;
+      const name = r.itemName || r.recordItemName;
+      const category = r.itemCategory || r.recordItemCategory || "Unknown";
+
+      if (id && typeof id === "number") {
+        acc[id] = acc[id] || {
+          id: id,
+          name: name,
+          category: category,
           rentals: 0,
         };
-        acc[r.itemId].rentals++;
+        acc[id].rentals++;
       }
       return acc;
     }, {} as Record<number, { id: number; name: string | null; category: string; rentals: number }>);
@@ -641,12 +655,14 @@ export async function getRentalAnalytics(filters: {
       null;
 
     const categoryCounts = records.reduce((acc, r) => {
-      if (r.itemCategory) {
-        acc[r.itemCategory] = acc[r.itemCategory] || {
-          name: r.itemCategory,
+      // 카테고리도 Fallback 적용
+      const category = r.itemCategory || r.recordItemCategory;
+      if (category) {
+        acc[category] = acc[category] || {
+          name: category,
           rentals: 0,
         };
-        acc[r.itemCategory].rentals++;
+        acc[category].rentals++;
       }
       return acc;
     }, {} as Record<string, { name: string; rentals: number }>);
@@ -680,16 +696,21 @@ export async function getRentalAnalytics(filters: {
 
     const categoryStats = Object.entries(categoryCounts)
       .map(([name, data]) => {
-        const itemsInCategory = records.filter((r) => r.itemCategory === name);
+        const itemsInCategory = records.filter(
+          (r) => (r.itemCategory || r.recordItemCategory) === name
+        );
         const topItemsInCategory = Object.values(
           itemsInCategory.reduce((acc, r) => {
-            if (r.itemId) {
-              acc[r.itemId] = acc[r.itemId] || {
-                itemId: r.itemId,
-                itemName: r.itemName || "Unknown",
+            const id = r.itemId || r.recordItemId;
+            const name = r.itemName || r.recordItemName || "Unknown";
+
+            if (id && typeof id === "number") {
+              acc[id] = acc[id] || {
+                itemId: id,
+                itemName: name,
                 rentals: 0,
               };
-              acc[r.itemId].rentals++;
+              acc[id].rentals++;
             }
             return acc;
           }, {} as Record<number, { itemId: number; itemName: string; rentals: number }>)
@@ -770,31 +791,55 @@ export async function getRentalAnalytics(filters: {
       }))
       .sort((a, b) => b.totalRentals - a.totalRentals);
 
+    // --------------------------------------------------------------
+    // [수정 3] 인원수별 통계 집계 (공란 문제 해결 핵심 로직)
+    // --------------------------------------------------------------
     const peopleItemStats: {
       [key: number]: {
         [itemId: number]: { itemId: number; itemName: string; rentals: number };
       };
     } = {};
+
     records.forEach((r) => {
-      const p = r.peopleCount || 0;
-      if (!peopleItemStats[p]) peopleItemStats[p] = {};
-      if (r.itemId && typeof r.itemId === "number" && r.itemName) {
-        if (!peopleItemStats[p][r.itemId]) {
-          peopleItemStats[p][r.itemId] = {
-            itemId: r.itemId,
-            itemName: r.itemName,
+      // 1. 인원수 합산 (JS 계산)
+      const p = (r.maleCount || 0) + (r.femaleCount || 0);
+
+      // 2. 0명인 경우 집계 제외 (불필요한 0명 카드 생성 방지)
+      if (p === 0) return;
+
+      // 3. 아이템 ID/Name 결정 (스냅샷 사용으로 삭제된 아이템도 표시)
+      const finalItemId = r.itemId || r.recordItemId;
+      const finalItemName = r.itemName || r.recordItemName || "Unknown";
+
+      // 4. 유효한 ID가 있을 때만 버킷 생성 및 집계
+      if (finalItemId && typeof finalItemId === "number") {
+        // 해당 인원수 그룹이 없을 때만 생성 (즉, 데이터가 확실히 있을 때만 그룹 생성)
+        if (!peopleItemStats[p]) {
+          peopleItemStats[p] = {};
+        }
+
+        if (!peopleItemStats[p][finalItemId]) {
+          peopleItemStats[p][finalItemId] = {
+            itemId: finalItemId,
+            itemName: finalItemName,
             rentals: 0,
           };
         }
-        peopleItemStats[p][r.itemId].rentals++;
+        peopleItemStats[p][finalItemId].rentals++;
       }
     });
-    const peopleCountItemStats = Object.keys(peopleItemStats).map((count) => ({
-      peopleCount: Number(count),
-      items: Object.values(peopleItemStats[Number(count)]).sort(
-        (a, b) => b.rentals - a.rentals
-      ) as { itemId: number; itemName: string; rentals: number }[],
-    }));
+
+    const peopleCountItemStats = Object.keys(peopleItemStats)
+      .map((count) => {
+        const peopleCount = Number(count);
+        return {
+          peopleCount: peopleCount,
+          items: Object.values(peopleItemStats[peopleCount]).sort(
+            (a, b) => b.rentals - a.rentals
+          ),
+        };
+      })
+      .sort((a, b) => a.peopleCount - b.peopleCount); // 1인, 2인 순서 정렬
 
     return {
       kpis: { totalRentals, uniqueUsers, mostPopularItem, mostPopularCategory },
@@ -856,7 +901,6 @@ export async function getRentalAnalytics(filters: {
     };
   }
 }
-
 export async function exportRentalRecordsToExcel(
   filters: {
     username?: string;

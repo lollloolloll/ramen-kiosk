@@ -8,6 +8,7 @@ import {
   getAllItemNames,
   getAvailableRentalYears,
   triggerExpiredRentalsCheck,
+  processAndMutateExpiredRentals,
 } from "@/lib/actions/rental";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RentalAnalyticsClient } from "./RentalAnalyticsClient";
@@ -21,7 +22,7 @@ export default async function AdminDashboardPage() {
     ageGroup: "all",
     category: "all",
   };
-  await triggerExpiredRentalsCheck();
+  await processAndMutateExpiredRentals();
   const initialData = await getRentalAnalytics(initialFilters);
 
   const categoryResult = await db

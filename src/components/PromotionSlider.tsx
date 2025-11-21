@@ -24,9 +24,9 @@ export function PromotionSlider({
   items,
   onClose,
   autoPlay = true,
-  autoPlayInterval = 5000, // 5초
+  autoPlayInterval = 20 * 1000, // 20초
   onLazyCheck,
-  userInteractionTimeout = 10000, //10초
+  userInteractionTimeout = 5 * 1000, //5초
 }: PromotionSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);

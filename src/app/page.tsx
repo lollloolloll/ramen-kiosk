@@ -19,8 +19,8 @@ function getFileType(fileName: string): "video" | "image" {
   return videoExts.includes(ext || "") ? "video" : "image";
 }
 // 비활성 시간 설정 (밀리초)
-//const INACTIVITY_TIMEOUT = 3 * 60 * 1000; // 3분
-const INACTIVITY_TIMEOUT = 1 * 5 * 1000; // 5초
+const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 1분
+// const INACTIVITY_TIMEOUT = 1 * 5 * 1000; // 5초
 
 export default function Home() {
   const [showPromotion, setShowPromotion] = useState(false);

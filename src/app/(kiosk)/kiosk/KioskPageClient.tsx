@@ -28,8 +28,8 @@ function getFileType(fileName: string): "video" | "image" {
   return videoExts.includes(ext || "") ? "video" : "image";
 }
 
-// const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 1분
-const INACTIVITY_TIMEOUT = 5 * 1000; // 테스트용 5초
+const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 1분
+// const INACTIVITY_TIMEOUT = 5 * 1000; // 테스트용 5초
 
 export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
   const router = useRouter();

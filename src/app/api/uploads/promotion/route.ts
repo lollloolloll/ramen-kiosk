@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB (비디오 파일을 위해 증가)
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB (비디오 파일을 위해 증가)
 const ALLOWED_FILE_TYPES = [
   "image/jpeg",
   "image/png",

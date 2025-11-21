@@ -273,7 +273,7 @@ export default function Home() {
           items={promotionItems}
           onClose={handleClosePromotion}
           autoPlay={true}
-          autoPlayInterval={5000}
+          autoPlayInterval={20000}
           onLazyCheck={handleLazyCheck}
         />
       )}

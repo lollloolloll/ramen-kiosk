@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PromotionItem {
@@ -24,54 +24,57 @@ export function PromotionSlider({
   items,
   onClose,
   autoPlay = true,
-  autoPlayInterval = 20 * 1000, // 20초
+  autoPlayInterval = 20 * 1000,
   onLazyCheck,
-  userInteractionTimeout = 5 * 1000, //5초
+  userInteractionTimeout = 5 * 1000,
 }: PromotionSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [userInteracted, setUserInteracted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 스와이프 관련 상태
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const currentItem = items[currentIndex];
   const isCurrentItemVideo = currentItem?.type === "video";
 
-  // 🆕 슬라이드 전환 시마다 lazyCheck 실행
+  // 슬라이드 전환 시마다 lazyCheck 실행
   useEffect(() => {
     if (onLazyCheck) {
-      console.log(
-        `LazyCheck triggered - Slide ${currentIndex + 1}/${items.length}`
-      );
       onLazyCheck().catch((err) => console.error("LazyCheck failed:", err));
     }
-  }, [currentIndex, onLazyCheck]); // currentIndex가 바뀔 때마다 실행
+  }, [currentIndex, onLazyCheck]);
 
-  // 사용자 상호작용 후 자동 재생 재개 로직
-  const resetAutoPlayAfterInteraction = () => {
+  // 전역 음소거 상태를 모든 비디오에 적용
+  useEffect(() => {
+    Object.values(videoRefs.current).forEach((video) => {
+      if (video) video.muted = isMuted;
+    });
+  }, [isMuted]);
+
+  const resetAutoPlayAfterInteraction = useCallback(() => {
     setUserInteracted(true);
     setIsPlaying(false);
 
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    if (interactionTimeoutRef.current) {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (interactionTimeoutRef.current)
       clearTimeout(interactionTimeoutRef.current);
-    }
 
     interactionTimeoutRef.current = setTimeout(() => {
-      console.log("User interaction timeout - resuming autoplay");
       setUserInteracted(false);
       setIsPlaying(autoPlay);
     }, userInteractionTimeout);
-  };
+  }, [autoPlay, userInteractionTimeout]);
 
   // 자동 슬라이드 (이미지일 경우에만)
   useEffect(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
 
     if (
       isPlaying &&
@@ -79,19 +82,13 @@ export function PromotionSlider({
       !isCurrentItemVideo &&
       !userInteracted
     ) {
-      console.log(
-        `Auto-advance timer started for image (${autoPlayInterval}ms)`
-      );
       intervalRef.current = setInterval(() => {
-        console.log("Auto-advancing to next slide (image timeout)");
         setCurrentIndex((prev) => (prev + 1) % items.length);
       }, autoPlayInterval);
     }
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [
     isPlaying,
@@ -106,8 +103,8 @@ export function PromotionSlider({
     items.forEach((item, index) => {
       const video = videoRefs.current[item.id];
       if (video) {
+        video.muted = isMuted;
         if (index === currentIndex && item.type === "video") {
-          console.log(`Playing video: ${item.title || item.id}`);
           video.play().catch(() => {});
         } else {
           video.pause();
@@ -115,27 +112,43 @@ export function PromotionSlider({
         }
       }
     });
-  }, [currentIndex, items]);
+  }, [currentIndex, items, isMuted]);
 
-  const goToPrevious = () => {
-    console.log("User clicked previous button");
+  const goToPrevious = useCallback(() => {
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
     resetAutoPlayAfterInteraction();
-  };
+  }, [items.length, resetAutoPlayAfterInteraction]);
 
-  const goToNext = () => {
-    console.log("User clicked next button");
+  const goToNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % items.length);
     resetAutoPlayAfterInteraction();
+  }, [items.length, resetAutoPlayAfterInteraction]);
+
+  // 스와이프 핸들러
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0) {
+        goToNext();
+      } else {
+        goToPrevious();
+      }
+    }
   };
 
   // 슬라이드 클릭 시: 닫기 + Fullscreen
   const handleSlideClick = async () => {
-    console.log("User clicked slide - closing promotion");
-
-    if (onClose) {
-      onClose();
-    }
+    if (onClose) onClose();
 
     try {
       if (!document.fullscreenElement) {
@@ -146,37 +159,72 @@ export function PromotionSlider({
     }
   };
 
-  if (items.length === 0) {
-    return null;
-  }
+  const handleStopPropagation = (e: React.TouchEvent | React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMuted((prev) => !prev);
+  };
+
+  if (items.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-      {/* 이전 버튼 */}
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* 음소거 토글 버튼 */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleMute}
+        onTouchStart={handleStopPropagation}
+        onTouchEnd={handleStopPropagation}
+        className="absolute top-4 right-4 z-[60] text-white hover:bg-white/20 rounded-full bg-black/30"
+      >
+        {isMuted ? (
+          <VolumeX className="w-6 h-6" />
+        ) : (
+          <Volume2 className="w-6 h-6" />
+        )}
+      </Button>
+
+      {/* 좌측 영역 (이전 슬라이드) */}
       {items.length > 1 && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={goToPrevious}
-          className="absolute left-4 z-50 text-white hover:bg-white/20 rounded-full"
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            goToPrevious();
+          }}
+          className="absolute left-0 top-0 w-1/4 h-full z-40 flex items-center justify-start cursor-pointer group"
         >
-          <ChevronLeft className="w-8 h-8" />
-        </Button>
+          <div className="ml-2 p-2 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-50">
+            <ChevronLeft className="w-8 h-8 text-white" />
+          </div>
+        </div>
       )}
 
-      {/* 다음 버튼 */}
+      {/* 우측 영역 (다음 슬라이드) */}
       {items.length > 1 && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={goToNext}
-          className="absolute right-4 z-50 text-white hover:bg-white/20 rounded-full"
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            goToNext();
+          }}
+          className="absolute right-0 top-0 w-1/4 h-full z-40 flex items-center justify-end cursor-pointer group"
         >
-          <ChevronRight className="w-8 h-8" />
-        </Button>
+          <div className="mr-2 p-2 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-50">
+            <ChevronRight className="w-8 h-8 text-white" />
+          </div>
+        </div>
       )}
 
-      {/* 슬라이드 컨텐츠 */}
+      {/* 슬라이드 컨텐츠 (중앙 50% 영역) */}
       <div
         className="w-full h-full flex items-center justify-center cursor-pointer"
         onClick={handleSlideClick}
@@ -189,13 +237,11 @@ export function PromotionSlider({
             src={currentItem.url}
             className="max-w-full max-h-full object-contain"
             loop={false}
-            muted
+            muted={isMuted}
             playsInline
             onEnded={() => {
-              console.log("Video ended - advancing to next slide");
               if (items.length > 1) {
                 setCurrentIndex((prev) => (prev + 1) % items.length);
-                // 동영상 끝난 후 자동재생 상태 복구
                 setUserInteracted(false);
                 setIsPlaying(autoPlay);
               }
@@ -212,15 +258,12 @@ export function PromotionSlider({
 
       {/* 인디케이터 */}
       {items.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2">
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2 z-50">
           {items.map((_, index) => (
             <button
               key={index}
               onClick={(e) => {
                 e.stopPropagation();
-                console.log(
-                  `User clicked indicator - jumping to slide ${index + 1}`
-                );
                 setCurrentIndex(index);
                 resetAutoPlayAfterInteraction();
               }}

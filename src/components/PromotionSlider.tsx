@@ -259,6 +259,9 @@ export function PromotionSlider({
             loop={false}
             muted={isMuted}
             playsInline
+            preload="metadata" // ⭐ 추가: 메타데이터만 먼저 로드
+            controls={false} // ⭐ 추가: 컨트롤 숨김 명시
+            webkit-playsinline="true" // ⭐ 추가: 구형 iOS 지원
             onEnded={() => {
               if (items.length > 1) {
                 setCurrentIndex((prev) => (prev + 1) % items.length);

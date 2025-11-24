@@ -119,6 +119,11 @@
 .scrollbar-hidden::-webkit-scrollbar {
   display: none; /* Chrome, Safari */
 }
+@media (max-width: 1024px) {
+  .mobile-padding {
+    padding-bottom: 240px; /* pb-60 */
+  }
+}
 
 @layer base {
   * {

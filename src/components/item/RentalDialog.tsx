@@ -153,6 +153,10 @@ export function RentalDialog({
 
   const [yearSelectOpen, setYearSelectOpen] = useState(false);
 
+  // const isMobileOrTablet =
+  //   typeof window !== "undefined" &&
+  //   ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+
   const identificationForm = useForm<IdentificationFormValues>({
     resolver: zodResolver(
       identificationSchema
@@ -1275,7 +1279,10 @@ export function RentalDialog({
     // [수정됨] 컨텐츠를 감싸는 스크롤 컨테이너
     // pb-60 (약 240px)을 추가하여 키보드가 올라왔을 때도 스크롤할 여유 공간을 충분히 확보
     return (
-      <div className="max-h-[80vh] overflow-y-auto overflow-x-hidden p-1 pb-60 scrollbar-hidden">
+      <div
+        className={`max-h-[80vh] overflow-y-auto overflow-x-hidden p-1 scrollbar-hidden mobile-padding
+      `}
+      >
         {content}
       </div>
     );

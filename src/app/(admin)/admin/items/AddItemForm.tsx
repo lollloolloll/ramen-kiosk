@@ -53,11 +53,8 @@ const formSchema = z.object({
     )
     .transform((val) => {
       if (val instanceof File) {
-        // If it's a File object, we don't modify the file name directly here.
-        // The file name will be handled when uploading.
         return val;
       }
-      // If it's a string (e.g., from defaultValues or if it's a URL string), remove spaces.
       return typeof val === "string" ? val.replace(/\s/g, "") : val;
     }),
   isTimeLimited: z.boolean().default(false).optional(),
@@ -66,14 +63,14 @@ const formSchema = z.object({
     .int()
     .positive("대여 시간은 양의 정수여야 합니다.")
     .optional()
-    .or(z.literal("").transform(() => undefined)), // 빈 문자열을 undefined로 처리
+    .or(z.literal("").transform(() => undefined)),
   maxRentalsPerUser: z.coerce
     .number()
     .int()
     .positive("최대 대여 횟수는 양의 정수여야 합니다.")
     .optional()
-    .or(z.literal("").transform(() => undefined)), // 빈 문자열을 undefined로 처리
-    enableParticipantTracking: z.boolean().default(false),
+    .or(z.literal("").transform(() => undefined)),
+  enableParticipantTracking: z.boolean().default(false),
 });
 
 export function AddItemForm() {
@@ -114,7 +111,6 @@ export function AddItemForm() {
       const file = values.imageUrl;
       const originalName = file.name;
 
-      // 확장자 분리
       const lastDotIndex = originalName.lastIndexOf(".");
       const extension =
         lastDotIndex !== -1 ? originalName.slice(lastDotIndex) : "";
@@ -123,14 +119,12 @@ export function AddItemForm() {
           ? originalName.slice(0, lastDotIndex)
           : originalName;
 
-      // 파일명 정규화
       const sanitizedName = nameWithoutExt
-        .replace(/[\s\(\)]/g, "-") // 공백, 괄호를 하이픈으로
-        .replace(/[^a-zA-Z0-9가-힣-]/g, "") // 영문, 숫자, 한글, 하이픈만 유지
-        .replace(/-+/g, "-") // 연속된 하이픈을 하나로
-        .replace(/^-|-$/g, ""); // 시작/끝 하이픈 제거
+        .replace(/[\s\(\)]/g, "-")
+        .replace(/[^a-zA-Z0-9가-힣-]/g, "")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
 
-      // 고유 식별자 추가 (충돌 방지)
       const uniqueSuffix = `${Date.now()}-${Math.random()
         .toString(36)
         .slice(2, 10)}`;
@@ -152,103 +146,18 @@ export function AddItemForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>이름</FormLabel>
-              <FormControl>
-                <Input placeholder="ex)라면" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>카테고리</FormLabel>
-              <FormControl>
-                <Input placeholder="ex)스포츠" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>이미지</FormLabel>
-              <FormControl>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  className="cursor-pointer"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) {
-                      if (file.size > 1 * 1024 * 1024) {
-                        toast.error("File size cannot exceed 1MB.");
-                        event.target.value = ""; // Clear the file input
-                        field.onChange(undefined); // Clear the form field value
-                        return;
-                      }
-                      field.onChange(file);
-                    } else {
-                      field.onChange(undefined);
-                    }
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-              {field.value && field.value instanceof File && (
-                <img
-                  src={URL.createObjectURL(field.value)}
-                  alt="Image Preview"
-                  className="mt-2 h-20 w-20 object-cover rounded-md"
-                />
-              )}
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="isTimeLimited"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">시간제 대여</FormLabel>
-                <FormDescription>
-                  시간제 대여 아이템으로 설정합니다
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        {isTimeLimited && (
-          <>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        {/* 참고하신 코드의 스크롤 컨테이너 적용 (pb-60 포함) */}
+        <div className="max-h-[80vh] overflow-y-auto overflow-x-hidden p-1 scrollbar-hidden mobile-padding">
+          <div className="space-y-8">
             <FormField
               control={form.control}
-              name="rentalTimeMinutes"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>대여 시간 (분)</FormLabel>
+                  <FormLabel>이름</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="ex) 30" {...field} />
+                    <Input placeholder="ex)라면" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -256,46 +165,136 @@ export function AddItemForm() {
             />
             <FormField
               control={form.control}
-              name="maxRentalsPerUser"
+              name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>사용자별 최대 대여 횟수</FormLabel>
+                  <FormLabel>카테고리</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="ex) 3" {...field} />
+                    <Input placeholder="ex)스포츠" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </>
-        )}
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>이미지</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      className="cursor-pointer"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) {
+                          if (file.size > 1 * 1024 * 1024) {
+                            toast.error("File size cannot exceed 1MB.");
+                            event.target.value = "";
+                            field.onChange(undefined);
+                            return;
+                          }
+                          field.onChange(file);
+                        } else {
+                          field.onChange(undefined);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  {field.value && field.value instanceof File && (
+                    <img
+                      src={URL.createObjectURL(field.value)}
+                      alt="Image Preview"
+                      className="mt-2 h-20 w-20 object-cover rounded-md"
+                    />
+                  )}
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="enableParticipantTracking"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  참여자 이름 입력 여부
-                </FormLabel>
-                <FormDescription>
-                  대여 시 참여자들의 이름을 개별적으로 입력받습니다
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
+            <FormField
+              control={form.control}
+              name="isTimeLimited"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">시간제 대여</FormLabel>
+                    <FormDescription>
+                      시간제 대여 아이템으로 설정합니다
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {isTimeLimited && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="rentalTimeMinutes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>대여 시간 (분)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="ex) 30" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+                <FormField
+                  control={form.control}
+                  name="maxRentalsPerUser"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>사용자별 최대 대여 횟수</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="ex) 3" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
 
-        <DialogFooter>
-          <Button type="submit">아이템 추가</Button>
-        </DialogFooter>
+            <FormField
+              control={form.control}
+              name="enableParticipantTracking"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      참여자 이름 입력 여부
+                    </FormLabel>
+                    <FormDescription>
+                      대여 시 참여자들의 이름을 개별적으로 입력받습니다
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button type="submit">아이템 추가</Button>
+            </DialogFooter>
+          </div>
+        </div>
       </form>
     </Form>
   );

@@ -76,7 +76,7 @@ export const generalUserColumns: ColumnDef<GeneralUser>[] = [
     cell: ({ row }) => {
       const user = row.original;
       return (
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"

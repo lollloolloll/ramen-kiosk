@@ -1275,7 +1275,7 @@ export function RentalDialog({
     // [수정됨] 컨텐츠를 감싸는 스크롤 컨테이너
     // pb-60 (약 240px)을 추가하여 키보드가 올라왔을 때도 스크롤할 여유 공간을 충분히 확보
     return (
-      <div className="max-h-[80vh] overflow-y-auto overflow-x-hidden p-1 pb-60 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="max-h-[80vh] overflow-y-auto overflow-x-hidden p-1 pb-60 scrollbar-hidden">
         {content}
       </div>
     );

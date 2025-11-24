@@ -124,9 +124,12 @@ export function PromotionSlider({
     resetAutoPlayAfterInteraction();
   }, [items.length, resetAutoPlayAfterInteraction]);
 
-  // 스와이프 핸들러
+  // --- [수정됨] 스와이프 핸들러 로직 개선 ---
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    // [중요] 터치 시작 시 End 값도 현재 위치로 초기화해야
+    // 단순히 클릭만 했을 때 이전 좌표값 때문에 스와이프로 오작동하는 것을 방지함
+    touchEndX.current = e.touches[0].clientX;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -134,9 +137,11 @@ export function PromotionSlider({
   };
 
   const handleTouchEnd = () => {
+    // 시작점과 끝점의 차이 계산
     const diff = touchStartX.current - touchEndX.current;
     const minSwipeDistance = 50;
 
+    // 단순 클릭(차이가 0이거나 매우 작음)이 아닌 경우에만 스와이프 동작 수행
     if (Math.abs(diff) > minSwipeDistance) {
       if (diff > 0) {
         goToNext();
@@ -145,8 +150,8 @@ export function PromotionSlider({
       }
     }
   };
+  // ----------------------------------------
 
-  // 슬라이드 클릭 시: 닫기 + Fullscreen
   const handleSlideClick = async () => {
     if (onClose) onClose();
 
@@ -159,6 +164,7 @@ export function PromotionSlider({
     }
   };
 
+  // 이벤트 전파 방지용 함수
   const handleStopPropagation = (e: React.TouchEvent | React.MouseEvent) => {
     e.stopPropagation();
   };
@@ -183,7 +189,9 @@ export function PromotionSlider({
         variant="ghost"
         size="icon"
         onClick={toggleMute}
+        // [수정됨] 모바일 터치 시 이벤트가 부모(스와이프 핸들러)로 새어나가는 것 방지 강화
         onTouchStart={handleStopPropagation}
+        onTouchMove={handleStopPropagation}
         onTouchEnd={handleStopPropagation}
         className="absolute top-4 right-4 z-[60] text-white hover:bg-white/20 rounded-full bg-black/30"
       >
@@ -201,6 +209,13 @@ export function PromotionSlider({
             e.stopPropagation();
             goToPrevious();
           }}
+          // [추가] 버튼 영역에서 스와이프 로직과 겹치지 않도록 터치 이벤트 차단
+          onTouchStart={handleStopPropagation}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            // 터치로 눌렀을 때도 동작하게 하려면 여기서 실행 (선택사항)
+            // goToPrevious();
+          }}
           className="absolute left-0 top-0 w-1/4 h-full z-40 flex items-center justify-start cursor-pointer group"
         >
           <div className="ml-2 p-2 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-50">
@@ -216,6 +231,11 @@ export function PromotionSlider({
             e.stopPropagation();
             goToNext();
           }}
+          // [추가] 버튼 영역에서 스와이프 로직과 겹치지 않도록 터치 이벤트 차단
+          onTouchStart={handleStopPropagation}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+          }}
           className="absolute right-0 top-0 w-1/4 h-full z-40 flex items-center justify-end cursor-pointer group"
         >
           <div className="mr-2 p-2 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-50">
@@ -224,7 +244,7 @@ export function PromotionSlider({
         </div>
       )}
 
-      {/* 슬라이드 컨텐츠 (중앙 50% 영역) */}
+      {/* 슬라이드 컨텐츠 */}
       <div
         className="w-full h-full flex items-center justify-center cursor-pointer"
         onClick={handleSlideClick}
@@ -267,6 +287,8 @@ export function PromotionSlider({
                 setCurrentIndex(index);
                 resetAutoPlayAfterInteraction();
               }}
+              // [추가] 인디케이터 터치 시 스와이프 방지
+              onTouchStart={handleStopPropagation}
               className={`w-3 h-3 rounded-full transition-all ${
                 index === currentIndex
                   ? "bg-white w-8"

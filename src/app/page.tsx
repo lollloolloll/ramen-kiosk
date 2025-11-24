@@ -218,6 +218,20 @@ export default function Home() {
         >
           관리자
         </Link>
+        <p
+          className="absolute top-6 right-20 text-sm text-muted-foreground hover:text-[oklch(0.75_0.12_165)] transition-colors cursor-pointer"
+          onClick={async () => {
+            try {
+              if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+              }
+            } catch (err) {
+              console.log("Fullscreen request failed:", err);
+            }
+          }}
+        >
+          전체화면
+        </p>
 
         {/* 메인 컨텐츠 */}
         <div className="relative z-10 text-center space-y-12 p-8">

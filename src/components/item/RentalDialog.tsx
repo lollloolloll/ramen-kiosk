@@ -183,7 +183,6 @@ export function RentalDialog({
     },
   });
 
-  // 인원 수 변경 감지하여 participants 배열 업데이트
   const maleCount = identificationForm.watch("maleCount") ?? 0;
   const femaleCount = identificationForm.watch("femaleCount") ?? 0;
 
@@ -266,7 +265,6 @@ export function RentalDialog({
   ) => {
     if (!item) return;
 
-    // enableParticipantTracking이 true일 때만 참여자 이름 필수 검증
     if (item.enableParticipantTracking && values.participants) {
       const hasEmptyName = values.participants.some(
         (p) => !p.name || p.name.trim().length === 0
@@ -509,187 +507,386 @@ export function RentalDialog({
   if (!item) return null;
 
   const renderStep = () => {
-    switch (step) {
-      case "identification":
-        return (
-          <Form {...identificationForm} key="identification">
-            <form
-              onSubmit={identificationForm.handleSubmit(
-                handleIdentificationSubmit
-              )}
-              className="space-y-4"
-            >
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
-                  {isRentedMode ? "대기열 등록" : "아이템 대여"}
-                </DialogTitle>
-                <DialogDescription>
-                  {isRentedMode
-                    ? `현재 '${item.name}'은(는) 대여 중입니다.`
-                    : `'${item.name}'을(를) 대여하려면 이름과 휴대폰 번호를 입력하세요.`}
-                </DialogDescription>
-              </DialogHeader>
+    const content = (() => {
+      switch (step) {
+        case "identification":
+          return (
+            <Form {...identificationForm} key="identification">
+              <form
+                onSubmit={identificationForm.handleSubmit(
+                  handleIdentificationSubmit
+                )}
+                className="space-y-4"
+              >
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
+                    {isRentedMode ? "대기열 등록" : "아이템 대여"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {isRentedMode
+                      ? `현재 '${item.name}'은(는) 대여 중입니다.`
+                      : `'${item.name}'을(를) 대여하려면 이름과 휴대폰 번호를 입력하세요.`}
+                  </DialogDescription>
+                </DialogHeader>
 
-              {isRentedMode && (
-                <div className="space-y-3">
-                  <div
-                    className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-linear-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:bg-linear-to-br hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
-                    onClick={handleWaitingListClick}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse" />
-                        <span className="text-sm font-semibold text-foreground">
-                          현재 대기 현황
-                        </span>
-                      </div>
-                      <span className="text-xs font-medium text-muted-foreground">
-                        예상 대기시간 {estimatedWaitingTime}분
-                      </span>
-                    </div>
-
-                    <div className="flex items-baseline gap-2">
-                      <div className="flex items-baseline">
-                        <span className="text-sm text-muted-foreground mr-1">
-                          사용중
-                        </span>
-                        <span className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
-                          1
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          팀
-                        </span>
-                      </div>
-                      <div className="flex items-baseline">
-                        <span className="text-sm text-muted-foreground mr-1">
-                          대기
-                        </span>
-                        <span className="text-3xl font-black text-[oklch(0.7_0.18_350)]">
-                          {item.waitingCount}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          팀
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)] flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        클릭하여 대기자 명단 보기
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {showWaitingList ? "▲" : "▼"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {showWaitingList && (
-                    <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-background p-4 space-y-2 max-h-[300px] overflow-y-auto">
-                      {isLoadingWaitingList ? (
-                        <div className="text-center py-4 text-sm text-muted-foreground">
-                          로딩 중...
+                {isRentedMode && (
+                  <div className="space-y-3">
+                    <div
+                      className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-linear-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:bg-linear-to-br hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
+                      onClick={handleWaitingListClick}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse" />
+                          <span className="text-sm font-semibold text-foreground">
+                            현재 대기 현황
+                          </span>
                         </div>
-                      ) : waitingList.length === 0 ? (
-                        <div className="text-center py-4 text-sm text-muted-foreground">
-                          대기자가 없습니다.
+                        <span className="text-xs font-medium text-muted-foreground">
+                          예상 대기시간 {estimatedWaitingTime}분
+                        </span>
+                      </div>
+
+                      <div className="flex items-baseline gap-2">
+                        <div className="flex items-baseline">
+                          <span className="text-sm text-muted-foreground mr-1">
+                            사용중
+                          </span>
+                          <span className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
+                            1
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            팀
+                          </span>
                         </div>
-                      ) : (
-                        <>
-                          <div className="text-xs font-semibold text-muted-foreground mb-2 pb-2 border-b">
-                            대기자 명단
+                        <div className="flex items-baseline">
+                          <span className="text-sm text-muted-foreground mr-1">
+                            대기
+                          </span>
+                          <span className="text-3xl font-black text-[oklch(0.7_0.18_350)]">
+                            {item.waitingCount}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            팀
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)] flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          클릭하여 대기자 명단 보기
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {showWaitingList ? "▲" : "▼"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {showWaitingList && (
+                      <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-background p-4 space-y-2 max-h-[300px] overflow-y-auto">
+                        {isLoadingWaitingList ? (
+                          <div className="text-center py-4 text-sm text-muted-foreground">
+                            로딩 중...
                           </div>
-                          {waitingList.map((entry) => (
-                            <div
-                              key={entry.id}
-                              className="flex items-center justify-between p-2 rounded-md bg-[oklch(0.75_0.12_165/0.05)] hover:bg-[oklch(0.75_0.12_165/0.1)] transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-6 h-6 rounded-full bg-[oklch(0.7_0.18_350)] flex items-center justify-center text-white text-xs font-bold">
-                                  {entry.position}
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-medium text-foreground">
-                                    {entry.userName || "알 수 없음"}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    남: {entry.maleCount}명, 여:{" "}
-                                    {entry.femaleCount}명
-                                  </span>
+                        ) : waitingList.length === 0 ? (
+                          <div className="text-center py-4 text-sm text-muted-foreground">
+                            대기자가 없습니다.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-xs font-semibold text-muted-foreground mb-2 pb-2 border-b">
+                              대기자 명단
+                            </div>
+                            {waitingList.map((entry) => (
+                              <div
+                                key={entry.id}
+                                className="flex items-center justify-between p-2 rounded-md bg-[oklch(0.75_0.12_165/0.05)] hover:bg-[oklch(0.75_0.12_165/0.1)] transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-[oklch(0.7_0.18_350)] flex items-center justify-center text-white text-xs font-bold">
+                                    {entry.position}
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-foreground">
+                                      {entry.userName || "알 수 없음"}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      남: {entry.maleCount}명, 여:{" "}
+                                      {entry.femaleCount}명
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </>
-                      )}
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <FormField
+                  control={identificationForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>이름</FormLabel>
+                      <FormControl>
+                        <Input placeholder="홍길동" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={identificationForm.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>휴대폰 번호</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="010-1234-5678"
+                          type="tel"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(formatPhoneNumber(e.target.value));
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-4">
+                  <FormField
+                    control={identificationForm.control}
+                    name="maleCount"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>남자 인원</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={field.value || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === "") {
+                                field.onChange(0);
+                              } else {
+                                const num = parseInt(value, 10);
+                                field.onChange(
+                                  isNaN(num) ? 0 : Math.max(0, num)
+                                );
+                              }
+                            }}
+                            onFocus={(e) => {
+                              if (field.value === 0) {
+                                e.target.value = "";
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value === "") {
+                                field.onChange(0);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={identificationForm.control}
+                    name="femaleCount"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>여자 인원</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={field.value || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === "") {
+                                field.onChange(0);
+                              } else {
+                                const num = parseInt(value, 10);
+                                field.onChange(
+                                  isNaN(num) ? 0 : Math.max(0, num)
+                                );
+                              }
+                            }}
+                            onFocus={(e) => {
+                              if (field.value === 0) {
+                                e.target.value = "";
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value === "") {
+                                field.onChange(0);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {item.enableParticipantTracking && fields.length > 0 && (
+                  <div className="space-y-3 pt-4 border-t border-dashed">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="flex items-center gap-2 font-semibold">
+                        <Users className="w-4 h-4" />
+                        함께하는 친구들 이름
+                      </FormLabel>
+                      <span className="text-xs text-muted-foreground">
+                        필수
+                      </span>
                     </div>
-                  )}
-                </div>
-              )}
+                    <FormDescription className="text-xs">
+                      참여하는 친구들의 이름을 모두 입력해주세요.
+                    </FormDescription>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 max-h-48 overflow-y-auto pr-2 bg-muted/20 p-3 rounded-lg">
+                      {fields.map((field, index) => {
+                        const genderLabel =
+                          field.gender === "남" ? "남자" : "여자";
+                        const genderIndex =
+                          fields
+                            .slice(0, index)
+                            .filter((f) => f.gender === field.gender).length +
+                          1;
 
-              <FormField
-                control={identificationForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>이름</FormLabel>
-                    <FormControl>
-                      <Input placeholder="홍길동" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                        return (
+                          <FormField
+                            key={field.id}
+                            control={identificationForm.control}
+                            name={`participants.${index}.name`}
+                            render={({ field: nameField }) => (
+                              <FormItem className="relative">
+                                <FormLabel className="text-xs text-muted-foreground absolute -top-2 left-2 bg-background px-1 z-10">
+                                  {`${genderLabel} ${genderIndex}`}
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...nameField}
+                                    placeholder="이름 입력"
+                                    className="h-9"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
-              />
-              <FormField
-                control={identificationForm.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>휴대폰 번호</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="010-1234-5678"
-                        type="tel"
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(formatPhoneNumber(e.target.value));
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex gap-4">
+
+                <DialogFooter className="gap-2 sm:justify-between">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep("register")}
+                    disabled={isSubmitting}
+                    className="border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
+                  >
+                    신규 등록
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={closeDialog}
+                      disabled={isSubmitting}
+                    >
+                      취소
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={
+                        isSubmitting || !identificationForm.formState.isValid
+                      }
+                      className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                    >
+                      {isSubmitting
+                        ? "처리 중..."
+                        : isRentedMode
+                        ? "대기열 등록하기"
+                        : "대여하기"}
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </form>
+            </Form>
+          );
+        case "register":
+          const watchedValues = registerForm.watch();
+          const isButtonDisabled =
+            !watchedValues.name ||
+            !watchedValues.phoneNumber ||
+            !watchedValues.gender ||
+            !watchedValues.birthDate ||
+            !watchedValues.school;
+          return (
+            <Form {...registerForm} key="register">
+              <form
+                onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
+                className="space-y-4"
+              >
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
+                    사용자 등록
+                  </DialogTitle>
+                  <DialogDescription>
+                    새로운 사용자를 등록합니다. 정보를 입력해주세요.
+                  </DialogDescription>
+                </DialogHeader>
                 <FormField
-                  control={identificationForm.control}
-                  name="maleCount"
+                  control={registerForm.control}
+                  name="name"
                   render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>남자 인원</FormLabel>
+                    <FormItem>
+                      <FormLabel>
+                        이름
+                        <span className="text-[oklch(0.7_0.18_350)]">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={field.value || ""}
+                          placeholder="홍길동"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(e.target.value.replace(/\s/g, ""))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={registerForm.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        휴대폰 번호
+                        <span className="text-[oklch(0.7_0.18_350)]">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="010-1234-5678"
+                          type="tel"
+                          {...field}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === "") {
-                              field.onChange(0);
-                            } else {
-                              const num = parseInt(value, 10);
-                              field.onChange(isNaN(num) ? 0 : Math.max(0, num));
-                            }
-                          }}
-                          onFocus={(e) => {
-                            if (field.value === 0) {
-                              e.target.value = "";
-                            }
-                          }}
-                          onBlur={(e) => {
-                            if (e.target.value === "") {
-                              field.onChange(0);
-                            }
+                            field.onChange(formatPhoneNumber(e.target.value));
                           }}
                         />
                       </FormControl>
@@ -698,562 +895,390 @@ export function RentalDialog({
                   )}
                 />
                 <FormField
-                  control={identificationForm.control}
-                  name="femaleCount"
+                  control={registerForm.control}
+                  name="gender"
                   render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>여자 인원</FormLabel>
+                    <FormItem>
+                      <FormLabel>
+                        성별
+                        <span className="text-[oklch(0.7_0.18_350)]">*</span>
+                      </FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === "") {
-                              field.onChange(0);
-                            } else {
-                              const num = parseInt(value, 10);
-                              field.onChange(isNaN(num) ? 0 : Math.max(0, num));
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={
+                              field.value === "남" ? "default" : "outline"
                             }
-                          }}
-                          onFocus={(e) => {
-                            if (field.value === 0) {
-                              e.target.value = "";
+                            onClick={() => {
+                              field.onChange("남");
+                              registerForm.trigger("gender");
+                            }}
+                            className={
+                              field.value === "남"
+                                ? "bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                                : "border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
                             }
-                          }}
-                          onBlur={(e) => {
-                            if (e.target.value === "") {
-                              field.onChange(0);
+                          >
+                            남
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={
+                              field.value === "여" ? "default" : "outline"
                             }
-                          }}
-                        />
+                            onClick={() => {
+                              field.onChange("여");
+                              registerForm.trigger("gender");
+                            }}
+                            className={
+                              field.value === "여"
+                                ? " bg-[oklch(0.7_0.18_350)] hover:bg-[oklch(0.68_0.18_350)] text-white"
+                                : " border-[oklch(0.7_0.18_350/0.3)] hover:bg-[oklch(0.7_0.18_350/0.1)]"
+                            }
+                          >
+                            여
+                          </Button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
+                <FormField
+                  control={registerForm.control}
+                  name="birthDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        생년월일
+                        <span className="text-[oklch(0.7_0.18_350)]">*</span>
+                      </FormLabel>
+                      <div className="flex gap-2">
+                        <Select
+                          onValueChange={setBirthYear}
+                          value={birthYear}
+                          open={yearSelectOpen}
+                          onOpenChange={setYearSelectOpen}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="년" />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            className="max-h-[300px]"
+                          >
+                            {years.map((year) => (
+                              <SelectItem key={year} value={String(year)}>
+                                {year}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          onValueChange={setBirthMonth}
+                          value={birthMonth}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="월" />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            className="max-h-[300px]"
+                          >
+                            {months.map((month) => (
+                              <SelectItem key={month} value={String(month)}>
+                                {month}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select onValueChange={setBirthDay} value={birthDay}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="일" />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            className="max-h-[300px]"
+                          >
+                            {days.map((day) => (
+                              <SelectItem key={day} value={String(day)}>
+                                {day}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={registerForm.control}
+                  name="school"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>
+                        학교
+                        <span className="text-[oklch(0.7_0.18_350)]">*</span>
+                      </FormLabel>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          onValueChange={setSchoolLevel}
+                          value={schoolLevel}
+                        >
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[
+                              "초등학교",
+                              "중학교",
+                              "고등학교",
+                              "대학교",
+                              "해당없음",
+                            ].map((level) => (
+                              <SelectItem key={level} value={level}>
+                                {level}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormControl>
+                          <Input
+                            placeholder="학교 이름 (예: 선덕, 자운)"
+                            value={schoolName}
+                            onChange={(e) =>
+                              setSchoolName(e.target.value.replace(/\s/g, ""))
+                            }
+                            disabled={
+                              !schoolLevel || schoolLevel === "해당없음"
+                            }
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              {/* 참여자 이름 입력 필드 */}
-              {item.enableParticipantTracking && fields.length > 0 && (
-                <div className="space-y-3 pt-4 border-t border-dashed">
-                  <div className="flex items-center justify-between">
-                    <FormLabel className="flex items-center gap-2 font-semibold">
-                      <Users className="w-4 h-4" />
-                      함께하는 친구들 이름
-                    </FormLabel>
-                    <span className="text-xs text-muted-foreground">필수</span>
-                  </div>
-                  <FormDescription className="text-xs">
-                    참여하는 친구들의 이름을 모두 입력해주세요. {/* ← 수정 */}
-                  </FormDescription>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 max-h-48 overflow-y-auto pr-2 bg-muted/20 p-3 rounded-lg">
-                    {fields.map((field, index) => {
-                      const genderLabel =
-                        field.gender === "남" ? "남자" : "여자";
-                      const genderIndex =
-                        fields
-                          .slice(0, index)
-                          .filter((f) => f.gender === field.gender).length + 1;
+                <FormField
+                  control={registerForm.control}
+                  name="personalInfoConsent"
+                  render={({ field }) => (
+                    <FormItem className="rounded-lg border-2 border-dashed border-[oklch(0.75_0.12_165/0.3)] p-4 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1">
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked === true);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        <div
+                          className="flex-1 space-y-2 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={handleOpenConsentModal}
+                        >
+                          <FormLabel className="text-base font-semibold leading-none cursor-pointer">
+                            개인정보 수집 및 이용 동의 (선택)
+                          </FormLabel>
+                          <FormDescription className="text-sm leading-relaxed">
+                            동의 시 맞춤형 서비스 제공에 활용될 수 있습니다.
+                            <br />
+                            동의하지 않아도 서비스 이용이 가능합니다.
+                            <br />
+                            <span className="text-[oklch(0.75_0.12_165)] font-medium">
+                              클릭하여 동의서 확인 및 선택
+                            </span>
+                          </FormDescription>
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
 
-                      return (
-                        <FormField
-                          key={field.id}
-                          control={identificationForm.control}
-                          name={`participants.${index}.name`}
-                          render={({ field: nameField }) => (
-                            <FormItem className="relative">
-                              <FormLabel className="text-xs text-muted-foreground absolute -top-2 left-2 bg-background px-1 z-10">
-                                {`${genderLabel} ${genderIndex}`}
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...nameField}
-                                  placeholder="이름 입력"
-                                  className="h-9"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <DialogFooter className="gap-2 sm:justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep("register")}
-                  disabled={isSubmitting}
-                  className="border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
-                >
-                  신규 등록
-                </Button>
-                <div className="flex gap-2">
+                <DialogFooter className="gap-2">
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={closeDialog}
+                    onClick={() => setStep("identification")}
                     disabled={isSubmitting}
                   >
-                    취소
+                    뒤로
                   </Button>
                   <Button
                     type="submit"
-                    disabled={
-                      isSubmitting || !identificationForm.formState.isValid
-                    }
+                    disabled={isSubmitting || isButtonDisabled}
                     className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
                   >
                     {isSubmitting
-                      ? "처리 중..."
+                      ? "등록 중..."
                       : isRentedMode
-                      ? "대기열 등록하기"
-                      : "대여하기"}
+                      ? "등록 및 대기"
+                      : "등록 및 대여"}
                   </Button>
-                </div>
-              </DialogFooter>
-            </form>
-          </Form>
-        );
-      case "register":
-        const watchedValues = registerForm.watch();
-        const isButtonDisabled =
-          !watchedValues.name ||
-          !watchedValues.phoneNumber ||
-          !watchedValues.gender ||
-          !watchedValues.birthDate ||
-          !watchedValues.school;
-        return (
-          <Form {...registerForm} key="register">
-            <form
-              onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
-              className="space-y-4"
+                </DialogFooter>
+              </form>
+            </Form>
+          );
+        case "success":
+          return (
+            <div
+              className="flex flex-col items-center justify-center py-12 px-8 text-center relative overflow-hidden"
+              key="success"
             >
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
-                  사용자 등록
-                </DialogTitle>
-                <DialogDescription>
-                  새로운 사용자를 등록합니다. 정보를 입력해주세요.
+              <div className="absolute inset-0 bg-linear-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)] animate-pulse" />
+
+              <div className="absolute top-4 left-1/4 text-4xl animate-bounce">
+                ✨
+              </div>
+              <div
+                className="absolute top-14 right-1/4 text-3xl animate-bounce"
+                style={{ animationDelay: "0.1s" }}
+              >
+                🎊
+              </div>
+              <div
+                className="absolute bottom-24 left-1/3 text-2xl animate-bounce"
+                style={{ animationDelay: "0.2s" }}
+              >
+                🎈
+              </div>
+
+              <div className="relative z-10 space-y-6">
+                <div className="relative inline-block">
+                  <div className="text-8xl animate-bounce">🎉</div>
+                  <div
+                    className="absolute -top-2 -right-2 text-3xl"
+                    style={{ animation: "spin 3s linear infinite" }}
+                  >
+                    ⭐
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <DialogTitle className="text-3xl font-black bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
+                    대여 완료!
+                  </DialogTitle>
+                  <div className="text-5xl font-bold text-[oklch(0.75_0.12_165)]">
+                    {item.name}
+                  </div>
+                </div>
+
+                <DialogDescription className="text-lg font-medium text-foreground leading-relaxed">
+                  신나게 즐기고 <br />
+                  <span className="text-[oklch(0.7_0.18_350)] font-bold">
+                    정리정돈
+                  </span>{" "}
+                  하는 거 잊지 말기!
                 </DialogDescription>
-              </DialogHeader>
-              <FormField
-                control={registerForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      이름<span className="text-[oklch(0.7_0.18_350)]">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="홍길동"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(e.target.value.replace(/\s/g, ""))
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={registerForm.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      휴대폰 번호
-                      <span className="text-[oklch(0.7_0.18_350)]">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="010-1234-5678"
-                        type="tel"
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(formatPhoneNumber(e.target.value));
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={registerForm.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      성별<span className="text-[oklch(0.7_0.18_350)]">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant={field.value === "남" ? "default" : "outline"}
-                          onClick={() => {
-                            field.onChange("남");
-                            registerForm.trigger("gender");
-                          }}
-                          className={
-                            field.value === "남"
-                              ? "bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
-                              : "border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
-                          }
-                        >
-                          남
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={field.value === "여" ? "default" : "outline"}
-                          onClick={() => {
-                            field.onChange("여");
-                            registerForm.trigger("gender");
-                          }}
-                          className={
-                            field.value === "여"
-                              ? " bg-[oklch(0.7_0.18_350)] hover:bg-[oklch(0.68_0.18_350)] text-white"
-                              : " border-[oklch(0.7_0.18_350/0.3)] hover:bg-[oklch(0.7_0.18_350/0.1)]"
-                          }
-                        >
-                          여
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={registerForm.control}
-                name="birthDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      생년월일
-                      <span className="text-[oklch(0.7_0.18_350)]">*</span>
-                    </FormLabel>
-                    <div className="flex gap-2">
-                      <Select
-                        onValueChange={setBirthYear}
-                        value={birthYear}
-                        open={yearSelectOpen}
-                        onOpenChange={setYearSelectOpen}
+
+                <div className="relative w-24 h-24 mx-auto my-6">
+                  <svg className="transform -rotate-90 w-24 h-24">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="#e5e7eb"
+                      strokeWidth="6"
+                      fill="none"
+                    />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="url(#gradient)"
+                      strokeWidth="6"
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 40}`}
+                      strokeDashoffset={`${
+                        2 * Math.PI * 40 * (1 - countdown / 5)
+                      }`}
+                      style={{
+                        transition: "stroke-dashoffset 1s linear",
+                      }}
+                      strokeLinecap="round"
+                    />
+                    <defs>
+                      <linearGradient
+                        id="gradient"
+                        x1="0%"
+                        y1="0%"
+                        x2="100%"
+                        y2="100%"
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="년" />
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          className="max-h-[300px]"
-                        >
-                          {years.map((year) => (
-                            <SelectItem key={year} value={String(year)}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select onValueChange={setBirthMonth} value={birthMonth}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="월" />
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          className="max-h-[300px]"
-                        >
-                          {months.map((month) => (
-                            <SelectItem key={month} value={String(month)}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select onValueChange={setBirthDay} value={birthDay}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="일" />
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          className="max-h-[300px]"
-                        >
-                          {days.map((day) => (
-                            <SelectItem key={day} value={String(day)}>
-                              {day}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={registerForm.control}
-                name="school"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>
-                      학교<span className="text-[oklch(0.7_0.18_350)]">*</span>
-                    </FormLabel>
-                    <div className="flex items-center gap-2">
-                      <Select
-                        onValueChange={setSchoolLevel}
-                        value={schoolLevel}
-                      >
-                        <SelectTrigger className="w-[120px]">
-                          <SelectValue placeholder="선택" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[
-                            "초등학교",
-                            "중학교",
-                            "고등학교",
-                            "대학교",
-                            "해당없음",
-                          ].map((level) => (
-                            <SelectItem key={level} value={level}>
-                              {level}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormControl>
-                        <Input
-                          placeholder="학교 이름 (예: 선덕, 자운)"
-                          value={schoolName}
-                          onChange={(e) =>
-                            setSchoolName(e.target.value.replace(/\s/g, ""))
-                          }
-                          disabled={!schoolLevel || schoolLevel === "해당없음"}
-                        />
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* 동의서 섹션 - 클릭하면 모달 오픈 */}
-              <FormField
-                control={registerForm.control}
-                name="personalInfoConsent"
-                render={({ field }) => (
-                  <FormItem className="rounded-lg border-2 border-dashed border-[oklch(0.75_0.12_165/0.3)] p-4 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={(checked) => {
-                            field.onChange(checked === true);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                      <div
-                        className="flex-1 space-y-2 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={handleOpenConsentModal}
-                      >
-                        <FormLabel className="text-base font-semibold leading-none cursor-pointer">
-                          개인정보 수집 및 이용 동의 (선택)
-                        </FormLabel>
-                        <FormDescription className="text-sm leading-relaxed">
-                          동의 시 맞춤형 서비스 제공에 활용될 수 있습니다.
-                          <br />
-                          동의하지 않아도 서비스 이용이 가능합니다.
-                          <br />
-                          <span className="text-[oklch(0.75_0.12_165)] font-medium">
-                            클릭하여 동의서 확인 및 선택
-                          </span>
-                        </FormDescription>
-                      </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter className="gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setStep("identification")}
-                  disabled={isSubmitting}
-                >
-                  뒤로
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || isButtonDisabled}
-                  className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
-                >
-                  {isSubmitting
-                    ? "등록 중..."
-                    : isRentedMode
-                    ? "등록 및 대기"
-                    : "등록 및 대여"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        );
-      case "success":
-        return (
-          <div
-            className="flex flex-col items-center justify-center py-12 px-8 text-center relative overflow-hidden"
-            key="success"
-          >
-            <div className="absolute inset-0 bg-linear-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)] animate-pulse" />
-
-            <div className="absolute top-4 left-1/4 text-4xl animate-bounce">
-              ✨
-            </div>
-            <div
-              className="absolute top-14 right-1/4 text-3xl animate-bounce"
-              style={{ animationDelay: "0.1s" }}
-            >
-              🎊
-            </div>
-            <div
-              className="absolute bottom-24 left-1/3 text-2xl animate-bounce"
-              style={{ animationDelay: "0.2s" }}
-            >
-              🎈
-            </div>
-
-            <div className="relative z-10 space-y-6">
-              <div className="relative inline-block">
-                <div className="text-8xl animate-bounce">🎉</div>
-                <div
-                  className="absolute -top-2 -right-2 text-3xl"
-                  style={{ animation: "spin 3s linear infinite" }}
-                >
-                  ⭐
+                        <stop offset="0%" stopColor="oklch(0.75 0.12 165)" />
+                        <stop offset="50%" stopColor="oklch(0.7 0.18 350)" />
+                        <stop offset="100%" stopColor="oklch(0.7 0.18 350)" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-3xl font-black bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
+                      {countdown}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <DialogTitle className="text-3xl font-black bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
-                  대여 완료!
-                </DialogTitle>
-                <div className="text-5xl font-bold text-[oklch(0.75_0.12_165)]">
-                  {item.name}
-                </div>
-              </div>
+                <DialogFooter className="mt-6">
+                  <Button
+                    onClick={handleSuccessConfirm}
+                    className="w-full h-12 text-lg font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  >
+                    확인 ✓
+                  </Button>
+                </DialogFooter>
 
-              <DialogDescription className="text-lg font-medium text-foreground leading-relaxed">
-                신나게 즐기고 <br />
-                <span className="text-[oklch(0.7_0.18_350)] font-bold">
-                  정리정돈
-                </span>{" "}
-                하는 거 잊지 말기!
-              </DialogDescription>
-
-              <div className="relative w-24 h-24 mx-auto my-6">
-                <svg className="transform -rotate-90 w-24 h-24">
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="#e5e7eb"
-                    strokeWidth="6"
-                    fill="none"
-                  />
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="url(#gradient)"
-                    strokeWidth="6"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 40}`}
-                    strokeDashoffset={`${
-                      2 * Math.PI * 40 * (1 - countdown / 5)
-                    }`}
-                    style={{
-                      transition: "stroke-dashoffset 1s linear",
-                    }}
-                    strokeLinecap="round"
-                  />
-                  <defs>
-                    <linearGradient
-                      id="gradient"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop offset="0%" stopColor="oklch(0.75 0.12 165)" />
-                      <stop offset="50%" stopColor="oklch(0.7 0.18 350)" />
-                      <stop offset="100%" stopColor="oklch(0.7 0.18 350)" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-black bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
-                    {countdown}
-                  </span>
-                </div>
-              </div>
-
-              <DialogFooter className="mt-6">
-                <Button
-                  onClick={handleSuccessConfirm}
-                  className="w-full h-12 text-lg font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-105 shadow-lg"
-                >
-                  확인 ✓
-                </Button>
-              </DialogFooter>
-
-              <p className="text-xs text-muted-foreground mt-2">
-                {countdown}초 후 자동으로 닫힙니다
-              </p>
-            </div>
-          </div>
-        );
-      case "waitingSuccess":
-        return (
-          <div
-            className="flex flex-col items-center justify-center py-12 px-8 text-center relative"
-            key="waitingSuccess"
-          >
-            <div className="relative z-10 space-y-6">
-              <DialogTitle className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
-                대기열 합류 완료!
-              </DialogTitle>
-              <DialogDescription className="text-lg font-medium text-foreground leading-relaxed">
-                예약 리스트에 올랐어!
-              </DialogDescription>
-
-              <div className="my-8">
-                <p className="text-base text-muted-foreground">너의 순서는</p>
-                <p className="text-8xl font-black text-[oklch(0.7_0.18_350)] animate-pulse">
-                  {waitingPosition}번째
+                <p className="text-xs text-muted-foreground mt-2">
+                  {countdown}초 후 자동으로 닫힙니다
                 </p>
               </div>
-
-              <DialogFooter className="mt-6">
-                <Button
-                  onClick={handleSuccessConfirm}
-                  className="w-full h-12 text-lg font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]"
-                >
-                  확인 ({countdown})
-                </Button>
-              </DialogFooter>
             </div>
-          </div>
-        );
-    }
+          );
+        case "waitingSuccess":
+          return (
+            <div
+              className="flex flex-col items-center justify-center py-12 px-8 text-center relative"
+              key="waitingSuccess"
+            >
+              <div className="relative z-10 space-y-6">
+                <DialogTitle className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
+                  대기열 합류 완료!
+                </DialogTitle>
+                <DialogDescription className="text-lg font-medium text-foreground leading-relaxed">
+                  예약 리스트에 올랐어!
+                </DialogDescription>
+
+                <div className="my-8">
+                  <p className="text-base text-muted-foreground">너의 순서는</p>
+                  <p className="text-8xl font-black text-[oklch(0.7_0.18_350)] animate-pulse">
+                    {waitingPosition}번째
+                  </p>
+                </div>
+
+                <DialogFooter className="mt-6">
+                  <Button
+                    onClick={handleSuccessConfirm}
+                    className="w-full h-12 text-lg font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]"
+                  >
+                    확인 ({countdown})
+                  </Button>
+                </DialogFooter>
+              </div>
+            </div>
+          );
+      }
+    })();
+
+    // [수정됨] 컨텐츠를 감싸는 스크롤 컨테이너
+    // pb-60 (약 240px)을 추가하여 키보드가 올라왔을 때도 스크롤할 여유 공간을 충분히 확보
+    return (
+      <div className="max-h-[80vh] overflow-y-auto overflow-x-hidden p-1 pb-60 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {content}
+      </div>
+    );
   };
 
   return (
@@ -1267,7 +1292,7 @@ export function RentalDialog({
           onOpenChange(isOpen);
         }}
       >
-        <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
           {renderStep()}
         </DialogContent>
       </Dialog>
@@ -1341,7 +1366,6 @@ export function RentalDialog({
             )}
           </div>
 
-          {/* 동의 체크박스 및 확인 버튼 */}
           <div className="px-6 py-4 border-t bg-muted/30 space-y-4">
             <div className="flex items-center gap-3">
               <Checkbox

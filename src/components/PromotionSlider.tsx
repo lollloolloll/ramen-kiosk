@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 interface PromotionItem {
   id: string;
-  type: "video" | "image";
+  type: "video" | "image" | "url" | "pdf"; // pdf 타입 추가됨
   url: string;
   title?: string;
 }
@@ -24,7 +24,7 @@ export function PromotionSlider({
   items,
   onClose,
   autoPlay = true,
-  autoPlayInterval = 20 * 1000,
+  autoPlayInterval = 10000, // 기본값 조정 (이미지/PDF 노출 시간)
   onLazyCheck,
   userInteractionTimeout = 5 * 1000,
 }: PromotionSliderProps) {
@@ -36,22 +36,23 @@ export function PromotionSlider({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 스와이프 관련 상태
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentItem = items[currentIndex];
-  const isCurrentItemVideo = currentItem?.type === "video";
+  // 비디오나 URL(유튜브 등)이 아닐 경우에만 타이머로 넘어감
+  const isVideoOrExternalUrl =
+    currentItem?.type === "video" || currentItem?.type === "url";
 
-  // 슬라이드 전환 시마다 lazyCheck 실행
+  // Lazy Check
   useEffect(() => {
     if (onLazyCheck) {
       onLazyCheck().catch((err) => console.error("LazyCheck failed:", err));
     }
   }, [currentIndex, onLazyCheck]);
 
-  // 전역 음소거 상태를 모든 비디오에 적용
+  // 음소거 상태 동기화
   useEffect(() => {
     Object.values(videoRefs.current).forEach((video) => {
       if (video) video.muted = isMuted;
@@ -72,14 +73,14 @@ export function PromotionSlider({
     }, userInteractionTimeout);
   }, [autoPlay, userInteractionTimeout]);
 
-  // 자동 슬라이드 (이미지일 경우에만)
+  // 자동 재생 로직 (이미지, PDF인 경우 타이머 작동)
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
 
     if (
       isPlaying &&
       items.length > 1 &&
-      !isCurrentItemVideo &&
+      !isVideoOrExternalUrl && // 비디오나 유튜브는 끝났을 때 넘어가거나 자체 루프
       !userInteracted
     ) {
       intervalRef.current = setInterval(() => {
@@ -94,21 +95,21 @@ export function PromotionSlider({
     isPlaying,
     items.length,
     autoPlayInterval,
-    isCurrentItemVideo,
+    isVideoOrExternalUrl,
     userInteracted,
   ]);
 
-  // 비디오 재생 제어
+  // 슬라이드 변경 시 비디오 제어
   useEffect(() => {
     items.forEach((item, index) => {
       const video = videoRefs.current[item.id];
       if (video) {
         video.muted = isMuted;
         if (index === currentIndex && item.type === "video") {
+          video.currentTime = 0;
           video.play().catch(() => {});
         } else {
           video.pause();
-          video.currentTime = 0;
         }
       }
     });
@@ -124,11 +125,9 @@ export function PromotionSlider({
     resetAutoPlayAfterInteraction();
   }, [items.length, resetAutoPlayAfterInteraction]);
 
-  // --- [수정됨] 스와이프 핸들러 로직 개선 ---
+  // 터치 스와이프 로직
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
-    // [중요] 터치 시작 시 End 값도 현재 위치로 초기화해야
-    // 단순히 클릭만 했을 때 이전 좌표값 때문에 스와이프로 오작동하는 것을 방지함
     touchEndX.current = e.touches[0].clientX;
   };
 
@@ -137,11 +136,9 @@ export function PromotionSlider({
   };
 
   const handleTouchEnd = () => {
-    // 시작점과 끝점의 차이 계산
     const diff = touchStartX.current - touchEndX.current;
     const minSwipeDistance = 50;
 
-    // 단순 클릭(차이가 0이거나 매우 작음)이 아닌 경우에만 스와이프 동작 수행
     if (Math.abs(diff) > minSwipeDistance) {
       if (diff > 0) {
         goToNext();
@@ -150,11 +147,9 @@ export function PromotionSlider({
       }
     }
   };
-  // ----------------------------------------
 
   const handleSlideClick = async () => {
     if (onClose) onClose();
-
     try {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
@@ -164,7 +159,6 @@ export function PromotionSlider({
     }
   };
 
-  // 이벤트 전파 방지용 함수
   const handleStopPropagation = (e: React.TouchEvent | React.MouseEvent) => {
     e.stopPropagation();
   };
@@ -172,6 +166,31 @@ export function PromotionSlider({
   const toggleMute = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsMuted((prev) => !prev);
+  };
+
+  const getEmbedUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      // YouTube
+      if (
+        urlObj.hostname.includes("youtube.com") ||
+        urlObj.hostname.includes("youtu.be")
+      ) {
+        let videoId = "";
+        if (urlObj.hostname.includes("youtu.be")) {
+          videoId = urlObj.pathname.slice(1);
+        } else {
+          videoId = urlObj.searchParams.get("v") || "";
+        }
+        // loop=1 & playlist=videoId 를 추가하면 유튜브 영상 하나도 반복재생 가능
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${
+          isMuted ? 1 : 0
+        }&loop=1&playlist=${videoId}&controls=0`;
+      }
+      return url;
+    } catch {
+      return url;
+    }
   };
 
   if (items.length === 0) return null;
@@ -183,16 +202,14 @@ export function PromotionSlider({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      // 클릭 시 전체화면 또는 닫기(필요에 따라 주석 해제)
+      onClick={handleSlideClick}
     >
-      {/* 음소거 토글 버튼 */}
       <Button
         variant="ghost"
         size="icon"
         onClick={toggleMute}
-        // [수정됨] 모바일 터치 시 이벤트가 부모(스와이프 핸들러)로 새어나가는 것 방지 강화
         onTouchStart={handleStopPropagation}
-        onTouchMove={handleStopPropagation}
-        onTouchEnd={handleStopPropagation}
         className="absolute top-4 right-4 z-[60] text-white hover:bg-white/20 rounded-full bg-black/30"
       >
         {isMuted ? (
@@ -202,84 +219,88 @@ export function PromotionSlider({
         )}
       </Button>
 
-      {/* 좌측 영역 (이전 슬라이드) */}
+      {/* 왼쪽 화살표 */}
       {items.length > 1 && (
         <div
           onClick={(e) => {
             e.stopPropagation();
             goToPrevious();
           }}
-          // [추가] 버튼 영역에서 스와이프 로직과 겹치지 않도록 터치 이벤트 차단
           onTouchStart={handleStopPropagation}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-            // 터치로 눌렀을 때도 동작하게 하려면 여기서 실행 (선택사항)
-            // goToPrevious();
-          }}
-          className="absolute left-0 top-0 w-1/4 h-full z-40 flex items-center justify-start cursor-pointer group"
+          className="absolute left-0 top-0 w-1/6 h-full z-40 flex items-center justify-start cursor-pointer group"
         >
-          <div className="ml-2 p-2 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-50">
+          <div className="ml-4 p-2 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
             <ChevronLeft className="w-8 h-8 text-white" />
           </div>
         </div>
       )}
 
-      {/* 우측 영역 (다음 슬라이드) */}
+      {/* 오른쪽 화살표 */}
       {items.length > 1 && (
         <div
           onClick={(e) => {
             e.stopPropagation();
             goToNext();
           }}
-          // [추가] 버튼 영역에서 스와이프 로직과 겹치지 않도록 터치 이벤트 차단
           onTouchStart={handleStopPropagation}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-          }}
-          className="absolute right-0 top-0 w-1/4 h-full z-40 flex items-center justify-end cursor-pointer group"
+          className="absolute right-0 top-0 w-1/6 h-full z-40 flex items-center justify-end cursor-pointer group"
         >
-          <div className="mr-2 p-2 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-50">
+          <div className="mr-4 p-2 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
             <ChevronRight className="w-8 h-8 text-white" />
           </div>
         </div>
       )}
 
-      {/* 슬라이드 컨텐츠 */}
-      <div
-        className="w-full h-full flex items-center justify-center cursor-pointer"
-        onClick={handleSlideClick}
-      >
+      {/* 콘텐츠 영역 */}
+      <div className="w-full h-full flex items-center justify-center bg-black">
         {currentItem.type === "video" ? (
           <video
             ref={(el) => {
               videoRefs.current[currentItem.id] = el;
             }}
             src={currentItem.url}
-            className="max-w-full max-h-full object-contain"
-            loop={false}
+            className="w-full h-full object-contain"
             muted={isMuted}
             playsInline
-            preload="metadata" // ⭐ 추가: 메타데이터만 먼저 로드
-            controls={false} // ⭐ 추가: 컨트롤 숨김 명시
-            webkit-playsinline="true" // ⭐ 추가: 구형 iOS 지원
+            autoPlay
             onEnded={() => {
               if (items.length > 1) {
-                setCurrentIndex((prev) => (prev + 1) % items.length);
-                setUserInteracted(false);
-                setIsPlaying(autoPlay);
+                goToNext();
+              } else {
+                // 영상이 하나일 경우 반복 재생
+                const video = videoRefs.current[currentItem.id];
+                if (video) {
+                  video.currentTime = 0;
+                  video.play();
+                }
               }
             }}
           />
+        ) : currentItem.type === "url" ? (
+          <iframe
+            src={getEmbedUrl(currentItem.url)}
+            className="w-full h-full pointer-events-none" // pointer-events-none을 넣어야 스와이프 터치가 먹힙니다. 필요시 제거.
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+          />
+        ) : currentItem.type === "pdf" ? (
+          // PDF 렌더링 추가
+          <iframe
+            src={`${currentItem.url}#view=FitH&toolbar=0&navpanes=0`}
+            className="w-full h-full"
+            title="PDF Viewer"
+          />
         ) : (
+          // 이미지
           <img
             src={currentItem.url}
             alt={currentItem.title || "홍보 이미지"}
-            className="max-w-full max-h-full object-contain"
+            className="w-full h-full object-contain"
           />
         )}
       </div>
 
-      {/* 인디케이터 */}
+      {/* 하단 인디케이터 */}
       {items.length > 1 && (
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2 z-50">
           {items.map((_, index) => (
@@ -290,14 +311,12 @@ export function PromotionSlider({
                 setCurrentIndex(index);
                 resetAutoPlayAfterInteraction();
               }}
-              // [추가] 인디케이터 터치 시 스와이프 방지
               onTouchStart={handleStopPropagation}
-              className={`w-3 h-3 rounded-full transition-all ${
+              className={`h-2 rounded-full transition-all duration-300 ${
                 index === currentIndex
                   ? "bg-white w-8"
-                  : "bg-white/50 hover:bg-white/75"
+                  : "bg-white/40 hover:bg-white/60 w-2"
               }`}
-              aria-label={`슬라이드 ${index + 1}로 이동`}
             />
           ))}
         </div>

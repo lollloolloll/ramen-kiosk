@@ -6,21 +6,33 @@ import { Button } from "@/components/ui/button";
 import { PromotionSlider } from "@/components/PromotionSlider";
 import { processAndMutateExpiredRentals } from "@/lib/actions/rental";
 
+// 인터페이스 수정: url, pdf 타입 추가
 interface PromotionItem {
   id: string;
-  type: "video" | "image";
+  type: "video" | "image" | "url" | "pdf";
   url: string;
   title?: string;
 }
 
-function getFileType(fileName: string): "video" | "image" {
+// URL 데이터 타입 (API 응답용)
+interface VideoUrl {
+  type: "url";
+  name: string;
+  url: string;
+}
+
+// 파일 타입 판별 함수 수정: PDF 추가
+function getFileType(fileName: string): "video" | "image" | "pdf" {
   const ext = fileName.toLowerCase().split(".").pop();
   const videoExts = ["mp4", "webm", "mov", "avi", "mkv"];
-  return videoExts.includes(ext || "") ? "video" : "image";
+
+  if (ext === "pdf") return "pdf";
+  if (videoExts.includes(ext || "")) return "video";
+  return "image";
 }
+
 // 비활성 시간 설정 (밀리초)
 const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 1분
-// const INACTIVITY_TIMEOUT = 1 * 5 * 1000; // 5초
 
 export default function Home() {
   const [showPromotion, setShowPromotion] = useState(false);
@@ -29,25 +41,41 @@ export default function Home() {
   const [promotionItems, setPromotionItems] = useState<PromotionItem[]>([]);
   const lastActivityRef = useRef<number>(Date.now());
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const hasCheckedKioskFlag = useRef(false); // 🆕 플래그 체크 여부
+  const hasCheckedKioskFlag = useRef(false);
 
-  // 업로드된 홍보물 파일 목록 가져오기 (먼저 실행)
+  // 업로드된 홍보물 파일 및 URL 목록 가져오기
   useEffect(() => {
     const fetchPromotionFiles = async () => {
       try {
         const response = await fetch("/api/uploads/promotion");
         if (response.ok) {
           const data = await response.json();
-          const items: PromotionItem[] = (data.files || []).map(
+
+          // 1. 파일 아이템 변환
+          const fileItems: PromotionItem[] = (data.files || []).map(
             (fileName: string, index: number) => ({
-              id: `promo-${index}-${fileName}`,
+              id: `file-${index}-${fileName}`,
               type: getFileType(fileName),
               url: `/uploads/promotion/${fileName}`,
               title: fileName,
             })
           );
-          setPromotionItems(items);
-          console.log(`Loaded ${items.length} promotion items`);
+
+          // 2. 외부 URL 아이템 변환 (유튜브 등)
+          const urlItems: PromotionItem[] = (data.urls || []).map(
+            (urlData: VideoUrl, index: number) => ({
+              id: `url-${index}-${urlData.name}`,
+              type: "url" as const,
+              url: urlData.url,
+              title: urlData.name,
+            })
+          );
+
+          // 3. 합치기
+          setPromotionItems([...fileItems, ...urlItems]);
+          console.log(
+            `Loaded ${fileItems.length + urlItems.length} promotion items`
+          );
         }
       } catch (error) {
         console.error("Error fetching promotion files:", error);
@@ -57,9 +85,8 @@ export default function Home() {
     fetchPromotionFiles();
   }, []);
 
-  // 🆕 promotionItems 로드 후 kiosk 플래그 확인
+  // Kiosk에서 넘어온 플래그 확인
   useEffect(() => {
-    // 이미 체크했거나 아이템이 없으면 스킵
     if (hasCheckedKioskFlag.current || promotionItems.length === 0) {
       return;
     }
@@ -71,7 +98,7 @@ export default function Home() {
         const payload = JSON.parse(promotionFlag);
         const now = Date.now();
 
-        // 타임스탬프 검증: TTL 내에 있는지 확인
+        // TTL(5초) 내에 리다이렉트 된 경우에만 즉시 실행
         if (
           payload.show &&
           payload.timestamp &&
@@ -81,7 +108,7 @@ export default function Home() {
           sessionStorage.removeItem("showPromotionOnHome");
           setShowPromotion(true);
           hasCheckedKioskFlag.current = true;
-          return; // 초기 홍보물 로직 스킵
+          return;
         } else {
           console.log("Expired promotion flag - ignoring");
           sessionStorage.removeItem("showPromotionOnHome");
@@ -93,9 +120,9 @@ export default function Home() {
     }
 
     hasCheckedKioskFlag.current = true;
-  }, [promotionItems]); // promotionItems가 로드되면 실행
+  }, [promotionItems]);
 
-  // 타이머 리셋 함수
+  // 타이머 리셋 로직
   const resetInactivityTimer = () => {
     lastActivityRef.current = Date.now();
 
@@ -113,14 +140,10 @@ export default function Home() {
   // 사용자 활동 감지
   useEffect(() => {
     const handleActivity = () => {
-      // 홍보물이 표시 중이면 활동 감지 무시
-      if (showPromotion) {
-        return;
-      }
+      if (showPromotion) return;
       resetInactivityTimer();
     };
 
-    // 다양한 이벤트 리스너 등록
     const events = [
       "mousedown",
       "mousemove",
@@ -134,14 +157,14 @@ export default function Home() {
       window.addEventListener(event, handleActivity, { passive: true });
     });
 
-    // 🆕 kiosk 플래그가 없을 때만 비활성 타이머 시작
+    // 키오스크 플래그가 없을 때만 초기 타이머 시작
     if (!sessionStorage.getItem("showPromotionOnHome")) {
       inactivityTimerRef.current = setTimeout(() => {
         setShowPromotion(true);
       }, INACTIVITY_TIMEOUT);
     }
 
-    // 처음 앱 킬 때 홍보물 표시 (한 번만)
+    // 앱 최초 실행 시 홍보물 표시 (한 번만)
     if (
       promotionItems.length > 0 &&
       !hasShownInitialPromotion &&
@@ -172,11 +195,10 @@ export default function Home() {
     setShowPromotion(false);
     lastActivityRef.current = Date.now();
 
-    // 새로운 타이머 설정
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
-
+    // 닫은 후 다시 타이머 시작
     inactivityTimerRef.current = setTimeout(() => {
       setShowPromotion(true);
     }, INACTIVITY_TIMEOUT);
@@ -210,7 +232,7 @@ export default function Home() {
           ⚽
         </div>
 
-        {/* 관리자 페이지 링크 - 우측 상단 */}
+        {/* 관리자 페이지 링크 */}
         <Link
           href="/admin"
           prefetch={false}
@@ -235,7 +257,6 @@ export default function Home() {
 
         {/* 메인 컨텐츠 */}
         <div className="relative z-10 text-center space-y-12 p-8">
-          {/* 로고/제목 영역 */}
           <div className="space-y-4">
             <div
               className="text-8xl mb-6 animate-bounce"
@@ -253,7 +274,6 @@ export default function Home() {
             </h1>
           </div>
 
-          {/* 메인 버튼 */}
           <div className="pt-8">
             <Button
               asChild
@@ -287,7 +307,7 @@ export default function Home() {
           items={promotionItems}
           onClose={handleClosePromotion}
           autoPlay={true}
-          autoPlayInterval={20000}
+          autoPlayInterval={15000} // 이미지/PDF 기본 노출 시간 15초
           onLazyCheck={handleLazyCheck}
         />
       )}

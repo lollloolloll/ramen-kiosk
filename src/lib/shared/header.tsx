@@ -6,27 +6,21 @@ import { signOut } from "next-auth/react";
 import { downloadDatabase } from "@/lib/actions/backup";
 
 interface HeaderProps {
-  onMenuClick: () => void;
+  onMenuClick: () => void; // 홈으로 이동
+  onSidebarToggle: () => void; // 사이드바 열기 (추가된 prop)
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ onMenuClick, onSidebarToggle }: HeaderProps) {
   const handleBackup = async () => {
     if (!confirm("현재 데이터베이스(DB)를 백업하시겠습니까?")) return;
-
     try {
       const result = await downloadDatabase();
-
       if (result.success && result.buffer) {
         const link = document.createElement("a");
-
-        // MIME 타입과 Base64 데이터를 조합하여 href 설정
         link.href = `data:${result.mimeType};base64,${result.buffer}`;
         link.download = result.fileName || "backup.db";
-
         document.body.appendChild(link);
         link.click();
-
-        // 뒷정리
         document.body.removeChild(link);
       } else {
         alert(`백업 실패: ${result.error}`);
@@ -39,31 +33,40 @@ export function Header({ onMenuClick }: HeaderProps) {
       );
     }
   };
+
   const handleLogout = async () => {
     if (!confirm("로그아웃 하시겠습니까?")) return;
-
-    // 1. NextAuth에게 로그아웃 요청 (redirect: false로 자동 이동 막기)
     await signOut({ redirect: false });
-
-    // 2. 브라우저 강제 새로고침 및 이동
-
     window.location.href = "/";
   };
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+      {/* 1. 햄버거 버튼 (모바일에서만 보임 md:hidden) */}
       <Button
         variant="outline"
         size="icon"
-        className="shrink-0 "
+        className="shrink-0 md:hidden"
+        onClick={onSidebarToggle}
+      >
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Toggle navigation menu</span>
+      </Button>
+
+      {/* 2. 홈 버튼 (기존 버튼) */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="shrink-0"
         onClick={onMenuClick}
       >
         <Home className="h-5 w-5" />
-        <span className="sr-only">Toggle navigation menu</span>
+        <span className="sr-only">Go to Main</span>
       </Button>
+
       <Button
         variant="ghost"
-        className="text-lg font-semibold cursor-pointer underline"
+        className="text-lg font-semibold cursor-pointer underline hidden sm:inline-flex" // 모바일 공간 부족시 텍스트 숨김 처리 옵션
         asChild
       >
         <a
@@ -75,10 +78,10 @@ export function Header({ onMenuClick }: HeaderProps) {
         </a>
       </Button>
       <div className="flex items-center gap-4 ml-auto">
-        <Button variant="ghost" onClick={handleBackup}>
+        <Button variant="ghost" onClick={handleBackup} size="sm">
           백업
         </Button>
-        <Button variant="ghost" onClick={handleLogout}>
+        <Button variant="ghost" onClick={handleLogout} size="sm">
           로그아웃
         </Button>
       </div>

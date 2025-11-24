@@ -133,7 +133,7 @@ export function EditUserForm({ user, children }: EditUserFormProps) {
       setSchoolLevel(schoolParts.level);
       setSchoolName(schoolParts.name);
     }
-  }, [open, user, form.reset]);
+  }, [open, user, form]);
 
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {
@@ -141,7 +141,7 @@ export function EditUserForm({ user, children }: EditUserFormProps) {
     } else {
       form.setValue("birthDate", "");
     }
-  }, [birthYear, birthMonth, birthDay, form.setValue]);
+  }, [birthYear, birthMonth, birthDay, form]);
 
   useEffect(() => {
     if (schoolLevel === "해당없음") {
@@ -169,7 +169,7 @@ export function EditUserForm({ user, children }: EditUserFormProps) {
     } else {
       form.setValue("school", "");
     }
-  }, [schoolLevel, schoolName, form.setValue]);
+  }, [schoolLevel, schoolName, form]);
 
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -219,8 +219,8 @@ export function EditUserForm({ user, children }: EditUserFormProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="max-h-[80vh] overflow-hidden p-0">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>사용자 정보 수정</DialogTitle>
           <DialogDescription>
             사용자 정보를 수정하고 저장합니다.
@@ -229,194 +229,213 @@ export function EditUserForm({ user, children }: EditUserFormProps) {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 py-4"
+            className="flex flex-col h-full"
           >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    이름<span className="text-red-500">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    휴대폰 번호<span className="text-red-500">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="tel"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(formatPhoneNumber(e.target.value));
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    성별<span className="text-red-500">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant={field.value === "남" ? "default" : "outline"}
-                        onClick={() => field.onChange("남")}
-                      >
-                        남
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={field.value === "여" ? "default" : "outline"}
-                        onClick={() => field.onChange("여")}
-                      >
-                        여
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="birthDate"
-              render={() => (
-                <FormItem>
-                  <FormLabel>
-                    생년월일<span className="text-red-500">*</span>
-                  </FormLabel>
-                  <div className="flex gap-2">
-                    <Select onValueChange={setBirthYear} value={birthYear}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="년" />
-                      </SelectTrigger>
-                      <SelectContent
-                        position="popper"
-                        className="max-h-[300px]"
-                      >
-                        {years.map((year) => (
-                          <SelectItem key={year} value={String(year)}>
-                            {year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select onValueChange={setBirthMonth} value={birthMonth}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="월" />
-                      </SelectTrigger>
-                      <SelectContent
-                        position="popper"
-                        className="max-h-[300px]"
-                      >
-                        {months.map((month) => (
-                          <SelectItem key={month} value={String(month)}>
-                            {month}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select onValueChange={setBirthDay} value={birthDay}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="일" />
-                      </SelectTrigger>
-                      <SelectContent
-                        position="popper"
-                        className="max-h-[300px]"
-                      >
-                        {days.map((day) => (
-                          <SelectItem key={day} value={String(day)}>
-                            {day}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="school"
-              render={() => (
-                <FormItem>
-                  <FormLabel>
-                    학교<span className="text-red-500">*</span>
-                  </FormLabel>
-                  <div className="flex items-center gap-2 whitespace-nowrap ">
-                    <Select onValueChange={setSchoolLevel} value={schoolLevel}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[
-                          "초등학교",
-                          "중학교",
-                          "고등학교",
-                          "대학교",
-                          "해당없음",
-                        ].map((level) => (
-                          <SelectItem key={level} value={level}>
-                            {level}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormControl>
-                      <Input
-                        placeholder="학교 이름 (예: 선덕, 자운)"
-                        value={schoolName}
-                        onChange={(e) => setSchoolName(e.target.value)}
-                        disabled={!schoolLevel || schoolLevel === "해당없음"}
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="personalInfoConsent"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>개인정보 수집 및 이용 동의 (선택)</FormLabel>
-                    <FormDescription>
-                      동의 시 맞춤형 서비스 제공에 활용될 수 있습니다.
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
+            {/* 스크롤 가능한 콘텐츠 영역 - 모바일에서 pb-60 적용 */}
+            <div className="max-h-[calc(80vh-180px)] overflow-y-auto overflow-x-hidden px-6 scrollbar-hidden pb-4 md:pb-4 pb-60">
+              <div className="space-y-4 py-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        이름<span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        휴대폰 번호<span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(formatPhoneNumber(e.target.value));
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        성별<span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={
+                              field.value === "남" ? "default" : "outline"
+                            }
+                            onClick={() => field.onChange("남")}
+                          >
+                            남
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={
+                              field.value === "여" ? "default" : "outline"
+                            }
+                            onClick={() => field.onChange("여")}
+                          >
+                            여
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="birthDate"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>
+                        생년월일<span className="text-red-500">*</span>
+                      </FormLabel>
+                      <div className="flex gap-2">
+                        <Select onValueChange={setBirthYear} value={birthYear}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="년" />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            className="max-h-[300px]"
+                          >
+                            {years.map((year) => (
+                              <SelectItem key={year} value={String(year)}>
+                                {year}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          onValueChange={setBirthMonth}
+                          value={birthMonth}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="월" />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            className="max-h-[300px]"
+                          >
+                            {months.map((month) => (
+                              <SelectItem key={month} value={String(month)}>
+                                {month}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select onValueChange={setBirthDay} value={birthDay}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="일" />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            className="max-h-[300px]"
+                          >
+                            {days.map((day) => (
+                              <SelectItem key={day} value={String(day)}>
+                                {day}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="school"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>
+                        학교<span className="text-red-500">*</span>
+                      </FormLabel>
+                      <div className="flex items-center gap-2 whitespace-nowrap ">
+                        <Select
+                          onValueChange={setSchoolLevel}
+                          value={schoolLevel}
+                        >
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[
+                              "초등학교",
+                              "중학교",
+                              "고등학교",
+                              "대학교",
+                              "해당없음",
+                            ].map((level) => (
+                              <SelectItem key={level} value={level}>
+                                {level}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormControl>
+                          <Input
+                            placeholder="학교 이름 (예: 선덕, 자운)"
+                            value={schoolName}
+                            onChange={(e) => setSchoolName(e.target.value)}
+                            disabled={
+                              !schoolLevel || schoolLevel === "해당없음"
+                            }
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="personalInfoConsent"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>개인정보 수집 및 이용 동의 (선택)</FormLabel>
+                        <FormDescription>
+                          동의 시 맞춤형 서비스 제공에 활용될 수 있습니다.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Footer - 고정 위치 */}
+            <DialogFooter className="px-6 pb-6 pt-4">
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "저장 중..." : "저장"}
               </Button>

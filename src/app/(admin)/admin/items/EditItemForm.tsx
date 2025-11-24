@@ -117,107 +117,26 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-h-[80vh] overflow-hidden p-0">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>아이템 정보 수정</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>이름</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Item Name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>카테고리</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Category" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>아이템 이미지</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      className="cursor-pointer"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) {
-                          field.onChange(file);
-                        } else {
-                          field.onChange(undefined);
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  {field.value && field.value instanceof File ? (
-                    <img
-                      src={URL.createObjectURL(field.value)}
-                      alt="Image Preview"
-                      className="mt-2 h-20 w-20 object-cover rounded-md"
-                    />
-                  ) : (
-                    item.imageUrl && (
-                      <img
-                        src={item.imageUrl}
-                        alt="Current Image"
-                        className="mt-2 h-20 w-20 object-cover rounded-md"
-                      />
-                    )
-                  )}
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="isTimeLimited"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">시간제 대여</FormLabel>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {isTimeLimited && (
-              <>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col h-full"
+          >
+            {/* 스크롤 가능한 콘텐츠 영역 - 모바일에서 pb-60 적용 */}
+            <div className="max-h-[calc(80vh-140px)] overflow-y-auto overflow-x-hidden px-6 scrollbar-hidden pb-4 md:pb-4 pb-60">
+              <div className="grid gap-4">
                 <FormField
                   control={form.control}
-                  name="rentalTimeMinutes"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>대여 시간 (분)</FormLabel>
+                      <FormLabel>이름</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="ex) 30" {...field} />
+                        <Input placeholder="Item Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -225,43 +144,141 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
                 />
                 <FormField
                   control={form.control}
-                  name="maxRentalsPerUser"
+                  name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>사용자별 최대 대여 횟수</FormLabel>
+                      <FormLabel>카테고리</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="ex) 3" {...field} />
+                        <Input placeholder="Category" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </>
-            )}
-            <FormField
-              control={form.control}
-              name="enableParticipantTracking"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">
-                      참여자 이름 입력 여부
-                    </FormLabel>
-                    <FormDescription>
-                      대여 시 참여자들의 이름을 개별적으로 입력받습니다
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>아이템 이미지</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          className="cursor-pointer"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) {
+                              field.onChange(file);
+                            } else {
+                              field.onChange(undefined);
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      {field.value && field.value instanceof File ? (
+                        <img
+                          src={URL.createObjectURL(field.value)}
+                          alt="Image Preview"
+                          className="mt-2 h-20 w-20 object-cover rounded-md"
+                        />
+                      ) : (
+                        item.imageUrl && (
+                          <img
+                            src={item.imageUrl}
+                            alt="Current Image"
+                            className="mt-2 h-20 w-20 object-cover rounded-md"
+                          />
+                        )
+                      )}
+                    </FormItem>
+                  )}
+                />
 
-            <DialogFooter>
+                <FormField
+                  control={form.control}
+                  name="isTimeLimited"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">시간제 대여</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {isTimeLimited && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="rentalTimeMinutes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>대여 시간 (분)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="ex) 30"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="maxRentalsPerUser"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>사용자별 최대 대여 횟수</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="ex) 3"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+                <FormField
+                  control={form.control}
+                  name="enableParticipantTracking"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          참여자 이름 입력 여부
+                        </FormLabel>
+                        <FormDescription>
+                          대여 시 참여자들의 이름을 개별적으로 입력받습니다
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Footer - 고정 위치 */}
+            <DialogFooter className="px-6 pb-6 pt-4">
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "수정 중..." : "수정"}
               </Button>

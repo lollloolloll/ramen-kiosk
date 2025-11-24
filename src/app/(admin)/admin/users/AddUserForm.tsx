@@ -172,9 +172,11 @@ export function AddUserForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="max-h-[80vh] overflow-y-auto overflow-x-hidden p-1 scrollbar-hidden mobile-padding">
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
@@ -379,6 +381,8 @@ export function AddUserForm() {
             {isSubmitting ? "등록 중..." : "사용자 추가"}
           </Button>
         </DialogFooter>
+          </div>
+        </div>
       </form>
     </Form>
   );

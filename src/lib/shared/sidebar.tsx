@@ -8,16 +8,16 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 const links = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/items", label: "Items" },
-  { href: "/admin/records", label: "Records" },
-  { href: "/admin/waitings", label: "Waitings" },
+  { href: "/admin", label: "대시보드" },
+  { href: "/admin/users", label: "사용자 관리" },
+  { href: "/admin/items", label: "물품 관리" },
+  { href: "/admin/records", label: "대여 기록 관리" },
+  { href: "/admin/waitings", label: "대기열 관리" },
 ];
 
 const operationLinks = [
-  { href: "/admin/promotion", label: "Promotion" },
-  { href: "/admin/consent", label: "Consent" },
+  { href: "/admin/promotion", label: "프로모션" },
+  { href: "/admin/consent", label: "약관" },
 ];
 
 export function Sidebar() {
@@ -46,7 +46,7 @@ export function Sidebar() {
         onClick={() => setShowOperationLinks(!showOperationLinks)}
         className="justify-center relative cursor-pointer"
       >
-        Operation
+        운영
         {showOperationLinks ? (
           <ChevronDown className="h-4 w-4 absolute right-16" />
         ) : (

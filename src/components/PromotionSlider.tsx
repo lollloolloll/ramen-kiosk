@@ -44,6 +44,7 @@ export function PromotionSlider({
   // Refs
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const ytPlayerRef = useRef<any>(null); // YouTube API 인스턴스 저장
+  const isMutedRef = useRef(isMuted); // ✅ isMuted의 현재값을 ref로 관리
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -56,6 +57,11 @@ export function PromotionSlider({
   // video나 url(유튜브)은 내부 로직으로 넘기므로 타이머 제외
   const isVideoOrExternalUrl =
     currentItem?.type === "video" || currentItem?.type === "url";
+
+  // ✅ isMutedRef 동기화
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
 
   // 1. YouTube API 스크립트 로드 (최초 1회)
   useEffect(() => {
@@ -74,22 +80,26 @@ export function PromotionSlider({
     }
   }, [currentIndex, onLazyCheck]);
 
-  // 음소거 상태 동기화 (HTML Video + YouTube API)
+  // ✅ 음소거 상태 동기화 (HTML Video + YouTube API) - 리플레이 방지
   useEffect(() => {
     // HTML Video 처리
     Object.values(videoRefs.current).forEach((video) => {
       if (video) video.muted = isMuted;
     });
 
-    // YouTube API 처리
+    // YouTube API 처리 - 재생 중인 플레이어만 음소거 토글
     if (ytPlayerRef.current && typeof ytPlayerRef.current.mute === "function") {
-      if (isMuted) {
-        ytPlayerRef.current.mute();
-      } else {
-        ytPlayerRef.current.unMute();
+      try {
+        if (isMuted) {
+          ytPlayerRef.current.mute();
+        } else {
+          ytPlayerRef.current.unMute();
+        }
+      } catch (e) {
+        console.error("YouTube mute toggle error:", e);
       }
     }
-  }, [isMuted]);
+  }, [isMuted]); // ✅ 이 useEffect는 isMuted만 감지
 
   const resetAutoPlayAfterInteraction = useCallback(() => {
     setUserInteracted(true);
@@ -146,7 +156,7 @@ export function PromotionSlider({
     items.forEach((item, index) => {
       const video = videoRefs.current[item.id];
       if (video) {
-        video.muted = isMuted;
+        video.muted = isMutedRef.current; // ✅ ref 사용
         if (index === currentIndex && item.type === "video") {
           video.currentTime = 0;
           video.play().catch(() => {});
@@ -155,7 +165,7 @@ export function PromotionSlider({
         }
       }
     });
-  }, [currentIndex, items, isMuted]);
+  }, [currentIndex, items]); // ✅ isMuted 제거
 
   // ---------------------------------------------------------
   // [핵심 수정] YouTube IFrame API 제어 로직
@@ -190,12 +200,11 @@ export function PromotionSlider({
               fs: 0,
               rel: 0,
               playsinline: 1,
-              // mute: isMuted ? 1 : 0, // 여기서 설정해도 되지만 onReady에서 확실히 처리
             },
             events: {
               onReady: (event: any) => {
-                // 준비되면 음소거 상태 동기화 후 재생
-                if (isMuted) event.target.mute();
+                // ✅ ref의 현재값 사용 (리플레이 방지)
+                if (isMutedRef.current) event.target.mute();
                 else event.target.unMute();
 
                 event.target.playVideo();
@@ -219,7 +228,7 @@ export function PromotionSlider({
         createPlayer();
       }
     }
-  }, [currentIndex, currentItem, items.length, goToNext, isMuted]); // isMuted를 의존성에서 빼고 ref로 처리할 수도 있음
+  }, [currentIndex, currentItem, items.length, goToNext]); // ✅ isMuted 제거!
 
   // YouTube ID 추출 헬퍼 함수
   const extractYouTubeId = (url: string) => {
@@ -286,7 +295,6 @@ export function PromotionSlider({
     <div
       ref={containerRef}
       className="fixed inset-0 z-50 bg-black flex items-center justify-center"
-      // URL(유튜브) 일 때도 스와이프가 동작해야 하므로 조건 제거
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

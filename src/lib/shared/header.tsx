@@ -70,7 +70,7 @@ export function Header({ onMenuClick, onSidebarToggle }: HeaderProps) {
         asChild
       >
         <a
-          href="https://github.com/lollloolloll/ramen-kiosk"
+          href="https://www.notion.so/636f6feb4d06408ebcaa40c037fabc53?pvs=25#2baea606c4d5809e8b2dfaa31ba8893c"
           target="_blank"
           rel="noopener noreferrer"
         >

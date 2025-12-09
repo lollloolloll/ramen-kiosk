@@ -636,7 +636,11 @@ export function RentalDialog({
                     <FormItem>
                       <FormLabel>이름</FormLabel>
                       <FormControl>
-                        <Input placeholder="홍길동" {...field} />
+                        <Input
+                          placeholder="홍길동"
+                          {...field}
+                          className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -653,6 +657,7 @@ export function RentalDialog({
                           placeholder="010-1234-5678"
                           type="tel"
                           {...field}
+                          className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
                           onChange={(e) => {
                             field.onChange(formatPhoneNumber(e.target.value));
                           }}
@@ -675,6 +680,7 @@ export function RentalDialog({
                             min="0"
                             placeholder="0"
                             value={field.value || ""}
+                            className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value === "") {
@@ -714,6 +720,7 @@ export function RentalDialog({
                             min="0"
                             placeholder="0"
                             value={field.value || ""}
+                            className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value === "") {
@@ -781,7 +788,7 @@ export function RentalDialog({
                                   <Input
                                     {...nameField}
                                     placeholder="이름 입력"
-                                    className="h-9"
+                                    className="h-9 focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -866,6 +873,7 @@ export function RentalDialog({
                         <Input
                           placeholder="홍길동"
                           {...field}
+                          className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
                           onChange={(e) =>
                             field.onChange(e.target.value.replace(/\s/g, ""))
                           }
@@ -889,6 +897,7 @@ export function RentalDialog({
                           placeholder="010-1234-5678"
                           type="tel"
                           {...field}
+                          className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
                           onChange={(e) => {
                             field.onChange(formatPhoneNumber(e.target.value));
                           }}
@@ -1052,6 +1061,7 @@ export function RentalDialog({
                           <Input
                             placeholder="학교 이름 (예: 선덕, 자운)"
                             value={schoolName}
+                            className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
                             onChange={(e) =>
                               setSchoolName(e.target.value.replace(/\s/g, ""))
                             }

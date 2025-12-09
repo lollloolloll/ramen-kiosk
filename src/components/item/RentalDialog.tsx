@@ -333,19 +333,18 @@ export function RentalDialog({
       if (result.error) {
         throw new Error(result.error);
       }
+
       if (result.user) {
-        const { maleCount, femaleCount, participants } =
-          identificationForm.getValues();
-        if (isRentedMode) {
-          await handleWaiting(result.user.id, maleCount, femaleCount);
-        } else {
-          await handleRental(
-            result.user.id,
-            maleCount,
-            femaleCount,
-            participants
-          );
-        }
+        toast.success("회원가입이 완료되었습니다.");
+
+        identificationForm.setValue("name", values.name, {
+          shouldValidate: true,
+        });
+        identificationForm.setValue("phoneNumber", values.phoneNumber, {
+          shouldValidate: true,
+        });
+
+        setStep("identification");
       }
     } catch (error) {
       toast.error(
@@ -524,7 +523,7 @@ export function RentalDialog({
               >
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
-                    {isRentedMode ? "대기열 등록" : "아이템 대여"}
+                    {isRentedMode ? "대기열 등록" : `${item.name} 대여`}
                   </DialogTitle>
                   <DialogDescription>
                     {isRentedMode
@@ -805,7 +804,20 @@ export function RentalDialog({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setStep("register")}
+                    onClick={() => {
+                      // 1. 현재 identificationForm에 입력된 값을 가져옵니다.
+                      const currentValues = identificationForm.getValues();
+
+                      // 2. 단계 변경
+                      setStep("register");
+
+                      // 3. 가져온 값을 회원가입 폼(registerForm)에 넣어줍니다.
+                      registerForm.setValue("name", currentValues.name);
+                      registerForm.setValue(
+                        "phoneNumber",
+                        currentValues.phoneNumber
+                      );
+                    }}
                     disabled={isSubmitting}
                     className="border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
                   >
@@ -1130,8 +1142,8 @@ export function RentalDialog({
                     {isSubmitting
                       ? "등록 중..."
                       : isRentedMode
-                      ? "등록 및 대기"
-                      : "등록 및 대여"}
+                      ? "등록"
+                      : "등록"}
                   </Button>
                 </DialogFooter>
               </form>

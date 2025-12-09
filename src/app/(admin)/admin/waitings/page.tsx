@@ -2,6 +2,8 @@ import { getWaitingQueueEntries } from "@/lib/actions/waiting";
 import { getActiveRentalsWithWaitCount } from "@/lib/actions/rental";
 import { WaitingPageClient } from "./WaitingPageClient";
 
+export const dynamic = "force-dynamic";
+
 interface WaitingPageProps {
   params?: Promise<{ [key: string]: string | string[] }>;
   searchParams?: Promise<{ page?: string; per_page?: string }>;

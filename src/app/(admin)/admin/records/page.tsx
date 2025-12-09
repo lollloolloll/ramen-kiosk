@@ -4,6 +4,8 @@ import { RecordsPageClient } from "./RecordsPageClient";
 import { FilterControls } from "./FilterControls";
 import { getDistinctItemNames } from "@/lib/actions/item";
 
+export const dynamic = "force-dynamic";
+
 interface RecordsPageProps {
   searchParams: Promise<{
     username?: string;

@@ -127,7 +127,7 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
             className="flex flex-col h-full"
           >
             {/* 스크롤 가능한 콘텐츠 영역 - 모바일에서 pb-60 적용 */}
-            <div className="max-h-[calc(80vh-140px)] overflow-y-auto overflow-x-hidden px-6 scrollbar-hidden pb-4 md:pb-4 pb-60">
+            <div className="max-h-[calc(80vh-140px)] overflow-y-auto overflow-x-hidden px-6 scrollbar-hidden  md:pb-4 pb-60">
               <div className="grid gap-4">
                 <FormField
                   control={form.control}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PromotionSlider } from "@/components/PromotionSlider";
 import { processAndMutateExpiredRentals } from "@/lib/actions/rental";
-import { MonitorPlay, Sparkles } from "lucide-react";
+import { Heart, MonitorPlay, Sparkle, Sparkles } from "lucide-react";
 
 // 인터페이스 수정: url, pdf 타입 추가
 interface PromotionItem {
@@ -278,15 +278,17 @@ export default function Home() {
         <div className="relative z-10 flex flex-col items-center text-center space-y-10 px-4">
           {/* 헤드라인 그룹 */}
           <div className="space-y-6 animate-in fade-in zoom-in duration-700 slide-in-from-bottom-10">
-            <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/60 border border-white/50 backdrop-blur-sm shadow-sm mb-4">
+            <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-white/60 border border-white/50 backdrop-blur-sm shadow-sm mb-4">
               <span className="text-sm font-bold text-slate-500 flex items-center gap-1">
-                <Sparkles className="w-4 h-4 text-[oklch(0.75_0.12_165)]" />
+                <Sparkle className="w-4 h-4 text-[oklch(0.75_0.12_165)]" />
                 우리들의 아지트
               </span>
             </div>
-            <div className="ml-4 inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/60 border border-white/50 backdrop-blur-sm shadow-sm mb-4">
+
+            {/* 옵션 2: Heart (머물다, 따뜻함) */}
+            <div className="ml-4 inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-white/60 border border-white/50 backdrop-blur-sm shadow-sm mb-4">
               <span className="text-sm font-bold text-slate-500 flex items-center gap-1">
-                <Sparkles className="w-4 h-4 text-[oklch(0.75_0.12_165)]" />
+                <Heart className="w-4 h-4 text-[oklch(0.75_0.12_165)]" />
                 나의 미성숙함이 머물다 가는 곳
               </span>
             </div>

@@ -10,7 +10,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Item } from "@/app/(admin)/admin/items/columns";
-import { rentItem, checkUserRentalStatus } from "@/lib/actions/rental";
+import {
+  rentItem,
+  checkUserRentalStatus,
+  getCurrentRenter,
+} from "@/lib/actions/rental";
 import {
   addToWaitingList,
   getWaitingListByItemId,
@@ -119,6 +123,13 @@ export function RentalDialog({
   const [isLoadingWaitingList, setIsLoadingWaitingList] = useState(false);
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const [tempConsent, setTempConsent] = useState(false);
+  const [currentRenter, setCurrentRenter] = useState<{
+    userName: string | null;
+    rentalDate: number | null; // DB 타입에 따라 Date 또는 number
+    returnDueDate: number | null;
+    maleCount: number;
+    femaleCount: number;
+  } | null>(null);
 
   const isRentedMode = item?.isTimeLimited && item?.status === "RENTED";
   const estimatedWaitingTime = useMemo(() => {
@@ -465,23 +476,42 @@ export function RentalDialog({
 
   const handleWaitingListClick = async () => {
     if (!item) return;
+
+    // 이미 열려있으면 닫기
     if (showWaitingList) {
       setShowWaitingList(false);
       return;
     }
+
     setIsLoadingWaitingList(true);
     try {
-      const result = await getWaitingListByItemId(item.id);
-      if (result.error) {
-        toast.error(result.error);
+      // 1. 대기자 명단 불러오기 (기존 로직)
+      const waitingResult = await getWaitingListByItemId(item.id);
+
+      // 2. [추가] 현재 대여자 정보 불러오기
+      const renterResult = await getCurrentRenter(item.id);
+
+      if (waitingResult.error) {
+        toast.error(waitingResult.error);
         return;
       }
-      if (result.data) {
-        setWaitingList(result.data);
-        setShowWaitingList(true);
+
+      if (waitingResult.data) {
+        setWaitingList(waitingResult.data);
       }
+
+      // 현재 대여자 정보 설정
+      if (renterResult.success && renterResult.data) {
+        // DB에서 가져온 날짜 타입이 string/Date/number 인지 확인 필요 (여기선 number/Date 가정)
+        // drizzle-sqlite에서 timestamp 모드에 따라 다름. 여기선 그대로 넣음.
+        setCurrentRenter(renterResult.data as any);
+      } else {
+        setCurrentRenter(null);
+      }
+
+      setShowWaitingList(true);
     } catch (error) {
-      toast.error("대기자 명단을 불러오는 중 오류가 발생했습니다.");
+      toast.error("정보를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setIsLoadingWaitingList(false);
     }
@@ -551,10 +581,12 @@ export function RentalDialog({
                   </DialogDescription>
                 </DialogHeader>
 
+                {/* 대기열 현황 카드 (대여 중일 때만 표시) */}
                 {isRentedMode && (
                   <div className="space-y-3">
+                    {/* 현황 요약 카드 (클릭하여 펼치기) */}
                     <div
-                      className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-linear-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:bg-linear-to-br hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
+                      className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
                       onClick={handleWaitingListClick}
                     >
                       <div className="flex items-center justify-between">
@@ -569,26 +601,27 @@ export function RentalDialog({
                         </span>
                       </div>
 
-                      <div className="flex items-baseline gap-2">
-                        <div className="flex items-baseline">
-                          <span className="text-sm text-muted-foreground mr-1">
+                      <div className="flex items-baseline gap-4">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-sm text-muted-foreground">
                             사용중
                           </span>
-                          <span className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
+                          <span className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
                             1
                           </span>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             팀
                           </span>
                         </div>
-                        <div className="flex items-baseline">
-                          <span className="text-sm text-muted-foreground mr-1">
+                        <div className="w-px h-8 bg-gray-200" />
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-sm text-muted-foreground">
                             대기
                           </span>
-                          <span className="text-3xl font-black text-[oklch(0.7_0.18_350)]">
-                            {item.waitingCount}
+                          <span className="text-2xl font-black text-[oklch(0.7_0.18_350)]">
+                            {item.waitingCount || 0}
                           </span>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             팀
                           </span>
                         </div>
@@ -596,7 +629,7 @@ export function RentalDialog({
 
                       <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)] flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
-                          클릭하여 대기자 명단 보기
+                          터치하여 상세 정보 {showWaitingList ? "닫기" : "보기"}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {showWaitingList ? "▲" : "▼"}
@@ -604,42 +637,96 @@ export function RentalDialog({
                       </div>
                     </div>
 
+                    {/* [수정됨] 상세 정보 영역 (현재 사용자 + 대기자 명단) */}
                     {showWaitingList && (
-                      <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-background p-4 space-y-2 max-h-[300px] overflow-y-auto">
+                      <div className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-white overflow-hidden shadow-sm animate-in slide-in-from-top-2 duration-200">
                         {isLoadingWaitingList ? (
-                          <div className="text-center py-4 text-sm text-muted-foreground">
-                            로딩 중...
-                          </div>
-                        ) : waitingList.length === 0 ? (
-                          <div className="text-center py-4 text-sm text-muted-foreground">
-                            대기자가 없습니다.
+                          <div className="text-center py-6 text-sm text-muted-foreground flex items-center justify-center gap-2">
+                            <div className="w-4 h-4 border-2 border-[oklch(0.75_0.12_165)] border-t-transparent rounded-full animate-spin" />
+                            정보 불러오는 중...
                           </div>
                         ) : (
                           <>
-                            <div className="text-xs font-semibold text-muted-foreground mb-2 pb-2 border-b">
-                              대기자 명단
-                            </div>
-                            {waitingList.map((entry) => (
-                              <div
-                                key={entry.id}
-                                className="flex items-center justify-between p-2 rounded-md bg-[oklch(0.75_0.12_165/0.05)] hover:bg-[oklch(0.75_0.12_165/0.1)] transition-colors"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="w-6 h-6 rounded-full bg-[oklch(0.7_0.18_350)] flex items-center justify-center text-white text-xs font-bold">
-                                    {entry.position}
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm font-medium text-foreground">
-                                      {entry.userName || "알 수 없음"}
+                            {/* 1. 현재 사용자 섹션 (Highlight) */}
+                            {currentRenter && (
+                              <div className="bg-[oklch(0.75_0.12_165/0.1)] p-3 border-b border-[oklch(0.75_0.12_165/0.1)]">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="bg-[oklch(0.75_0.12_165)] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    현재 사용 중
+                                  </span>
+                                  {currentRenter.returnDueDate && (
+                                    <span className="text-[10px] text-[oklch(0.7_0.18_350)] font-semibold ml-auto">
+                                      {/* 남은 시간 계산 로직 필요 (여기선 단순 예시) */}
+                                      반납 예정:{" "}
+                                      {new Date(
+                                        currentRenter.returnDueDate * 1000
+                                      ).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
                                     </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      남: {entry.maleCount}명, 여:{" "}
-                                      {entry.femaleCount}명
+                                  )}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-base font-bold text-gray-800">
+                                    {currentRenter.userName || "익명 사용자"}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs bg-white/60 px-1.5 py-0.5 rounded text-gray-600 border border-black/5">
+                                      남 {currentRenter.maleCount}
+                                    </span>
+                                    <span className="text-xs bg-white/60 px-1.5 py-0.5 rounded text-gray-600 border border-black/5">
+                                      여 {currentRenter.femaleCount}
                                     </span>
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                            )}
+
+                            {/* 2. 대기자 명단 섹션 */}
+                            <div className="bg-gray-50/50">
+                              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground border-b flex justify-between bg-gray-100/50">
+                                <span>대기 순서</span>
+                                <span>대기자 ({waitingList.length}팀)</span>
+                              </div>
+
+                              <div className="max-h-[200px] overflow-y-auto p-2 space-y-1">
+                                {waitingList.length === 0 ? (
+                                  <div className="text-center py-8 text-sm text-gray-400">
+                                    대기자가 없습니다.
+                                    <br />
+                                    <span className="text-xs">
+                                      다음 순서로 바로 이용 가능해요!
+                                    </span>
+                                  </div>
+                                ) : (
+                                  waitingList.map((entry) => (
+                                    <div
+                                      key={entry.id}
+                                      className="flex items-center gap-3 p-2.5 rounded-md bg-white border border-gray-100 shadow-sm"
+                                    >
+                                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[oklch(0.7_0.18_350)] text-white flex items-center justify-center text-xs font-bold">
+                                        {entry.position}
+                                      </div>
+                                      <div className="flex flex-col flex-1">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-sm font-semibold text-gray-700">
+                                            {entry.userName}
+                                          </span>
+                                        </div>
+                                        <div className="text-[10px] text-gray-400 flex gap-1 mt-0.5">
+                                          <span>남 {entry.maleCount}</span>
+                                          <span className="text-gray-300">
+                                            |
+                                          </span>
+                                          <span>여 {entry.femaleCount}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
                           </>
                         )}
                       </div>
@@ -768,6 +855,7 @@ export function RentalDialog({
                   />
                 </div>
 
+                {/* 참가자 이름 입력 필드 (enableParticipantTracking 활성화 시) */}
                 {item.enableParticipantTracking && fields.length > 0 && (
                   <div className="space-y-3 pt-4 border-t border-dashed">
                     <div className="flex items-center justify-between">
@@ -775,14 +863,14 @@ export function RentalDialog({
                         <Users className="w-4 h-4" />
                         함께하는 친구들 이름
                       </FormLabel>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground font-medium bg-red-50 text-red-500 px-2 py-0.5 rounded-full">
                         필수
                       </span>
                     </div>
                     <FormDescription className="text-xs">
                       참여하는 친구들의 이름을 모두 입력해주세요.
                     </FormDescription>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 max-h-48 overflow-y-auto pr-2 bg-muted/20 p-3 rounded-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
                       {fields.map((field, index) => {
                         const genderLabel =
                           field.gender === "남" ? "남자" : "여자";
@@ -798,18 +886,24 @@ export function RentalDialog({
                             control={identificationForm.control}
                             name={`participants.${index}.name`}
                             render={({ field: nameField }) => (
-                              <FormItem className="relative">
-                                <FormLabel className="text-xs text-muted-foreground absolute -top-2 left-2 bg-background px-1 z-10">
-                                  {`${genderLabel} ${genderIndex}`}
-                                </FormLabel>
+                              <FormItem className="relative bg-gray-50 p-2 rounded-lg border">
+                                <span
+                                  className={`absolute -top-2 left-2 text-[10px] px-1.5 py-0.5 rounded-full font-bold text-white shadow-sm ${
+                                    field.gender === "남"
+                                      ? "bg-blue-400"
+                                      : "bg-pink-400"
+                                  }`}
+                                >
+                                  {genderLabel} {genderIndex}
+                                </span>
                                 <FormControl>
                                   <Input
                                     {...nameField}
-                                    placeholder="이름 입력"
-                                    className="h-9 focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
+                                    placeholder="이름"
+                                    className="h-8 mt-1 text-sm bg-white focus-visible:border-[oklch(0.75_0.12_165)]"
                                   />
                                 </FormControl>
-                                <FormMessage />
+                                <FormMessage className="text-[10px]" />
                               </FormItem>
                             )}
                           />
@@ -838,7 +932,7 @@ export function RentalDialog({
                       );
                     }}
                     disabled={isSubmitting}
-                    className="border-[oklch(0.75_0.12_165/0.3)] hover:bg-[oklch(0.75_0.12_165/0.1)]"
+                    className="border-[oklch(0.75_0.12_165/0.3)] text-gray-600 hover:bg-[oklch(0.75_0.12_165/0.05)]"
                   >
                     신규 등록
                   </Button>
@@ -856,7 +950,7 @@ export function RentalDialog({
                       disabled={
                         isSubmitting || !identificationForm.formState.isValid
                       }
-                      className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
+                      className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)] text-white shadow-sm"
                     >
                       {isSubmitting
                         ? "처리 중..."

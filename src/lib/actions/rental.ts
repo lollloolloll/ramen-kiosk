@@ -1020,7 +1020,7 @@ export async function deleteRentalRecord(recordId: number) {
     };
   }
 }
-
+//모든 활성 대여 목록을 가져오는 함수
 export async function getActiveRentalsWithWaitCount() {
   try {
     const waitCountSubquery = db
@@ -1061,6 +1061,38 @@ export async function getActiveRentalsWithWaitCount() {
     return {
       error: "활성 대여 목록을 불러오는 데 실패했습니다.",
     };
+  }
+}
+
+// 특정 아이템의 현재 대여 정보를 가져오는 액션
+export async function getCurrentRenter(itemId: number) {
+  try {
+    const record = await db
+      .select({
+        id: rentalRecords.id,
+        userName: generalUsers.name, // generalUsers와 조인하여 최신 이름 가져옴
+        userPhone: generalUsers.phoneNumber, // 필요하다면 전화번호 뒷자리 등 식별용
+        rentalDate: rentalRecords.rentalDate,
+        returnDueDate: rentalRecords.returnDueDate,
+        maleCount: rentalRecords.maleCount,
+        femaleCount: rentalRecords.femaleCount,
+      })
+      .from(rentalRecords)
+      .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
+      .where(
+        and(
+          eq(rentalRecords.itemsId, itemId),
+          eq(rentalRecords.isReturned, false) // 반납 안 된 기록만
+        )
+      )
+      .limit(1); // 하나만 가져옴
+
+    if (record.length === 0) return { success: true, data: null };
+
+    return { success: true, data: record[0] };
+  } catch (error) {
+    console.error("Error fetching current renter:", error);
+    return { error: "현재 대여자 정보를 불러오지 못했습니다." };
   }
 }
 

@@ -308,22 +308,30 @@ export default function Home() {
           </div>
 
           {/* CTA 버튼 */}
+          {/* CTA 버튼 */}
           <div className="pt-4 animate-in fade-in zoom-in duration-1000 delay-300 slide-in-from-bottom-10 fill-mode-backwards">
             <Button
               asChild
               className="group relative h-24 px-12 text-3xl md:text-4xl font-black rounded-[2rem] 
             bg-white text-slate-800 border-4 border-slate-100
             shadow-[0_8px_30px_rgb(0,0,0,0.04)] 
-            hover:scale-105
+            
+            /* 호버 시: 크기만 살짝 커지고, 그림자만 부드럽게. 테두리나 배경색 강하게 변경 X */
+            hover:scale-105 hover:bg-white hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)]
             active:scale-95 active:shadow-sm
             transition-all duration-300 overflow-hidden"
             >
               <Link href="/kiosk" className="flex items-center gap-4">
-                {/* 버튼 배경 그라데이션 효과 */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)] opacity-0  transition-opacity duration-300" />
+                {/* 배경: 호버 시 아주 연한 틴트(10% 투명도)만 살짝 올라옴 -> 글자 가독성 해치지 않음 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                <span className="relative z-10">😎 놀 준비 완료!</span>
-                <div className="relative z-10 bg-slate-800 text-white rounded-full p-2 group-hover:rotate-45 transition-transform duration-300">
+                {/* 텍스트: 색상 변경 없이 그대로 유지 */}
+                <span className="relative z-10 text-slate-800">
+                  😎 놀 준비 완료!
+                </span>
+
+                {/* 아이콘: 색상 반전 없이 회전 애니메이션만 살짝 */}
+                <div className="relative z-10 bg-slate-800 text-white rounded-full p-2 group-hover:rotate-12 transition-transform duration-300 shadow-sm">
                   <MonitorPlay
                     className="w-6 h-6 md:w-8 md:h-8"
                     fill="currentColor"

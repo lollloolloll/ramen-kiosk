@@ -655,7 +655,7 @@ export function RentalDialog({
                         <Input
                           placeholder="홍길동"
                           {...field}
-                          className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
+                          className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                         />
                       </FormControl>
                       <FormMessage />
@@ -673,7 +673,7 @@ export function RentalDialog({
                           placeholder="010-1234-5678"
                           type="tel"
                           {...field}
-                          className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
+                          className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                           onChange={(e) => {
                             field.onChange(formatPhoneNumber(e.target.value));
                           }}
@@ -696,7 +696,7 @@ export function RentalDialog({
                             min="0"
                             placeholder="0"
                             value={field.value || ""}
-                            className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
+                            className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value === "") {
@@ -736,7 +736,7 @@ export function RentalDialog({
                             min="0"
                             placeholder="0"
                             value={field.value || ""}
-                            className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
+                            className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value === "") {
@@ -804,7 +804,7 @@ export function RentalDialog({
                                   <Input
                                     {...nameField}
                                     placeholder="이름 입력"
-                                    className="h-9 focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
+                                    className="h-9 focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -902,7 +902,7 @@ export function RentalDialog({
                         <Input
                           placeholder="홍길동"
                           {...field}
-                          className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
+                          className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                           onChange={(e) =>
                             field.onChange(e.target.value.replace(/\s/g, ""))
                           }
@@ -926,7 +926,7 @@ export function RentalDialog({
                           placeholder="010-1234-5678"
                           type="tel"
                           {...field}
-                          className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
+                          className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                           onChange={(e) => {
                             field.onChange(formatPhoneNumber(e.target.value));
                           }}
@@ -1003,7 +1003,7 @@ export function RentalDialog({
                           open={yearSelectOpen}
                           onOpenChange={setYearSelectOpen}
                         >
-                          <SelectTrigger className="focus:!outline-none focus:!ring-0 focus:!ring-offset-0 focus:!border-2 focus:!border-[oklch(0.75_0.12_165)] data-[state=open]:!border-2 data-[state=open]:!border-[oklch(0.75_0.12_165)]">
+                          <SelectTrigger className="focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]!">
                             <SelectValue placeholder="년" />
                           </SelectTrigger>
                           <SelectContent
@@ -1021,7 +1021,7 @@ export function RentalDialog({
                           onValueChange={setBirthMonth}
                           value={birthMonth}
                         >
-                          <SelectTrigger className="focus:!outline-none focus:!ring-0 focus:!ring-offset-0 focus:!border-2 focus:!border-[oklch(0.75_0.12_165)] data-[state=open]:!border-2 data-[state=open]:!border-[oklch(0.75_0.12_165)]">
+                          <SelectTrigger className="focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]!">
                             <SelectValue placeholder="월" />
                           </SelectTrigger>
                           <SelectContent
@@ -1036,7 +1036,7 @@ export function RentalDialog({
                           </SelectContent>
                         </Select>
                         <Select onValueChange={setBirthDay} value={birthDay}>
-                          <SelectTrigger className="focus:!outline-none focus:!ring-0 focus:!ring-offset-0 focus:!border-2 focus:!border-[oklch(0.75_0.12_165)] data-[state=open]:!border-2 data-[state=open]:!border-[oklch(0.75_0.12_165)]">
+                          <SelectTrigger className="focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]!">
                             <SelectValue placeholder="일" />
                           </SelectTrigger>
                           <SelectContent
@@ -1069,7 +1069,7 @@ export function RentalDialog({
                           onValueChange={setSchoolLevel}
                           value={schoolLevel}
                         >
-                          <SelectTrigger className="w-[120px] focus:!outline-none focus:!ring-0 focus:!ring-offset-0 focus:!border-2 focus:!border-[oklch(0.75_0.12_165)] data-[state=open]:!border-2 data-[state=open]:!border-[oklch(0.75_0.12_165)] ">
+                          <SelectTrigger className="w-[120px] focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]! ">
                             <SelectValue placeholder="선택" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1090,7 +1090,7 @@ export function RentalDialog({
                           <Input
                             placeholder="학교 이름 (예: 선덕, 자운)"
                             value={schoolName}
-                            className="focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 focus-visible:!border-2 focus-visible:!border-[oklch(0.75_0.12_165)]"
+                            className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                             onChange={(e) =>
                               setSchoolName(e.target.value.replace(/\s/g, ""))
                             }
@@ -1109,7 +1109,7 @@ export function RentalDialog({
                   control={registerForm.control}
                   name="personalInfoConsent"
                   render={({ field }) => (
-                    <FormItem className="rounded-lg border-2 border-dashed border-[oklch(0.75_0.12_165/0.3)] p-4 bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
+                    <FormItem className="rounded-lg border-2 border-dashed border-[oklch(0.75_0.12_165/0.3)] p-4 bg-linear-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
                       <div className="flex items-start gap-3">
                         <div className="mt-1">
                           <Checkbox
@@ -1346,7 +1346,7 @@ export function RentalDialog({
       {/* 동의서 모달 */}
       <Dialog open={isConsentModalOpen} onOpenChange={setIsConsentModalOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] p-0 gap-0 overflow-hidden">
-          <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)]">
+          <DialogHeader className="px-6 py-4 border-b bg-linear-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)]">
             <DialogTitle className="text-2xl font-bold text-[oklch(0.75_0.12_165)]">
               개인정보 수집 및 이용 동의서
             </DialogTitle>

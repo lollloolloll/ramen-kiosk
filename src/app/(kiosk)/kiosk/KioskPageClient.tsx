@@ -165,7 +165,7 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-[oklch(0.75_0.12_165/0.15)] via-[oklch(0.7_0.18_350/0.15)] to-[oklch(0.7_0.18_350/0.15)]">
+      <div className="min-h-screen bg-linear-to-br from-[oklch(0.75_0.12_165/0.15)] via-[oklch(0.7_0.18_350/0.15)] to-[oklch(0.7_0.18_350/0.15)]">
         <div className="container mx-auto px-6 py-10">
           <div className="mb-12 flex items-center justify-between relative">
             <Link
@@ -181,7 +181,7 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
               <h1 className="text-5xl font-black text-[oklch(0.75_0.12_165)] mb-4">
                 쉬다 대여 목록
               </h1>
-              <div className="h-1.5 w-32 mx-auto bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] rounded-full" />
+              <div className="h-1.5 w-32 mx-auto bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] rounded-full" />
             </div>
             <div className="w-[180px]" />
           </div>

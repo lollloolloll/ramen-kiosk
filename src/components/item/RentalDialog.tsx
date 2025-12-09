@@ -196,17 +196,34 @@ export function RentalDialog({
       return;
     }
 
+    const currentParticipants = identificationForm.getValues("participants");
+
+    // 성별별로 기존 참가자 분리
+    const existingMales = currentParticipants.filter((p) => p.gender === "남");
+    const existingFemales = currentParticipants.filter(
+      (p) => p.gender === "여"
+    );
+
     const newParticipants: Array<{ name: string; gender: "남" | "여" }> = [];
 
+    // 남자 참가자 - 기존 값 유지하고 부족하면 빈 값 추가
     for (let i = 0; i < maleCount; i++) {
-      newParticipants.push({ name: "", gender: "남" });
+      newParticipants.push(existingMales[i] || { name: "", gender: "남" });
     }
+
+    // 여자 참가자 - 기존 값 유지하고 부족하면 빈 값 추가
     for (let i = 0; i < femaleCount; i++) {
-      newParticipants.push({ name: "", gender: "여" });
+      newParticipants.push(existingFemales[i] || { name: "", gender: "여" });
     }
 
     replace(newParticipants);
-  }, [maleCount, femaleCount, item?.enableParticipantTracking, replace]);
+  }, [
+    maleCount,
+    femaleCount,
+    item?.enableParticipantTracking,
+    replace,
+    identificationForm,
+  ]);
 
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {

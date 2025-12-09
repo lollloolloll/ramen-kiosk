@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Item } from "@/app/(admin)/admin/items/columns";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
+import elainaImage from "@/assets/images/elaina.png";
 
 interface ItemCardProps {
   item: Item;
@@ -29,7 +30,7 @@ export function ItemCard({ item, onOrder }: ItemCardProps) {
       {/* 이미지 영역: 이제 정상적으로 상단에 위치 */}
       <div className="relative aspect-square bg-linear-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)]">
         <Image
-          src={item.imageUrl || "/placeholder.svg"}
+          src={item.imageUrl || elainaImage}
           alt={item.name}
           fill
           className="object-cover"

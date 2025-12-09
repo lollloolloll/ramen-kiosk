@@ -974,7 +974,7 @@ export function RentalDialog({
                           open={yearSelectOpen}
                           onOpenChange={setYearSelectOpen}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="focus:!outline-none focus:!ring-0 focus:!ring-offset-0 focus:!border-2 focus:!border-[oklch(0.75_0.12_165)] data-[state=open]:!border-2 data-[state=open]:!border-[oklch(0.75_0.12_165)]">
                             <SelectValue placeholder="년" />
                           </SelectTrigger>
                           <SelectContent
@@ -992,7 +992,7 @@ export function RentalDialog({
                           onValueChange={setBirthMonth}
                           value={birthMonth}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="focus:!outline-none focus:!ring-0 focus:!ring-offset-0 focus:!border-2 focus:!border-[oklch(0.75_0.12_165)] data-[state=open]:!border-2 data-[state=open]:!border-[oklch(0.75_0.12_165)]">
                             <SelectValue placeholder="월" />
                           </SelectTrigger>
                           <SelectContent
@@ -1007,7 +1007,7 @@ export function RentalDialog({
                           </SelectContent>
                         </Select>
                         <Select onValueChange={setBirthDay} value={birthDay}>
-                          <SelectTrigger>
+                          <SelectTrigger className="focus:!outline-none focus:!ring-0 focus:!ring-offset-0 focus:!border-2 focus:!border-[oklch(0.75_0.12_165)] data-[state=open]:!border-2 data-[state=open]:!border-[oklch(0.75_0.12_165)]">
                             <SelectValue placeholder="일" />
                           </SelectTrigger>
                           <SelectContent
@@ -1040,7 +1040,7 @@ export function RentalDialog({
                           onValueChange={setSchoolLevel}
                           value={schoolLevel}
                         >
-                          <SelectTrigger className="w-[120px]">
+                          <SelectTrigger className="w-[120px] focus:!outline-none focus:!ring-0 focus:!ring-offset-0 focus:!border-2 focus:!border-[oklch(0.75_0.12_165)] data-[state=open]:!border-2 data-[state=open]:!border-[oklch(0.75_0.12_165)] ">
                             <SelectValue placeholder="선택" />
                           </SelectTrigger>
                           <SelectContent>

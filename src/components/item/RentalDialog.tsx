@@ -870,7 +870,7 @@ export function RentalDialog({
                     <FormDescription className="text-xs">
                       참여하는 친구들의 이름을 모두 입력해주세요.
                     </FormDescription>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 max-h-48 overflow-y-auto pr-1 pt-3 pl-1">
                       {fields.map((field, index) => {
                         const genderLabel =
                           field.gender === "남" ? "남자" : "여자";
@@ -888,7 +888,7 @@ export function RentalDialog({
                             render={({ field: nameField }) => (
                               <FormItem className="relative bg-gray-50 p-2 rounded-lg border">
                                 <span
-                                  className={`absolute -top-2 left-2 text-[10px] px-1.5 py-0.5 rounded-full font-bold text-white shadow-sm ${
+                                  className={`absolute -top-2.5 left-2 text-[10px] px-2 py-0.5 rounded-full font-bold text-white shadow-sm z-10 ${
                                     field.gender === "남"
                                       ? "bg-blue-400"
                                       : "bg-pink-400"

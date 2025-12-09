@@ -40,6 +40,7 @@ export function PromotionSlider({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [userInteracted, setUserInteracted] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [isApiReady, setIsApiReady] = useState(false);
 
   // Refs
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
@@ -65,9 +66,21 @@ export function PromotionSlider({
 
   // 1. YouTube API 스크립트 로드 (최초 1회)
   useEffect(() => {
-    if (!window.YT) {
+    // 이미 로드되어 있다면 바로 true 처리
+    if (window.YT && window.YT.Player) {
+      setIsApiReady(true);
+      return;
+    }
+
+    // 전역 콜백 함수 정의 (유튜브 API가 로드되면 이 함수를 호출함)
+    window.onYouTubeIframeAPIReady = () => {
+      setIsApiReady(true);
+    };
+
+    if (!document.getElementById("youtube-api-script")) {
       const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
+      tag.id = "youtube-api-script"; // 중복 로드 방지 ID
+      tag.src = "https://www.youtube.com/iframe_api"; // ✨ https:// 추가
       const firstScriptTag = document.getElementsByTagName("script")[0];
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
     }
@@ -228,7 +241,7 @@ export function PromotionSlider({
         createPlayer();
       }
     }
-  }, [currentIndex, currentItem, items.length, goToNext]); // ✅ isMuted 제거!
+  }, [currentIndex, currentItem, items.length, goToNext, isApiReady]); // ✅ isMuted 제거!
 
   // YouTube ID 추출 헬퍼 함수
   const extractYouTubeId = (url: string) => {

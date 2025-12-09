@@ -9,6 +9,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
+RUN npm install --platform=linux --arch=x64 sharp
+
 # Tailwind CSS와 lightningcss 관련 패키지 재설치
 RUN npm install --force \
     lightningcss \

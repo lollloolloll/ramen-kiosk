@@ -27,7 +27,7 @@ export function ItemCard({ item, onOrder }: ItemCardProps) {
         </Badge>
       </div>
       {/* 이미지 영역: 이제 정상적으로 상단에 위치 */}
-      <div className="relative aspect-square bg-gradient-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)]">
+      <div className="relative aspect-square bg-linear-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)]">
         <Image
           src={item.imageUrl || "/placeholder.svg"}
           alt={item.name}
@@ -37,7 +37,7 @@ export function ItemCard({ item, onOrder }: ItemCardProps) {
       </div>
 
       {/* 상품명 영역: 이미지 영역 아래에 위치 */}
-      <div className="p-4 bg-gradient-to-r from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
+      <div className="p-4 bg-linear-to-r from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)]">
         <h3 className="text-lg font-bold text-center line-clamp-2 text-foreground">
           {item.name}
         </h3>

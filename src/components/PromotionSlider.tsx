@@ -318,7 +318,7 @@ export function PromotionSlider({
         size="icon"
         onClick={toggleMute}
         onTouchStart={handleStopPropagation}
-        className="absolute top-4 right-4 z-[60] text-white hover:bg-white/20 rounded-full bg-black/30"
+        className="absolute top-4 right-4 z-60 text-white hover:bg-white/20 rounded-full bg-black/30"
       >
         {isMuted ? (
           <VolumeX className="w-6 h-6" />

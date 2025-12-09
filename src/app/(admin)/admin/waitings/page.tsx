@@ -28,7 +28,7 @@ export default async function WaitingPage({ searchParams }: WaitingPageProps) {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-8">특수 아이템 관제탑</h1>
+      <h1 className="text-3xl font-bold mb-8">대기열 아이템 관제탑</h1>
       <WaitingPageClient
         activeRentals={activeRentals || []}
         waitingEntries={waitingEntries || []}

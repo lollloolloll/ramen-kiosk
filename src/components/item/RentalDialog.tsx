@@ -526,11 +526,6 @@ export function RentalDialog({
 
   if (!item) return null;
 
-  const radius = 40;
-  const circumference = 2 * Math.PI * radius;
-  const totalTime = 5;
-  const strokeDashoffset = circumference * (1 - countdown / totalTime);
-
   const renderStep = () => {
     const content = (() => {
       switch (step) {
@@ -1561,7 +1556,6 @@ export function RentalDialog({
       >
         <DialogContent
           onOpenAutoFocus={(e) => e.preventDefault()}
-          // 아래 삼항 연산자가 핵심입니다. 성공/대기성공 일 때 padding(p-0), border(border-0) 제거
           className={`sm:max-w-[425px] transition-all duration-300 ${
             step === "success" || step === "waitingSuccess"
               ? "p-0 border-0 overflow-hidden bg-transparent shadow-none" // 이 부분 필수

@@ -48,7 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Users } from "lucide-react";
+import { FileText, Minus, Plus, Users } from "lucide-react";
 
 interface RentalDialogProps {
   item: Item | null;
@@ -586,7 +586,7 @@ export function RentalDialog({
                   <div className="space-y-3">
                     {/* 현황 요약 카드 (클릭하여 펼치기) */}
                     <div
-                      className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-gradient-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
+                      className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-linear-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
                       onClick={handleWaitingListClick}
                     >
                       <div className="flex items-center justify-between">
@@ -705,7 +705,7 @@ export function RentalDialog({
                                       key={entry.id}
                                       className="flex items-center gap-3 p-2.5 rounded-md bg-white border border-gray-100 shadow-sm"
                                     >
-                                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[oklch(0.7_0.18_350)] text-white flex items-center justify-center text-xs font-bold">
+                                      <div className="shrink-0 w-6 h-6 rounded-full bg-[oklch(0.7_0.18_350)] text-white flex items-center justify-center text-xs font-bold">
                                         {entry.position}
                                       </div>
                                       <div className="flex flex-col flex-1">
@@ -773,86 +773,62 @@ export function RentalDialog({
                   )}
                 />
                 <div className="flex gap-4">
-                  <FormField
-                    control={identificationForm.control}
-                    name="maleCount"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>남자 인원</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            value={field.value || ""}
-                            className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === "") {
-                                field.onChange(0);
-                              } else {
-                                const num = parseInt(value, 10);
-                                field.onChange(
-                                  isNaN(num) ? 0 : Math.max(0, num)
-                                );
-                              }
-                            }}
-                            onFocus={(e) => {
-                              if (field.value === 0) {
-                                e.target.value = "";
-                              }
-                            }}
-                            onBlur={(e) => {
-                              if (e.target.value === "") {
-                                field.onChange(0);
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={identificationForm.control}
-                    name="femaleCount"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>여자 인원</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            value={field.value || ""}
-                            className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === "") {
-                                field.onChange(0);
-                              } else {
-                                const num = parseInt(value, 10);
-                                field.onChange(
-                                  isNaN(num) ? 0 : Math.max(0, num)
-                                );
-                              }
-                            }}
-                            onFocus={(e) => {
-                              if (field.value === 0) {
-                                e.target.value = "";
-                              }
-                            }}
-                            onBlur={(e) => {
-                              if (e.target.value === "") {
-                                field.onChange(0);
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {[
+                    { name: "maleCount", label: "남자 인원" },
+                    { name: "femaleCount", label: "여자 인원" },
+                  ].map((item) => (
+                    <FormField
+                      key={item.name}
+                      control={identificationForm.control}
+                      name={item.name as "maleCount" | "femaleCount"}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>{item.label}</FormLabel>
+                          <FormControl>
+                            <div className="flex items-center rounded-md border border-input bg-background p-1">
+                              {/* 감소 버튼 */}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 rounded-sm hover:bg-slate-100"
+                                onClick={() =>
+                                  field.onChange(
+                                    Math.max(0, (field.value || 0) - 1)
+                                  )
+                                }
+                                disabled={!field.value || field.value <= 0}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+
+                              {/* 숫자 표시 (읽기 전용 입력창) */}
+                              <Input
+                                {...field}
+                                type="number"
+                                readOnly
+                                className="h-8 flex-1 border-0 bg-transparent text-center focus-visible:ring-0 shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+
+                              {/* 증가 버튼 */}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 rounded-sm hover:bg-slate-100"
+                                onClick={() =>
+                                  field.onChange((field.value || 0) + 1)
+                                }
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
                 </div>
 
                 {/* 참가자 이름 입력 필드 (enableParticipantTracking 활성화 시) */}
@@ -863,7 +839,7 @@ export function RentalDialog({
                         <Users className="w-4 h-4" />
                         함께하는 친구들 이름
                       </FormLabel>
-                      <span className="text-xs text-muted-foreground font-medium bg-red-50 text-red-500 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-medium bg-red-50 text-red-500 px-2 py-0.5 rounded-full">
                         필수
                       </span>
                     </div>

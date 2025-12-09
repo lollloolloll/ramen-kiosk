@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PromotionSlider } from "@/components/PromotionSlider";
 import { processAndMutateExpiredRentals } from "@/lib/actions/rental";
+import { MonitorPlay, Sparkles } from "lucide-react";
 
 // 인터페이스 수정: url, pdf 타입 추가
 interface PromotionItem {
@@ -211,28 +212,24 @@ export default function Home() {
 
   return (
     <>
-      <div className="relative flex flex-col items-center justify-center min-h-screen bg-linear-to-br from-[oklch(0.75_0.12_165/0.15)] via-[oklch(0.7_0.18_350/0.15)] to-[oklch(0.7_0.18_350/0.15)]">
-        {/* 배경 장식 요소 */}
-        <div
-          className="absolute top-10 left-10 text-6xl opacity-20 animate-bounce"
-          style={{ animationDuration: "3s" }}
-        >
-          🎮
-        </div>
-        <div
-          className="absolute bottom-20 right-16 text-5xl opacity-20 animate-bounce"
-          style={{ animationDuration: "4s", animationDelay: "0.5s" }}
-        >
-          🎯
-        </div>
-        <div
-          className="absolute top-1/3 right-10 text-4xl opacity-20 animate-bounce"
-          style={{ animationDuration: "3.5s", animationDelay: "1s" }}
-        >
-          ⚽
+      <div className="relative flex flex-col items-center justify-center min-h-screen w-full overflow-hidden bg-slate-50 font-sans selection:bg-[oklch(0.75_0.12_165/0.2)]">
+        {/* 1. 배경: 동적인 그라데이션 블러 효과 (Lava Lamp 느낌) */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <div
+            className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[oklch(0.75_0.12_165/0.2)] rounded-full blur-[100px] animate-pulse"
+            style={{ animationDuration: "8s" }}
+          />
+          <div
+            className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-[oklch(0.7_0.18_350/0.2)] rounded-full blur-[120px] animate-pulse"
+            style={{ animationDuration: "10s", animationDelay: "1s" }}
+          />
+          <div
+            className="absolute top-[40%] left-[30%] w-[40vw] h-[40vw] bg-purple-200/40 rounded-full blur-[80px] animate-pulse"
+            style={{ animationDuration: "12s", animationDelay: "2s" }}
+          />
         </div>
 
-        {/* 관리자 페이지 링크 */}
+        {/* 2. 관리자/전체화면 컨트롤 */}
         <Link
           href="/admin"
           prefetch={false}
@@ -255,62 +252,168 @@ export default function Home() {
           전체화면
         </p>
 
-        {/* 메인 컨텐츠 */}
-        <div className="relative z-10 text-center space-y-12 p-8">
-          <div className="space-y-4">
-            <div
-              className="text-8xl mb-6 animate-bounce"
-              style={{ animationDuration: "2s" }}
-            >
-              🍜
+        {/* 3. 떠다니는 스티커 아이콘들 */}
+        <FloatingSticker
+          emoji="🎮"
+          className="top-[15%] left-[10%] rotate-[-12deg]"
+          delay="0s"
+        />
+        <FloatingSticker
+          emoji="🎤"
+          className="top-[20%] right-[12%] rotate-[12deg]"
+          delay="1.5s"
+        />
+        <FloatingSticker
+          emoji="🎲"
+          className="bottom-[25%] left-[15%] rotate-[6deg]"
+          delay="0.5s"
+        />
+        <FloatingSticker
+          emoji="🍜"
+          className="bottom-[20%] right-[10%] rotate-[-6deg]"
+          delay="2s"
+        />
+
+        {/* 4. 메인 컨텐츠 */}
+        <div className="relative z-10 flex flex-col items-center text-center space-y-10 px-4">
+          {/* 헤드라인 그룹 */}
+          <div className="space-y-6 animate-in fade-in zoom-in duration-700 slide-in-from-bottom-10">
+            <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/60 border border-white/50 backdrop-blur-sm shadow-sm mb-4">
+              <span className="text-sm font-bold text-slate-500 flex items-center gap-1">
+                <Sparkles className="w-4 h-4 text-[oklch(0.75_0.12_165)]" />
+                우리들의 아지트
+              </span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight">
-              학교 끝나고 뭐할래?
+            <div className="ml-4 inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/60 border border-white/50 backdrop-blur-sm shadow-sm mb-4">
+              <span className="text-sm font-bold text-slate-500 flex items-center gap-1">
+                <Sparkles className="w-4 h-4 text-[oklch(0.75_0.12_165)]" />
+                나의 미성숙함이 머물다 가는 곳
+              </span>
+            </div>
+
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[1.1] text-slate-800 drop-shadow-sm">
+              학교 끝나고
               <br />
-              <span className="text-[oklch(0.75_0.12_165)]">
-                <span style={{ color: "oklch(0.75 0.25 350)" }}>쌍청문</span>
-                에서 놀자! 🎉
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]">
+                뭐하고 놀래?
               </span>
             </h1>
+
+            <p className="text-xl md:text-2xl font-medium text-slate-500">
+              <span className="font-bold text-[oklch(0.7_0.18_350)]">
+                쌍청문
+              </span>
+              으로 다 모여! 🎉
+            </p>
           </div>
 
-          <div className="pt-8">
+          {/* CTA 버튼 */}
+          <div className="pt-4 animate-in fade-in zoom-in duration-1000 delay-300 slide-in-from-bottom-10 fill-mode-backwards">
             <Button
               asChild
-              size="lg"
-              className="h-20 px-16 text-2xl font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-110 shadow-2xl rounded-2xl"
+              className="group relative h-24 px-12 text-3xl md:text-4xl font-black rounded-[2rem] 
+            bg-white text-slate-800 border-4 border-slate-100
+            shadow-[0_8px_30px_rgb(0,0,0,0.04)] 
+            hover:scale-105
+            active:scale-95 active:shadow-sm
+            transition-all duration-300 overflow-hidden"
             >
-              <Link href="/kiosk">😎 놀 준비 완료!</Link>
+              <Link href="/kiosk" className="flex items-center gap-4">
+                {/* 버튼 배경 그라데이션 효과 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)] opacity-0  transition-opacity duration-300" />
+
+                <span className="relative z-10">😎 놀 준비 완료!</span>
+                <div className="relative z-10 bg-slate-800 text-white rounded-full p-2 group-hover:rotate-45 transition-transform duration-300">
+                  <MonitorPlay
+                    className="w-6 h-6 md:w-8 md:h-8"
+                    fill="currentColor"
+                  />
+                </div>
+              </Link>
             </Button>
           </div>
         </div>
 
-        {/* 하단 장식 */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-          <div className="flex gap-2">
-            <div className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)] animate-pulse" />
-            <div
-              className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse"
-              style={{ animationDelay: "0.3s" }}
-            />
-            <div
-              className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)] animate-pulse"
-              style={{ animationDelay: "0.6s" }}
-            />
+        {/* 5. 하단 무한 스크롤 띠 */}
+        <div className="absolute bottom-10 w-full overflow-hidden bg-white/30 backdrop-blur-md border-y border-white/20 py-3 transform -rotate-1 shadow-sm">
+          <div className="flex animate-marquee whitespace-nowrap">
+            <MarqueeText />
+            <MarqueeText />
+            <MarqueeText />
+            <MarqueeText />
           </div>
         </div>
       </div>
 
-      {/* 홍보물 슬라이드 */}
+      {/* 홍보물 슬라이드 (기존 기능 유지) */}
       {showPromotion && promotionItems.length > 0 && (
         <PromotionSlider
           items={promotionItems}
           onClose={handleClosePromotion}
           autoPlay={true}
-          autoPlayInterval={15000} // 이미지/PDF 기본 노출 시간 15초
+          autoPlayInterval={15000}
           onLazyCheck={handleLazyCheck}
         />
       )}
+
+      {/* Marquee 애니메이션 스타일 */}
+      <style jsx global>{`
+        @keyframes marquee {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-100%);
+          }
+        }
+        .animate-marquee {
+          animation: marquee 20s linear infinite;
+        }
+      `}</style>
     </>
+  );
+}
+
+// 스티커 컴포넌트
+function FloatingSticker({
+  emoji,
+  className,
+  delay,
+}: {
+  emoji: string;
+  className: string;
+  delay: string;
+}) {
+  return (
+    <div
+      className={`absolute flex items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-white rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.1)] border-4 border-white transform hover:scale-110 transition-transform duration-300 cursor-default select-none animate-bounce ${className}`}
+      style={{ animationDuration: "3s", animationDelay: delay }}
+    >
+      <span className="text-5xl md:text-6xl filter drop-shadow-sm">
+        {emoji}
+      </span>
+    </div>
+  );
+}
+
+// 하단 흐르는 텍스트 컴포넌트
+function MarqueeText() {
+  return (
+    <span className="mx-4 text-lg font-bold text-slate-500/80 flex items-center gap-8">
+      <span>🎮 닌텐도 스위치</span>
+      <span className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)]"></span>
+      <span>🍜 라면</span>
+      <span className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)]"></span>
+      <span>🎲 보드게임</span>
+      <span className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)]"></span>
+      <span>🏸 배드민턴</span>
+      <span className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)]"></span>
+      <span>🍿 맛있는 간식</span>
+      <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+      <span>🏀 농구</span>
+      <span className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)]"></span>
+      <span>🏓 탁구</span>
+      <span className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)]"></span>
+    </span>
   );
 }

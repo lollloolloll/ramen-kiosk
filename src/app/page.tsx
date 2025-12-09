@@ -211,7 +211,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-[oklch(0.75_0.12_165/0.15)] via-[oklch(0.7_0.18_350/0.15)] to-[oklch(0.7_0.18_350/0.15)]">
+      <div className="relative flex flex-col items-center justify-center min-h-screen bg-linear-to-br from-[oklch(0.75_0.12_165/0.15)] via-[oklch(0.7_0.18_350/0.15)] to-[oklch(0.7_0.18_350/0.15)]">
         {/* 배경 장식 요소 */}
         <div
           className="absolute top-10 left-10 text-6xl opacity-20 animate-bounce"
@@ -278,7 +278,7 @@ export default function Home() {
             <Button
               asChild
               size="lg"
-              className="h-20 px-16 text-2xl font-bold bg-gradient-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-110 shadow-2xl rounded-2xl"
+              className="h-20 px-16 text-2xl font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-110 shadow-2xl rounded-2xl"
             >
               <Link href="/kiosk">😎 놀 준비 완료!</Link>
             </Button>

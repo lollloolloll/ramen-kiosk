@@ -526,6 +526,11 @@ export function RentalDialog({
 
   if (!item) return null;
 
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const totalTime = 5;
+  const strokeDashoffset = circumference * (1 - countdown / totalTime);
+
   const renderStep = () => {
     const content = (() => {
       switch (step) {
@@ -540,7 +545,9 @@ export function RentalDialog({
               >
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
-                    {isRentedMode ? "대기열 등록" : `${item.name} 대여`}
+                    {isRentedMode
+                      ? `${item.name} 대기열 등록`
+                      : `${item.name} 대여`}
                   </DialogTitle>
                   <DialogDescription>
                     {isRentedMode
@@ -1167,13 +1174,19 @@ export function RentalDialog({
             </Form>
           );
         case "success":
+          // 성공 화면용 원 둘레 계산 (반지름 40)
+          const rSuccess = 40;
+          const cSuccess = 2 * Math.PI * rSuccess;
+
           return (
             <div
-              className="flex flex-col items-center justify-center py-12 px-8 text-center relative overflow-hidden"
+              className="flex flex-col items-center justify-center w-full min-h-[500px] py-12 px-8 text-center relative overflow-hidden bg-white"
               key="success"
             >
+              {/* 배경 그라데이션 */}
               <div className="absolute inset-0 bg-linear-to-br from-[oklch(0.75_0.12_165/0.1)] via-[oklch(0.7_0.18_350/0.1)] to-[oklch(0.7_0.18_350/0.1)] animate-pulse" />
 
+              {/* 이모지 장식 */}
               <div className="absolute top-4 left-1/4 text-4xl animate-bounce">
                 ✨
               </div>
@@ -1190,7 +1203,7 @@ export function RentalDialog({
                 🎈
               </div>
 
-              <div className="relative z-10 space-y-6">
+              <div className="relative z-10 space-y-6 w-full">
                 <div className="relative inline-block">
                   <div className="text-8xl animate-bounce">🎉</div>
                   <div
@@ -1218,12 +1231,13 @@ export function RentalDialog({
                   하는 거 잊지 말기!
                 </DialogDescription>
 
+                {/* 싱크가 맞는 원형 카운트다운 (Success용) */}
                 <div className="relative w-24 h-24 mx-auto my-6">
                   <svg className="transform -rotate-90 w-24 h-24">
                     <circle
                       cx="48"
                       cy="48"
-                      r="40"
+                      r={rSuccess}
                       stroke="#e5e7eb"
                       strokeWidth="6"
                       fill="none"
@@ -1231,18 +1245,16 @@ export function RentalDialog({
                     <circle
                       cx="48"
                       cy="48"
-                      r="40"
+                      r={rSuccess}
                       stroke="url(#gradient)"
                       strokeWidth="6"
                       fill="none"
-                      strokeDasharray={`${2 * Math.PI * 40}`}
-                      strokeDashoffset={`${
-                        2 * Math.PI * 40 * (1 - countdown / 5)
-                      }`}
-                      style={{
-                        transition: "stroke-dashoffset 1s linear",
-                      }}
+                      strokeDasharray={cSuccess}
+                      strokeDashoffset={0}
                       strokeLinecap="round"
+                      style={{
+                        animation: "countdown-ring 5s linear forwards",
+                      }}
                     />
                     <defs>
                       <linearGradient
@@ -1259,16 +1271,16 @@ export function RentalDialog({
                     </defs>
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-3xl font-black bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent">
+                    <span className="text-3xl font-black bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)] bg-clip-text text-transparent tabular-nums">
                       {countdown}
                     </span>
                   </div>
                 </div>
 
-                <DialogFooter className="mt-6">
+                <DialogFooter className="mt-6 w-full">
                   <Button
                     onClick={handleSuccessConfirm}
-                    className="w-full h-12 text-lg font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    className="w-full h-12 text-lg font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] hover:from-[oklch(0.7_0.12_165)] hover:via-[oklch(0.65_0.18_350)] hover:to-[oklch(0.65_0.18_350)] transition-all duration-300 transform hover:scale-105 shadow-lg text-white border-0"
                   >
                     확인 ✓
                   </Button>
@@ -1278,37 +1290,246 @@ export function RentalDialog({
                   {countdown}초 후 자동으로 닫힙니다
                 </p>
               </div>
+              {/* 애니메이션 키프레임 정의 */}
+              <style jsx>{`
+                @keyframes countdown-ring {
+                  from {
+                    stroke-dashoffset: 0;
+                  }
+                  to {
+                    stroke-dashoffset: ${cSuccess};
+                  }
+                }
+              `}</style>
             </div>
           );
+
         case "waitingSuccess":
+          // 대기열 화면용 원 둘레 계산 (동일하게 설정)
+          const rWait = 40;
+          const cWait = 2 * Math.PI * rWait;
+
           return (
             <div
-              className="flex flex-col items-center justify-center py-12 px-8 text-center relative"
+              className="relative flex flex-col items-center justify-center w-full min-h-[500px] overflow-hidden bg-white"
               key="waitingSuccess"
             >
-              <div className="relative z-10 space-y-6">
-                <DialogTitle className="text-3xl font-black text-[oklch(0.75_0.12_165)]">
-                  대기열 합류 완료!
-                </DialogTitle>
-                <DialogDescription className="text-lg font-medium text-foreground leading-relaxed">
-                  예약 리스트에 올랐어!
-                </DialogDescription>
+              {/* 1. 배경 그라데이션 (깔끔한 버전) */}
+              <div className="absolute inset-0 z-0">
+                <div className="absolute inset-0 bg-linear-to-br from-[oklch(0.75_0.12_165/0.2)] via-[oklch(0.7_0.18_350/0.15)] to-[oklch(0.65_0.2_350/0.15)] animate-pulse" />
+                <div
+                  className="absolute inset-0 bg-linear-to-tr from-transparent via-[oklch(0.75_0.12_165/0.1)] to-transparent animate-pulse"
+                  style={{ animationDelay: "1s", animationDuration: "3s" }}
+                />
+              </div>
 
-                <div className="my-8">
-                  <p className="text-base text-muted-foreground">너의 순서는</p>
-                  <p className="text-8xl font-black text-[oklch(0.7_0.18_350)] animate-pulse">
-                    {waitingPosition}번째
-                  </p>
+              {/* 2. 컨텐츠 영역 */}
+              <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-8 backdrop-blur-[2px]">
+                {/* 싱크가 맞는 원형 카운트다운 (Waiting용) */}
+                <div className="relative flex items-center justify-center w-40 h-40 mb-8">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle
+                      cx="50%"
+                      cy="50%"
+                      r={rWait}
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="transparent"
+                      className="text-gray-100"
+                    />
+                    <circle
+                      cx="50%"
+                      cy="50%"
+                      r={rWait}
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="transparent"
+                      strokeDasharray={cWait}
+                      strokeDashoffset={0}
+                      strokeLinecap="round"
+                      className="text-[oklch(0.7_0.18_350)]"
+                      style={{
+                        animation: "countdown-ring-wait 5s linear forwards",
+                      }}
+                    />
+                  </svg>
+
+                  {/* 중앙 대기 번호 */}
+                  <div className="absolute inset-0 flex items-center justify-center flex-col">
+                    <div className="text-center animate-in zoom-in duration-300">
+                      <span className="text-xs text-muted-foreground font-semibold block mb-1">
+                        대기번호
+                      </span>
+                      <span className="text-4xl font-black text-[oklch(0.7_0.18_350)]">
+                        {waitingPosition}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <DialogFooter className="mt-6">
+                {/* 텍스트 메시지 */}
+                <div className="space-y-3 text-center mb-8">
+                  <DialogTitle className="text-3xl font-black text-gray-800">
+                    대기열 등록 완료!
+                  </DialogTitle>
+
+                  <DialogDescription className="text-lg text-gray-600 leading-relaxed font-medium">
+                    예약 리스트에 등록되었습니다.
+                    <br />
+                    순서가 되면 알려드릴게요!
+                  </DialogDescription>
+                </div>
+
+                {/* 하단 버튼 */}
+                <div className="w-full space-y-3">
                   <Button
                     onClick={handleSuccessConfirm}
-                    className="w-full h-12 text-lg font-bold bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]"
+                    className="w-full h-12 text-lg font-bold text-white bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)] hover:opacity-90 shadow-lg transform transition-transform hover:scale-[1.02]"
                   >
-                    확인 ({countdown})
+                    확인하러 가기
                   </Button>
-                </DialogFooter>
+                  <p className="text-xs text-center text-gray-500 font-medium">
+                    {countdown}초 후 자동으로 이동합니다
+                  </p>
+                </div>
+              </div>
+              {/* 애니메이션 키프레임 정의 (Wait용) */}
+              <style jsx>{`
+                @keyframes countdown-ring-wait {
+                  from {
+                    stroke-dashoffset: 0;
+                  }
+                  to {
+                    stroke-dashoffset: ${cWait};
+                  }
+                }
+              `}</style>
+            </div>
+          );
+
+        case "waitingSuccess":
+          const isWaiting = step === "waitingSuccess";
+          // 반지름과 둘레 계산
+          const r = 40;
+          const c = 2 * Math.PI * r;
+
+          return (
+            <div
+              // key에 step을 넣어 모달이 열릴 때마다 애니메이션이 새로 시작되도록 함
+              key={step}
+              className="relative flex flex-col items-center justify-center w-full min-h-[500px] overflow-hidden bg-white"
+            >
+              {/* 1. 배경 그라데이션 */}
+              <div className="absolute inset-0 z-0">
+                <div className="absolute inset-0 bg-linear-to-br from-[oklch(0.75_0.12_165/0.2)] via-[oklch(0.7_0.18_350/0.15)] to-[oklch(0.65_0.2_350/0.15)] animate-pulse" />
+                <div
+                  className="absolute inset-0 bg-linear-to-tr from-transparent via-[oklch(0.75_0.12_165/0.1)] to-transparent animate-pulse"
+                  style={{ animationDelay: "1s", animationDuration: "3s" }}
+                />
+              </div>
+
+              {/* 2. 컨텐츠 영역 */}
+              <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-8 backdrop-blur-[2px]">
+                {/* 카운트다운 원형 UI */}
+                <div className="relative flex items-center justify-center w-40 h-40 mb-8">
+                  <svg className="w-full h-full transform -rotate-90">
+                    {/* 배경 트랙 */}
+                    <circle
+                      cx="50%"
+                      cy="50%"
+                      r={r}
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="transparent"
+                      className="text-gray-100"
+                    />
+                    {/* 진행바 (CSS Animation 사용) */}
+                    <circle
+                      cx="50%"
+                      cy="50%"
+                      r={r}
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="transparent"
+                      strokeDasharray={c}
+                      strokeDashoffset={0} /* 시작은 꽉 찬 상태 */
+                      strokeLinecap="round"
+                      className="text-[oklch(0.7_0.18_350)]"
+                      style={{
+                        // 5초 동안 선형(linear)으로 정확하게 줄어들도록 설정
+                        animation: `countdown-ring 5s linear forwards`,
+                      }}
+                    />
+                    {/* CSS Keyframes 정의 (이 컴포넌트 내부에서만 동작) */}
+                    <style jsx>{`
+                      @keyframes countdown-ring {
+                        from {
+                          stroke-dashoffset: 0;
+                        }
+                        to {
+                          stroke-dashoffset: ${c};
+                        }
+                      }
+                    `}</style>
+                  </svg>
+
+                  {/* 중앙 숫자/텍스트 */}
+                  <div className="absolute inset-0 flex items-center justify-center flex-col">
+                    {isWaiting ? (
+                      <div className="text-center animate-in zoom-in duration-300">
+                        <span className="text-xs text-muted-foreground font-semibold block mb-1">
+                          대기번호
+                        </span>
+                        <span className="text-4xl font-black text-[oklch(0.7_0.18_350)]">
+                          {waitingPosition}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-5xl font-black text-[oklch(0.7_0.18_350)] tabular-nums animate-in zoom-in duration-300">
+                        {countdown}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 메시지 영역 */}
+                <div className="space-y-3 text-center mb-8">
+                  <DialogTitle className="text-3xl font-black text-gray-800">
+                    {isWaiting ? "대기열 등록 완료!" : "대여 완료!"}
+                  </DialogTitle>
+
+                  <DialogDescription className="text-lg text-gray-600 leading-relaxed font-medium">
+                    {isWaiting ? (
+                      <>
+                        예약 리스트에 등록되었습니다.
+                        <br />
+                        순서가 되면 알려드릴게요!
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[oklch(0.75_0.12_165)] font-bold">
+                          {item.name}
+                        </span>{" "}
+                        대여가
+                        <br />
+                        성공적으로 처리되었습니다.
+                      </>
+                    )}
+                  </DialogDescription>
+                </div>
+
+                {/* 버튼 영역 */}
+                <div className="w-full space-y-3">
+                  <Button
+                    onClick={handleSuccessConfirm}
+                    className="w-full h-12 text-lg font-bold text-white bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)] hover:opacity-90 shadow-lg transform transition-transform hover:scale-[1.02]"
+                  >
+                    확인하러 가기
+                  </Button>
+                  <p className="text-xs text-center text-gray-500 font-medium">
+                    {countdown}초 후 자동으로 이동합니다
+                  </p>
+                </div>
               </div>
             </div>
           );
@@ -1338,7 +1559,15 @@ export function RentalDialog({
           onOpenChange(isOpen);
         }}
       >
-        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
+        <DialogContent
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          // 아래 삼항 연산자가 핵심입니다. 성공/대기성공 일 때 padding(p-0), border(border-0) 제거
+          className={`sm:max-w-[425px] transition-all duration-300 ${
+            step === "success" || step === "waitingSuccess"
+              ? "p-0 border-0 overflow-hidden bg-transparent shadow-none" // 이 부분 필수
+              : ""
+          }`}
+        >
           {renderStep()}
         </DialogContent>
       </Dialog>

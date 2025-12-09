@@ -530,13 +530,17 @@ export async function getRentalRecordsByUserId(
     return { error: "사용자 대여 기록을 불러오는 데 실패했습니다." };
   }
 }
-function calculateAge(birthDate: string | null): number | null {
+function calculateAge(
+  birthDate: string | null,
+  referenceDate: Date = new Date()
+): number | null {
   if (!birthDate) return null;
   const birth = new Date(birthDate);
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+  const targetDate = referenceDate; // 기준 날짜 사용
+
+  let age = targetDate.getFullYear() - birth.getFullYear();
+  const m = targetDate.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && targetDate.getDate() < birth.getDate())) {
     age--;
   }
   return age;
@@ -619,7 +623,10 @@ export async function getRentalAnalytics(filters: {
     if (ageGroup && ageGroup !== "all") {
       records = records.filter((r) => {
         if (!r.birthDate) return false;
-        const age = calculateAge(r.birthDate);
+
+        // [수정] 대여 날짜(rentalDate) 기준 나이 계산
+        const age = calculateAge(r.birthDate, new Date(r.rentalDate * 1000));
+
         if (age === null) return false;
         if (ageGroup === "child" && age <= 12) return true;
         if (ageGroup === "teen" && age > 12 && age <= 18) return true;
@@ -627,7 +634,6 @@ export async function getRentalAnalytics(filters: {
         return false;
       });
     }
-
     const totalRentals = records.length;
     const uniqueUsers = new Set(records.map((r) => r.userId)).size;
 
@@ -678,7 +684,9 @@ export async function getRentalAnalytics(filters: {
     };
     records.forEach((r) => {
       if (r.birthDate) {
-        const age = calculateAge(r.birthDate);
+        // [수정] 대여 날짜(rentalDate) 기준 나이 계산
+        const age = calculateAge(r.birthDate, new Date(r.rentalDate * 1000));
+
         if (age !== null) {
           if (age <= 12) {
             ageGroupStats.child.count++;

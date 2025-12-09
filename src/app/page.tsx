@@ -255,22 +255,22 @@ export default function Home() {
         {/* 3. 떠다니는 스티커 아이콘들 */}
         <FloatingSticker
           emoji="🎮"
-          className="top-[15%] left-[10%] rotate-[-12deg]"
+          className="top-[15%] left-[10%] -rotate-12"
           delay="0s"
         />
         <FloatingSticker
           emoji="🎤"
-          className="top-[20%] right-[12%] rotate-[12deg]"
+          className="top-[20%] right-[12%] rotate-12"
           delay="1.5s"
         />
         <FloatingSticker
           emoji="🎲"
-          className="bottom-[25%] left-[15%] rotate-[6deg]"
+          className="bottom-[25%] left-[15%] rotate-6"
           delay="0.5s"
         />
         <FloatingSticker
           emoji="🍜"
-          className="bottom-[20%] right-[10%] rotate-[-6deg]"
+          className="bottom-[20%] right-[10%] -rotate-6"
           delay="2s"
         />
 
@@ -296,7 +296,7 @@ export default function Home() {
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[1.1] text-slate-800 drop-shadow-sm">
               학교 끝나고
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-[oklch(0.75_0.12_165)] to-[oklch(0.7_0.18_350)]">
                 뭐하고 놀래?
               </span>
             </h1>
@@ -314,7 +314,7 @@ export default function Home() {
           <div className="pt-4 animate-in fade-in zoom-in duration-1000 delay-300 slide-in-from-bottom-10 fill-mode-backwards">
             <Button
               asChild
-              className="group relative h-24 px-12 text-3xl md:text-4xl font-black rounded-[2rem] 
+              className="group relative h-24 px-12 text-3xl md:text-4xl font-black rounded-4xl 
             bg-white text-slate-800 border-4 border-slate-100
             shadow-[0_8px_30px_rgb(0,0,0,0.04)] 
             
@@ -325,7 +325,7 @@ export default function Home() {
             >
               <Link href="/kiosk" className="flex items-center gap-4">
                 {/* 배경: 호버 시 아주 연한 틴트(10% 투명도)만 살짝 올라옴 -> 글자 가독성 해치지 않음 */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-linear-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                 {/* 텍스트: 색상 변경 없이 그대로 유지 */}
                 <span className="relative z-10 text-slate-800">

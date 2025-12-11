@@ -196,6 +196,7 @@ export async function updateItem(formData: FormData) {
 
   let imageUrl: string | undefined;
 
+  // 이미지 파일 처리
   if (imageFile && imageFile.size > 0) {
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     try {
@@ -205,12 +206,16 @@ export async function updateItem(formData: FormData) {
     }
 
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const filename = `${uniqueSuffix}-${imageFile.name}`;
+    // 안전한 파일명 처리 (addItem 참고)
+    const safeName = imageFile.name
+      .replace(/\s+/g, "_")
+      .replace(/[^\w\.-]/g, "");
+    const filename = `${uniqueSuffix}-${safeName}`;
     const filePath = path.join(uploadsDir, filename);
-    const bytes = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
 
     try {
+      const bytes = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
       await writeFile(filePath, buffer);
       imageUrl = `/uploads/${filename}`;
     } catch (error) {
@@ -220,33 +225,66 @@ export async function updateItem(formData: FormData) {
     imageUrl = imageUrlFromForm;
   }
 
+  // 업데이트할 데이터 객체 생성
   const dataToUpdate: {
     name?: string;
     category?: string;
     imageUrl?: string;
     isTimeLimited?: boolean;
-    enableParticipantTracking?: boolean; // 추가
+    enableParticipantTracking?: boolean;
     rentalTimeMinutes?: number;
     maxRentalsPerUser?: number;
   } = {};
+
   if (name) dataToUpdate.name = name;
   if (category) dataToUpdate.category = category;
   if (imageUrl) dataToUpdate.imageUrl = imageUrl;
-  dataToUpdate.isTimeLimited = isTimeLimited;
-  dataToUpdate.enableParticipantTracking = enableParticipantTracking; // 추가
-  if (rentalTimeMinutes) dataToUpdate.rentalTimeMinutes = rentalTimeMinutes;
-  if (maxRentalsPerUser) dataToUpdate.maxRentalsPerUser = maxRentalsPerUser;
 
+  // boolean 값들은 항상 업데이트
+  dataToUpdate.isTimeLimited = isTimeLimited;
+  dataToUpdate.enableParticipantTracking = enableParticipantTracking;
+
+  // 시간제 설정이 켜져있을 때만 값 할당, 꺼지면 null 처리가 필요할 수도 있으나 스키마상 optional이므로 값 덮어쓰기
+  if (rentalTimeMinutes !== undefined)
+    dataToUpdate.rentalTimeMinutes = rentalTimeMinutes;
+  if (maxRentalsPerUser !== undefined)
+    dataToUpdate.maxRentalsPerUser = maxRentalsPerUser;
+
+  // 유효성 검사
   const validatedData = updateItemSchema.safeParse({ id, ...dataToUpdate });
   if (!validatedData.success) {
     return { error: "유효하지 않은 데이터입니다." };
   }
 
   try {
+    // 1. 아이템 정보 업데이트
     await db.update(items).set(validatedData.data).where(eq(items.id, id));
+
+    // 2. [요청 해결] 대기열 초기화
+    // 아이템 설정이 변경되었으므로 기존 대기열 삭제
+    await db.delete(waitingQueue).where(eq(waitingQueue.itemId, id));
+
+    // 3. [추가 문제 해결] 시간제 대여로 변경 시, 현재 대여 중인 기록 강제 반납
+    if (dataToUpdate.isTimeLimited) {
+      await db
+        .update(rentalRecords)
+        .set({
+          isReturned: true,
+          returnDate: Date.now(), 
+          isManualReturn: true,
+        })
+        .where(
+          and(
+            eq(rentalRecords.itemsId, id),
+            eq(rentalRecords.isReturned, false)
+          )
+        );
+    }
+
     revalidatePath("/admin/items");
     return { success: true };
   } catch (error) {
+    console.error("Update item error:", error);
     return { error: "아이템 정보 업데이트에 실패했습니다." };
   }
 }

@@ -4,6 +4,7 @@ import { Menu, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
 import { downloadDatabase } from "@/lib/actions/backup";
+import Link from "next/link";
 
 interface HeaderProps {
   onMenuClick: () => void; // 홈으로 이동
@@ -78,6 +79,9 @@ export function Header({ onMenuClick, onSidebarToggle }: HeaderProps) {
         </a>
       </Button>
       <div className="flex items-center gap-4 ml-auto">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/admin/adminAccount">관리자계정</Link>
+        </Button>
         <Button variant="ghost" onClick={handleBackup} size="sm">
           백업
         </Button>

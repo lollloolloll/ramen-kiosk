@@ -66,4 +66,3 @@ node_modules/
 # tasks/ 
 
 .vercel
-data/local.db

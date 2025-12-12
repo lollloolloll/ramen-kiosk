@@ -150,7 +150,17 @@ const SCHOOL_DATA: Record<string, string[]> = {
     "창동고",
     "효문고",
   ],
-  대학교: ["광운대", "삼육대", "인덕대", "이화여대", "남서울대", "서일대"],
+  대학교: [
+    "광운대",
+    "삼육대",
+    "인덕대",
+    "이화여대",
+    "남서울대",
+    "서일대",
+    "서울과기대",
+    "서울여대",
+    "덕성여대",
+  ],
 };
 
 export function RentalDialog({
@@ -1253,7 +1263,7 @@ export function RentalDialog({
                               </p>
 
                               {/* 학교 목록 버튼 그리드 */}
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pr-1">
                                 {SCHOOL_DATA[schoolLevel]?.map((school) => (
                                   <Button
                                     key={school}
@@ -1300,7 +1310,10 @@ export function RentalDialog({
                                 <FormControl>
                                   <Input
                                     placeholder={
-                                      schoolLevel === "고등학교"
+                                      schoolLevel === "초등학교" ||
+                                      "중학교" ||
+                                      "고등학교" ||
+                                      "대학교"
                                         ? "예: 선덕 (자동으로 '선덕고'가 됩니다)"
                                         : "학교 이름을 입력해주세요"
                                     }

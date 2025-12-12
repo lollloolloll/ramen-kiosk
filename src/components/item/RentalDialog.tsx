@@ -97,6 +97,13 @@ const formatPhoneNumber = (value: string) => {
   )}-${phoneNumber.slice(7, 11)}`;
 };
 
+const SCHOOL_DATA: Record<string, string[]> = {
+  초등학교: ["쌍문", "백운", "창동", "숭미", "신화", "초당"],
+  중학교: ["노곡", "도봉", "북서울", "백운", "창동", "선덕"],
+  고등학교: ["선덕", "자운", "창동", "정의여", "누원", "도봉"],
+  대학교: ["덕성여", "서울", "고려"],
+};
+
 export function RentalDialog({
   item,
   open,
@@ -130,6 +137,7 @@ export function RentalDialog({
     maleCount: number;
     femaleCount: number;
   } | null>(null);
+  const [isDirectInput, setIsDirectInput] = useState(false);
 
   const isRentedMode = item?.isTimeLimited && item?.status === "RENTED";
   const estimatedWaitingTime = useMemo(() => {
@@ -268,6 +276,7 @@ export function RentalDialog({
         default:
           suffix = "";
       }
+      // 직접 입력이든 선택이든 schoolName에는 '선덕' 같은 기본 이름만 들어감
       registerForm.setValue("school", `${schoolName}${suffix}`);
     } else {
       registerForm.setValue("school", "");
@@ -467,6 +476,7 @@ export function RentalDialog({
     setBirthYear(undefined);
     setBirthMonth(undefined);
     setBirthDay(undefined);
+    setIsDirectInput(false);
     setSchoolLevel("");
     setSchoolName("");
     setYearSelectOpen(false);
@@ -844,7 +854,7 @@ export function RentalDialog({
                       </span>
                     </div>
                     <FormDescription className="text-xs">
-                      참여하는 친구들의 이름을 모두 입력해주세요.
+                      참여하는 친구들의 이름을 모두 입력해주세요.(본인 포함)
                     </FormDescription>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 max-h-48 overflow-y-auto pr-1 pt-3 pl-1">
                       {fields.map((field, index) => {
@@ -1136,41 +1146,100 @@ export function RentalDialog({
                         학교
                         <span className="text-[oklch(0.7_0.18_350)]">*</span>
                       </FormLabel>
-                      <div className="flex items-center gap-2">
-                        <Select
-                          onValueChange={setSchoolLevel}
-                          value={schoolLevel}
-                        >
-                          <SelectTrigger className="w-[120px] focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]! ">
-                            <SelectValue placeholder="선택" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[
-                              "초등학교",
-                              "중학교",
-                              "고등학교",
-                              "대학교",
-                              "해당없음",
-                            ].map((level) => (
-                              <SelectItem key={level} value={level}>
-                                {level}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormControl>
-                          <Input
-                            placeholder="학교 이름 (예: 선덕, 자운)"
-                            value={schoolName}
-                            className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
-                            onChange={(e) =>
-                              setSchoolName(e.target.value.replace(/\s/g, ""))
-                            }
-                            disabled={
-                              !schoolLevel || schoolLevel === "해당없음"
-                            }
-                          />
-                        </FormControl>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          {/* 1. 학교 급 선택 */}
+                          <Select
+                            onValueChange={(value) => {
+                              setSchoolLevel(value);
+                              setSchoolName(""); // 급이 바뀌면 이름 초기화
+                              setIsDirectInput(false); // 직접 입력 모드 해제
+                            }}
+                            value={schoolLevel}
+                          >
+                            <SelectTrigger className="w-[120px] focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]! ">
+                              <SelectValue placeholder="선택" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[
+                                "초등학교",
+                                "중학교",
+                                "고등학교",
+                                "대학교",
+                                "해당없음",
+                              ].map((level) => (
+                                <SelectItem key={level} value={level}>
+                                  {level}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          {/* 2. 학교 이름 선택 (해당없음이 아닐 때만 표시) */}
+                          {schoolLevel && schoolLevel !== "해당없음" && (
+                            <div className="flex-1">
+                              <Select
+                                onValueChange={(value) => {
+                                  if (value === "direct") {
+                                    setIsDirectInput(true);
+                                    setSchoolName(""); // 입력창을 비워줌
+                                  } else {
+                                    setIsDirectInput(false);
+                                    setSchoolName(value);
+                                  }
+                                }}
+                                // 직접 입력 모드일 때는 Select의 값을 "direct"로 유지
+                                value={
+                                  isDirectInput
+                                    ? "direct"
+                                    : SCHOOL_DATA[schoolLevel]?.includes(
+                                        schoolName
+                                      )
+                                    ? schoolName
+                                    : ""
+                                }
+                              >
+                                <SelectTrigger className="w-full focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]!">
+                                  <SelectValue placeholder="학교 선택" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[200px]">
+                                  {SCHOOL_DATA[schoolLevel]?.map((school) => (
+                                    <SelectItem key={school} value={school}>
+                                      {school}
+                                    </SelectItem>
+                                  ))}
+                                  {/* 구분선 */}
+                                  <div className="h-px bg-gray-100 my-1" />
+                                  <SelectItem
+                                    value="direct"
+                                    className="font-semibold text-[oklch(0.75_0.12_165)]"
+                                  >
+                                    직접 입력
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 3. 직접 입력 인풋 (직접 입력 선택 시에만 표시) */}
+                        {isDirectInput &&
+                          schoolLevel &&
+                          schoolLevel !== "해당없음" && (
+                            <FormControl>
+                              <Input
+                                placeholder="학교 이름 입력 (예: 선덕)"
+                                value={schoolName}
+                                className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
+                                onChange={(e) =>
+                                  setSchoolName(
+                                    e.target.value.replace(/\s/g, "")
+                                  )
+                                }
+                                autoFocus // 나타날 때 자동 포커스
+                              />
+                            </FormControl>
+                          )}
                       </div>
                       <FormMessage />
                     </FormItem>

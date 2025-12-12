@@ -58,6 +58,7 @@ interface EditItemFormProps {
 
 export function EditItemForm({ item, children }: EditItemFormProps) {
   const [open, setOpen] = useState(false);
+  const [isImageDeleted, setIsImageDeleted] = useState(false);
   const router = useRouter();
   const form = useForm<UpdateItemSchema>({
     resolver: zodResolver(updateItemClientSchema) as Resolver<UpdateItemSchema>,
@@ -73,6 +74,7 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
   });
 
   const isTimeLimited = form.watch("isTimeLimited");
+  const currentImageUrl = form.watch("imageUrl");
 
   const onSubmit = async (values: UpdateItemSchema) => {
     const formData = new FormData();
@@ -91,7 +93,9 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
       formData.append("maxRentalsPerUser", String(values.maxRentalsPerUser));
     }
 
-    if (values.imageUrl && values.imageUrl instanceof File) {
+    if (isImageDeleted) {
+      formData.append("deleteImage", "true");
+    } else if (values.imageUrl && values.imageUrl instanceof File) {
       formData.append("image", values.imageUrl);
     } else if (typeof values.imageUrl === "string") {
       formData.append("imageUrl", values.imageUrl);
@@ -104,6 +108,7 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
       }
       toast.success("아이템 정보가 수정되었습니다.");
       setOpen(false);
+      setIsImageDeleted(false);
       router.refresh();
     } catch (error) {
       toast.error(
@@ -115,7 +120,15 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        setOpen(newOpen);
+        if (!newOpen) {
+          setIsImageDeleted(false);
+        }
+      }}
+    >
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[80vh] overflow-hidden p-0">
         <DialogHeader className="px-6 pt-6">
@@ -178,19 +191,43 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
                       </FormControl>
                       <FormMessage />
                       {field.value && field.value instanceof File ? (
-                        <img
-                          src={URL.createObjectURL(field.value)}
-                          alt="Image Preview"
-                          className="mt-2 h-20 w-20 object-cover rounded-md"
-                        />
-                      ) : (
-                        item.imageUrl && (
+                        <div className="mt-2 relative">
                           <img
-                            src={item.imageUrl}
-                            alt="Current Image"
-                            className="mt-2 h-20 w-20 object-cover rounded-md"
+                            src={URL.createObjectURL(field.value)}
+                            alt="Image Preview"
+                            className="h-20 w-20 object-cover rounded-md"
                           />
+                        </div>
+                      ) : (
+                        !isImageDeleted &&
+                        (currentImageUrl || item.imageUrl) && (
+                          // ✅ 수정된 부분: w-fit 추가하여 div가 이미지 크기에 딱 맞게 조절됨
+                          <div className="mt-2 relative w-fit">
+                            <img
+                              src={currentImageUrl || item.imageUrl}
+                              alt="Current Image"
+                              className="h-20 w-20 object-cover rounded-md"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              // absolute 위치는 부모(div) 기준이므로 w-fit이 있으면 이미지 우측 상단에 붙음
+                              className="absolute top-0 right-0 -mt-2 -mr-2 h-6 w-6 rounded-full p-0 z-10"
+                              onClick={() => {
+                                setIsImageDeleted(true);
+                                field.onChange(undefined);
+                              }}
+                            >
+                              ×
+                            </Button>
+                          </div>
                         )
+                      )}
+                      {isImageDeleted && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          이미지가 삭제되었습니다.
+                        </div>
                       )}
                     </FormItem>
                   )}

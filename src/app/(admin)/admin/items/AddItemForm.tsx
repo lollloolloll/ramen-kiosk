@@ -49,7 +49,7 @@ const formSchema = z.object({
         // 1MB
         return val.size <= 1 * 1024 * 1024;
       },
-      { message: "이미지 크기는 1MB 미만 이어야 합니다." }
+      { message: "이미지 크기는 1MB 미만이어야 합니다." }
     )
     .transform((val) => {
       if (val instanceof File) {

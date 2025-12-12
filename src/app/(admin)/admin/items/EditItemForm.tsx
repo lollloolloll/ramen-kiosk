@@ -32,7 +32,18 @@ import { Switch } from "@/components/ui/switch";
 const updateItemClientSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요."),
   category: z.string().min(1, "카테고리를 입력해주세요."),
-  imageUrl: z.any().optional(),
+  imageUrl: z
+    .any()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val || !(val instanceof File)) {
+          return true; // 파일이 아니거나(기존 문자열 URL 등) 없으면 통과
+        }
+        return val.size <= 1 * 1024 * 1024; // 1MB 제한
+      },
+      { message: "이미지 크기는 1MB 미만이어야 합니다." }
+    ),
   isTimeLimited: z.boolean().optional(),
   rentalTimeMinutes: z.coerce
     .number()
@@ -182,6 +193,15 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
                           onChange={(event) => {
                             const file = event.target.files?.[0];
                             if (file) {
+                              // ✅ 추가된 부분: 파일 크기 1MB 체크
+                              if (file.size > 1 * 1024 * 1024) {
+                                toast.error(
+                                  "이미지 크기는 1MB 미만 이어야 합니다."
+                                );
+                                event.target.value = ""; // 입력값 초기화
+                                field.onChange(undefined);
+                                return;
+                              }
                               field.onChange(file);
                             } else {
                               field.onChange(undefined);
@@ -201,7 +221,6 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
                       ) : (
                         !isImageDeleted &&
                         (currentImageUrl || item.imageUrl) && (
-                          // ✅ 수정된 부분: w-fit 추가하여 div가 이미지 크기에 딱 맞게 조절됨
                           <div className="mt-2 relative w-fit">
                             <img
                               src={currentImageUrl || item.imageUrl}
@@ -212,7 +231,6 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
                               type="button"
                               variant="destructive"
                               size="sm"
-                              // absolute 위치는 부모(div) 기준이므로 w-fit이 있으면 이미지 우측 상단에 붙음
                               className="absolute top-0 right-0 -mt-2 -mr-2 h-6 w-6 rounded-full p-0 z-10"
                               onClick={() => {
                                 setIsImageDeleted(true);

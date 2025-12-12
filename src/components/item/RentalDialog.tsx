@@ -98,10 +98,58 @@ const formatPhoneNumber = (value: string) => {
 };
 
 const SCHOOL_DATA: Record<string, string[]> = {
-  초등학교: ["쌍문", "백운", "창동", "숭미", "신화", "초당"],
-  중학교: ["노곡", "도봉", "북서울", "백운", "창동", "선덕"],
-  고등학교: ["선덕", "자운", "창동", "정의여", "누원", "도봉"],
-  대학교: ["덕성여", "서울", "고려"],
+  초등학교: [
+    "가인초",
+    "누원초",
+    "도봉초",
+    "동북초",
+    "방학초",
+    "백운초",
+    "숭미초",
+    "신방학초",
+    "신학초",
+    "신창초",
+    "신화초",
+    "쌍문초",
+    "오봉초",
+    "월천초",
+    "자운초",
+    "창경초",
+    "창도초",
+    "창동초",
+    "창림초",
+    "창원초",
+    "창일초",
+    "초당초",
+    "한신초",
+  ],
+  중학교: [
+    "노곡중",
+    "도봉중",
+    "방학중",
+    "백운중",
+    "북서울중",
+    "선덕중",
+    "신도봉중",
+    "신방학중",
+    "정의여중",
+    "창동중",
+    "창북중",
+    "창일중",
+    "효문중",
+  ],
+  고등학교: [
+    "누원고",
+    "서울문화고",
+    "서울외고",
+    "선덕고",
+    "세그루패션디자인고",
+    "자운고",
+    "정의여고",
+    "창동고",
+    "효문고",
+  ],
+  대학교: ["광운", "삼육", "인덕", "이화여", "남서울", "서일"],
 };
 
 export function RentalDialog({
@@ -258,8 +306,23 @@ export function RentalDialog({
   useEffect(() => {
     if (schoolLevel === "해당없음") {
       registerForm.setValue("school", "해당없음");
-    } else if (schoolLevel && schoolName) {
+      return;
+    }
+
+    if (!schoolName) {
+      registerForm.setValue("school", "");
+      return;
+    }
+
+    // 1. 목록에서 선택한 경우: 풀네임이므로 그대로 저장
+    if (!isDirectInput) {
+      registerForm.setValue("school", schoolName);
+    }
+    // 2. 직접 입력한 경우: 편의를 위해 접미사 자동 완성 (단, 중복 방지)
+    else {
+      let finalName = schoolName;
       let suffix = "";
+
       switch (schoolLevel) {
         case "초등학교":
           suffix = "초";
@@ -273,15 +336,17 @@ export function RentalDialog({
         case "대학교":
           suffix = "대";
           break;
-        default:
-          suffix = "";
       }
-      // 직접 입력이든 선택이든 schoolName에는 '선덕' 같은 기본 이름만 들어감
-      registerForm.setValue("school", `${schoolName}${suffix}`);
-    } else {
-      registerForm.setValue("school", "");
+
+      // 사용자가 이미 "정의여고"를 입력했거나 "선덕고"를 입력했으면 접미사를 붙이지 않음
+
+      if (suffix && !finalName.endsWith(suffix)) {
+        finalName += suffix;
+      }
+
+      registerForm.setValue("school", finalName);
     }
-  }, [schoolLevel, schoolName, registerForm]);
+  }, [schoolLevel, schoolName, isDirectInput, registerForm]);
 
   useEffect(() => {
     if (step === "success" || step === "waitingSuccess") {
@@ -1152,13 +1217,13 @@ export function RentalDialog({
                           <Select
                             onValueChange={(value) => {
                               setSchoolLevel(value);
-                              setSchoolName(""); // 급이 바뀌면 이름 초기화
-                              setIsDirectInput(false); // 직접 입력 모드 해제
+                              setSchoolName(""); // 급 변경 시 이름 초기화
+                              setIsDirectInput(false);
                             }}
                             value={schoolLevel}
                           >
                             <SelectTrigger className="w-[120px] focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]! ">
-                              <SelectValue placeholder="선택" />
+                              <SelectValue placeholder="급 선택" />
                             </SelectTrigger>
                             <SelectContent>
                               {[
@@ -1175,23 +1240,25 @@ export function RentalDialog({
                             </SelectContent>
                           </Select>
 
-                          {/* 2. 학교 이름 선택 (해당없음이 아닐 때만 표시) */}
+                          {/* 2. 학교 이름 선택 (해당없음이 아니고 급이 선택되었을 때만) */}
                           {schoolLevel && schoolLevel !== "해당없음" && (
                             <div className="flex-1">
                               <Select
                                 onValueChange={(value) => {
-                                  if (value === "direct") {
+                                  if (value === "direct_input_option") {
                                     setIsDirectInput(true);
-                                    setSchoolName(""); // 입력창을 비워줌
+                                    setSchoolName("");
                                   } else {
                                     setIsDirectInput(false);
                                     setSchoolName(value);
                                   }
                                 }}
-                                // 직접 입력 모드일 때는 Select의 값을 "direct"로 유지
+                                // ✅ 런타임 에러 방지 핵심:
+                                // 직접 입력 모드일 때는 Select의 value를 고정값으로 둠.
+                                // 목록에 없는 값이 value로 들어가면 Select가 깨질 수 있음.
                                 value={
                                   isDirectInput
-                                    ? "direct"
+                                    ? "direct_input_option"
                                     : SCHOOL_DATA[schoolLevel]?.includes(
                                         schoolName
                                       )
@@ -1203,15 +1270,16 @@ export function RentalDialog({
                                   <SelectValue placeholder="학교 선택" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px]">
+                                  {/* 데이터 매핑 시 key와 value가 비어있지 않은지 확인 */}
                                   {SCHOOL_DATA[schoolLevel]?.map((school) => (
                                     <SelectItem key={school} value={school}>
                                       {school}
                                     </SelectItem>
                                   ))}
-                                  {/* 구분선 */}
-                                  <div className="h-px bg-gray-100 my-1" />
+                                  <div className="h-[1px] bg-gray-100 my-1" />
+                                  {/* ✅ value는 절대 빈 문자열이면 안됨 */}
                                   <SelectItem
-                                    value="direct"
+                                    value="direct_input_option"
                                     className="font-semibold text-[oklch(0.75_0.12_165)]"
                                   >
                                     직접 입력
@@ -1222,13 +1290,17 @@ export function RentalDialog({
                           )}
                         </div>
 
-                        {/* 3. 직접 입력 인풋 (직접 입력 선택 시에만 표시) */}
+                        {/* 3. 직접 입력 인풋 */}
                         {isDirectInput &&
                           schoolLevel &&
                           schoolLevel !== "해당없음" && (
                             <FormControl>
                               <Input
-                                placeholder="학교 이름 입력 (예: 선덕)"
+                                placeholder={
+                                  schoolLevel === "고등학교"
+                                    ? "예: 선덕, 정의여, 대원외 (자동으로 '고'가 붙습니다)"
+                                    : "학교 이름 입력"
+                                }
                                 value={schoolName}
                                 className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                                 onChange={(e) =>
@@ -1236,7 +1308,7 @@ export function RentalDialog({
                                     e.target.value.replace(/\s/g, "")
                                   )
                                 }
-                                autoFocus // 나타날 때 자동 포커스
+                                autoFocus
                               />
                             </FormControl>
                           )}

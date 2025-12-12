@@ -1,6 +1,6 @@
 "use server";
 
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
 import { eq, and, count, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -174,6 +174,8 @@ export async function addItem(formData: FormData) {
     return { error: "아이템 추가에 실패했습니다." };
   }
 }
+// lib/actions/item.ts (updateItem 함수 부분만 교체)
+
 export async function updateItem(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   const name = formData.get("name") as string;
@@ -195,16 +197,26 @@ export async function updateItem(formData: FormData) {
     return { error: "유효하지 않은 ID입니다." };
   }
 
-  // ✅ 수정: undefined 대신 null을 허용하여 DB 컬럼을 비울 수 있게 함
-  let imageUrl: string | undefined | null;
-
-  // 이미지 삭제 처리
-  if (deleteImage) {
-    imageUrl = null; // ✅ 수정: DB에서 지우기 위해 null 할당
+  // 기존 아이템 조회
+  const [existingItem] = await db.select().from(items).where(eq(items.id, id));
+  if (!existingItem) {
+    return { error: "존재하지 않는 아이템입니다." };
   }
-  // 이미지 파일 처리
-  else if (imageFile && imageFile.size > 0) {
-    // ... (기존 파일 업로드 로직 유지) ...
+
+  // 파일 삭제 헬퍼 함수
+  const deleteFileFromDisk = async (url: string) => {
+    try {
+      const filePath = path.join(process.cwd(), "public", url);
+      await unlink(filePath);
+    } catch (error) {
+      console.warn(`파일 삭제 실패 (${url}):`, error);
+    }
+  };
+
+  let newImageUrl: string | undefined | null;
+
+  // 1. 새 이미지 저장 로직 (업로드는 먼저 수행해야 함)
+  if (imageFile && imageFile.size > 0) {
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     try {
       await mkdir(uploadsDir, { recursive: true });
@@ -218,16 +230,22 @@ export async function updateItem(formData: FormData) {
       const bytes = await imageFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
       await writeFile(filePath, buffer);
-      imageUrl = `/uploads/${filename}`;
+
+      newImageUrl = `/uploads/${filename}`;
     } catch (error) {
       return { error: "이미지 파일 저장에 실패했습니다." };
     }
-  } else if (imageUrlFromForm) {
-    imageUrl = imageUrlFromForm;
+  }
+  // 2. 이미지 삭제 요청
+  else if (deleteImage) {
+    newImageUrl = null;
+  }
+  // 3. 기존 유지
+  else if (imageUrlFromForm) {
+    newImageUrl = imageUrlFromForm;
   }
 
   // 업데이트할 데이터 객체 생성
-  // ✅ 수정: imageUrl 타입에 null 추가
   const dataToUpdate: {
     name?: string;
     category?: string;
@@ -241,15 +259,11 @@ export async function updateItem(formData: FormData) {
   if (name) dataToUpdate.name = name;
   if (category) dataToUpdate.category = category;
 
-  // ✅ 수정: 이미지 처리 로직 명확화
-  if (deleteImage) {
-    dataToUpdate.imageUrl = null; // DB Null Update
-  } else if (imageUrl !== undefined) {
-    // undefined가 아닐 때만 업데이트 (null 포함, 즉 파일 업로드를 했거나 기존 유지시)
-    dataToUpdate.imageUrl = imageUrl;
+  // 이미지 경로 할당
+  if (newImageUrl !== undefined) {
+    dataToUpdate.imageUrl = newImageUrl;
   }
 
-  // boolean 값들은 항상 업데이트
   dataToUpdate.isTimeLimited = isTimeLimited;
   dataToUpdate.enableParticipantTracking = enableParticipantTracking;
 
@@ -258,16 +272,34 @@ export async function updateItem(formData: FormData) {
   if (maxRentalsPerUser !== undefined)
     dataToUpdate.maxRentalsPerUser = maxRentalsPerUser;
 
-  // ... (이후 유효성 검사 및 DB 업데이트 로직 유지) ...
-  // validatedData 검사 시 스키마가 null을 허용하는지 확인 필요.
-  // 만약 updateItemSchema가 strict하다면 { ...dataToUpdate } 전달 전 확인 필요.
+  // 🔥 [중요] 유효성 검사 먼저 수행!
+  // 여기서 실패하면 파일 삭제 로직이 실행되지 않아 안전함
+  const validatedData = updateItemSchema.safeParse({ id, ...dataToUpdate });
+
+  if (!validatedData.success) {
+    console.error(validatedData.error);
+    // 만약 새 파일을 업로드했는데 검증 실패했다면, 방금 올린 파일도 지워주는게 좋음 (선택사항)
+    return { error: "유효하지 않은 데이터입니다." };
+  }
 
   try {
-    // 1. 아이템 정보 업데이트
-    // ✅ 주의: updateItemSchema가 imageUrl에 대해 .nullable()을 허용해야 합니다.
-    await db.update(items).set(dataToUpdate).where(eq(items.id, id));
+    // DB 업데이트
+    await db.update(items).set(validatedData.data).where(eq(items.id, id));
 
-    // ... (대기열 삭제 및 반납 처리 로직 유지) ...
+    // ✅ DB 업데이트가 성공하면 그때 기존 파일을 삭제합니다.
+    if (deleteImage && existingItem.imageUrl) {
+      await deleteFileFromDisk(existingItem.imageUrl);
+    }
+    // 새 파일로 교체된 경우에도 기존 파일 삭제
+    else if (
+      newImageUrl &&
+      newImageUrl !== existingItem.imageUrl &&
+      existingItem.imageUrl
+    ) {
+      await deleteFileFromDisk(existingItem.imageUrl);
+    }
+
+    // 대기열 및 렌탈 정보 정리
     await db.delete(waitingQueue).where(eq(waitingQueue.itemId, id));
 
     if (dataToUpdate.isTimeLimited) {

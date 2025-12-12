@@ -32,7 +32,7 @@ export const updateItemSchema = z.object({
     .min(1, "카테고리를 입력해주세요.")
     .transform((val) => val.replace(/\s/g, ""))
     .optional(),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().nullable().optional(),
   isTimeLimited: z.boolean().optional(),
   rentalTimeMinutes: z.number().int().positive().optional(),
   maxRentalsPerUser: z.number().int().positive().optional(),

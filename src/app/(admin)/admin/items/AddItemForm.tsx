@@ -191,7 +191,7 @@ export function AddItemForm() {
                         const file = event.target.files?.[0];
                         if (file) {
                           if (file.size > 1 * 1024 * 1024) {
-                            toast.error("File size cannot exceed 1MB.");
+                            toast.error("파일사이즈는 1MB 미만이어야 합니다.");
                             event.target.value = "";
                             field.onChange(undefined);
                             return;

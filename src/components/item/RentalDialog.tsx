@@ -49,6 +49,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileText, Minus, Plus, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RentalDialogProps {
   item: Item | null;
@@ -143,13 +144,13 @@ const SCHOOL_DATA: Record<string, string[]> = {
     "서울문화고",
     "서울외고",
     "선덕고",
-    "세그루패션디자인고",
+    "세그루패션고",
     "자운고",
     "정의여고",
     "창동고",
     "효문고",
   ],
-  대학교: ["광운", "삼육", "인덕", "이화여", "남서울", "서일"],
+  대학교: ["광운대", "삼육대", "인덕대", "이화여대", "남서울대", "서일대"],
 };
 
 export function RentalDialog({
@@ -1211,107 +1212,116 @@ export function RentalDialog({
                         학교
                         <span className="text-[oklch(0.7_0.18_350)]">*</span>
                       </FormLabel>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                          {/* 1. 학교 급 선택 */}
-                          <Select
-                            onValueChange={(value) => {
-                              setSchoolLevel(value);
-                              setSchoolName(""); // 급 변경 시 이름 초기화
-                              setIsDirectInput(false);
-                            }}
-                            value={schoolLevel}
-                          >
-                            <SelectTrigger className="w-[120px] focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]! ">
-                              <SelectValue placeholder="급 선택" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[
-                                "초등학교",
-                                "중학교",
-                                "고등학교",
-                                "대학교",
-                                "해당없음",
-                              ].map((level) => (
-                                <SelectItem key={level} value={level}>
-                                  {level}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
 
-                          {/* 2. 학교 이름 선택 (해당없음이 아니고 급이 선택되었을 때만) */}
-                          {schoolLevel && schoolLevel !== "해당없음" && (
-                            <div className="flex-1">
-                              <Select
-                                onValueChange={(value) => {
-                                  if (value === "direct_input_option") {
-                                    setIsDirectInput(true);
-                                    setSchoolName("");
-                                  } else {
-                                    setIsDirectInput(false);
-                                    setSchoolName(value);
-                                  }
-                                }}
-                                // ✅ 런타임 에러 방지 핵심:
-                                // 직접 입력 모드일 때는 Select의 value를 고정값으로 둠.
-                                // 목록에 없는 값이 value로 들어가면 Select가 깨질 수 있음.
-                                value={
-                                  isDirectInput
-                                    ? "direct_input_option"
-                                    : SCHOOL_DATA[schoolLevel]?.includes(
-                                        schoolName
-                                      )
-                                    ? schoolName
-                                    : ""
-                                }
-                              >
-                                <SelectTrigger className="w-full focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]!">
-                                  <SelectValue placeholder="학교 선택" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[200px]">
-                                  {/* 데이터 매핑 시 key와 value가 비어있지 않은지 확인 */}
-                                  {SCHOOL_DATA[schoolLevel]?.map((school) => (
-                                    <SelectItem key={school} value={school}>
-                                      {school}
-                                    </SelectItem>
-                                  ))}
-                                  <div className="h-[1px] bg-gray-100 my-1" />
-                                  {/* ✅ value는 절대 빈 문자열이면 안됨 */}
-                                  <SelectItem
-                                    value="direct_input_option"
-                                    className="font-semibold text-[oklch(0.75_0.12_165)]"
-                                  >
-                                    직접 입력
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
+                      <div className="space-y-4">
+                        {/* 1. 학교 급 선택 (버튼 그리드) */}
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            "초등학교",
+                            "중학교",
+                            "고등학교",
+                            "대학교",
+                            "해당없음",
+                          ].map((level) => (
+                            <Button
+                              key={level}
+                              type="button" // 폼 제출 방지
+                              variant="outline"
+                              onClick={() => {
+                                setSchoolLevel(level);
+                                setSchoolName(""); // 급 변경 시 이름 초기화
+                                setIsDirectInput(false);
+                              }}
+                              className={cn(
+                                "h-12 text-base font-medium transition-all",
+                                schoolLevel === level
+                                  ? "bg-[oklch(0.75_0.12_165)] text-white hover:bg-[oklch(0.72_0.12_165)] border-transparent"
+                                  : "hover:bg-[oklch(0.75_0.12_165/0.1)] text-slate-600"
+                              )}
+                            >
+                              {level}
+                            </Button>
+                          ))}
                         </div>
 
-                        {/* 3. 직접 입력 인풋 */}
-                        {isDirectInput &&
-                          schoolLevel &&
-                          schoolLevel !== "해당없음" && (
-                            <FormControl>
-                              <Input
-                                placeholder={
-                                  schoolLevel === "고등학교"
-                                    ? "예: 선덕, 정의여, 대원외 (자동으로 '고'가 붙습니다)"
-                                    : "학교 이름 입력"
-                                }
-                                value={schoolName}
-                                className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
-                                onChange={(e) =>
-                                  setSchoolName(
-                                    e.target.value.replace(/\s/g, "")
-                                  )
-                                }
-                                autoFocus
-                              />
-                            </FormControl>
-                          )}
+                        {/* 2. 학교 이름 선택 (해당없음이 아니고, 급이 선택되었을 때 펼쳐짐) */}
+                        {schoolLevel && schoolLevel !== "해당없음" && (
+                          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                              <p className="text-sm text-slate-500 mb-3 font-medium">
+                                학교를 선택해주세요
+                              </p>
+
+                              {/* 학교 목록 버튼 그리드 */}
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                                {SCHOOL_DATA[schoolLevel]?.map((school) => (
+                                  <Button
+                                    key={school}
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setIsDirectInput(false);
+                                      setSchoolName(school);
+                                    }}
+                                    className={cn(
+                                      "h-12 w-full justify-center px-4 text-center", // 텍스트 왼쪽 정렬
+                                      !isDirectInput && schoolName === school
+                                        ? "border-2 border-[oklch(0.75_0.12_165)] text-[oklch(0.75_0.12_165)] bg-[oklch(0.75_0.12_165/0.05)]"
+                                        : "border-slate-200"
+                                    )}
+                                  >
+                                    {school}
+                                  </Button>
+                                ))}
+
+                                {/* 직접 입력 버튼 (목록 끝에 추가) */}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setIsDirectInput(true);
+                                    setSchoolName(""); // 입력창 초기화
+                                  }}
+                                  className={cn(
+                                    "h-12 w-full justify-center px-4 text-center font-semibold",
+                                    isDirectInput
+                                      ? "border-2 border-[oklch(0.75_0.12_165)] text-[oklch(0.75_0.12_165)] bg-[oklch(0.75_0.12_165/0.05)]"
+                                      : "text-slate-500 border-dashed border-slate-300"
+                                  )}
+                                >
+                                  ✎ 직접 입력
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* 3. 직접 입력 인풋 (직접 입력 버튼 눌렀을 때만 하단에 표시) */}
+                            {isDirectInput && (
+                              <div className="mt-3 animate-in fade-in duration-300">
+                                <FormControl>
+                                  <Input
+                                    placeholder={
+                                      schoolLevel === "고등학교"
+                                        ? "예: 선덕 (자동으로 '선덕고'가 됩니다)"
+                                        : "학교 이름을 입력해주세요"
+                                    }
+                                    value={schoolName}
+                                    className="h-12 text-lg focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
+                                    onChange={(e) =>
+                                      setSchoolName(
+                                        e.target.value.replace(/\s/g, "")
+                                      )
+                                    }
+                                    // 키오스크에서는 자동 포커스가 오히려 키보드를 가릴 수 있으니 상황에 따라 조정
+                                    autoFocus
+                                  />
+                                </FormControl>
+                                <p className="text-xs text-muted-foreground mt-1 px-1">
+                                  * 목록에 학교가 없을 경우 직접 입력해주세요.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <FormMessage />
                     </FormItem>

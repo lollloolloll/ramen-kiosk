@@ -1790,6 +1790,7 @@ export function RentalDialog({
       >
         <DialogContent
           onOpenAutoFocus={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
           className={`sm:max-w-[425px] transition-all duration-300 ${
             step === "success" || step === "waitingSuccess"
               ? "p-0 border-0 overflow-hidden bg-transparent shadow-none" // 이 부분 필수

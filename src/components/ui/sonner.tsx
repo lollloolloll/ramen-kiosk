@@ -29,7 +29,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
           [&>div]:gap-8           
         `,
         style: {
-          gap: "1rem", // 👈 인라인 스타일로 강제
+          gap: "1rem",
+          width: "auto", // 👈 추가
+          maxWidth: "90vw", // 👈 화면의 90%까지만
+          minWidth: "fit-content", // 👈 내용에 맞게
         },
       }}
       icons={{

@@ -1133,6 +1133,8 @@ export function RentalDialog({
                       <FormControl>
                         {/* [수정] 에러 시 전체 영역 빨간 테두리 */}
                         <div
+                          ref={field.ref}
+                          tabIndex={-1}
                           className={cn(
                             "flex gap-2 p-1 rounded-md",
                             fieldState.invalid && "ring-1 ring-red-500"
@@ -1194,6 +1196,8 @@ export function RentalDialog({
                       </FormLabel>
                       {/* [수정] 에러 시 빨간 테두리 컨테이너 추가 */}
                       <div
+                        ref={field.ref}
+                        tabIndex={-1}
                         className={cn(
                           "flex gap-2 rounded-md",
                           fieldState.invalid && "ring-1 ring-red-500 p-1"
@@ -1262,7 +1266,7 @@ export function RentalDialog({
                   control={registerForm.control}
                   name="school"
                   render={(
-                    { fieldState } // [수정] fieldState 추가
+                    { field, fieldState } // [수정] fieldState 추가
                   ) => (
                     <FormItem>
                       <FormLabel
@@ -1275,6 +1279,8 @@ export function RentalDialog({
                       <div className="space-y-4">
                         {/* [수정] 에러 시 버튼 그룹 전체 빨간 테두리 */}
                         <div
+                          ref={field.ref}
+                          tabIndex={-1}
                           className={cn(
                             "grid grid-cols-3 gap-2 rounded-md",
                             fieldState.invalid && "ring-1 ring-red-500 p-1"

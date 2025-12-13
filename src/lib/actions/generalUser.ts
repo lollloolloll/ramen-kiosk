@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { generalUsers, users } from "@drizzle/schema";
-import { eq, asc, desc, like, or } from "drizzle-orm";
+import { eq, asc, desc, like, or, sql } from "drizzle-orm";
 import { generalUserSchema } from "@/lib/validators/generalUser";
 import { revalidatePath } from "next/cache";
 
@@ -63,7 +63,6 @@ export async function createGeneralUser(data: unknown) {
 }
 
 import { count } from "drizzle-orm";
-
 export async function getAllGeneralUsers({
   page = 1,
   per_page = 10,
@@ -80,10 +79,29 @@ export async function getAllGeneralUsers({
   try {
     const offset = (page - 1) * per_page;
 
-    // 이름으로만 검색
-    let whereClause;
+    let whereClause = undefined;
+
     if (search) {
-      whereClause = like(generalUsers.name, `%${search}%`);
+      // 사용자가 입력한 검색어에서 하이픈 제거 (예: 010-1234 -> 0101234)
+      // 만약 이름 검색인 경우(하이픈 없음)에는 그대로 유지됨
+      const cleanSearch = search.replace(/-/g, "");
+
+      // cleanSearch가 빈 문자열이면(검색어가 '-'만 있는 경우 등) 모든 전화번호가 검색되는 문제 방지
+      if (cleanSearch.length > 0) {
+        whereClause = or(
+          // 1. 이름 검색 (기존 검색어 그대로 사용)
+          like(generalUsers.name, `%${search}%`),
+
+          // 2. 전화번호 검색 (DB값의 하이픈을 제거하고, 하이픈 없는 검색어와 비교)
+          // SQLite의 REPLACE 함수 사용: phone_number의 '-'를 ''로 변경 후 비교
+          sql`REPLACE(${
+            generalUsers.phoneNumber
+          }, '-', '') LIKE ${`%${cleanSearch}%`}`
+        );
+      } else {
+        // 검색어가 특수문자로만 이루어져서 cleanSearch가 빈 값이 된 경우 이름만 검색
+        whereClause = like(generalUsers.name, `%${search}%`);
+      }
     }
 
     const [total] = await db
@@ -119,10 +137,10 @@ export async function getAllGeneralUsers({
 
     return { data: allUsers, total_count };
   } catch (error) {
+    console.error(error);
     return { error: "사용자 정보를 가져오는 데 실패했습니다." };
   }
 }
-
 export async function getAllAdminUsers() {
   try {
     const allUsers = await db.select().from(users);

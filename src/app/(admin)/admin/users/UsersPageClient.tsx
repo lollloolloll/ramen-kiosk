@@ -55,6 +55,7 @@ export function UsersPageClient({
 
   const [searchTerm, setSearchTerm] = useState(search);
   const debouncedSearch = useDebounce(searchTerm, 500);
+  // ref에서 type 제거, term만 추적
   const prevSearchRef = useRef(search);
 
   const [isRentalHistoryDialogOpen, setIsRentalHistoryDialogOpen] =
@@ -66,17 +67,18 @@ export function UsersPageClient({
   const [availableItems, setAvailableItems] = useState<string[]>([]);
 
   const handleRowClick = (user: GeneralUser, event: React.MouseEvent) => {
-    // 드롭다운 메뉴 내부의 클릭 이벤트는 무시합니다.
-    // 클릭된 요소가 Dialog 또는 AlertDialog 내부에 있는지 확인합니다.
-    // Dialog 및 AlertDialog는 일반적으로 role="dialog" 속성을 가집니다.
-    if (event.target instanceof HTMLElement && event.target.closest('[role="dialog"]')) {
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest('[role="dialog"]')
+    ) {
       return;
     }
     setSelectedUserForHistory({ userId: user.id, username: user.name });
     setIsRentalHistoryDialogOpen(true);
   };
+
   useEffect(() => {
-    // 검색어가 실제로 변경되었을 때만 실행
+    // 검색어가 변경되었을 때만 실행
     if (debouncedSearch !== prevSearchRef.current) {
       prevSearchRef.current = debouncedSearch;
 
@@ -89,7 +91,7 @@ export function UsersPageClient({
       params.set("page", "1");
       router.push(`?${params.toString()}`);
     }
-  }, [debouncedSearch, router, searchParams]); // Added searchParams to dependency array
+  }, [debouncedSearch, router, searchParams]);
 
   useEffect(() => {
     async function fetchItemNames() {
@@ -145,7 +147,7 @@ export function UsersPageClient({
               )}
             </Button>
             <Input
-              placeholder="이름 검색..."
+              placeholder="이름 또는 전화번호 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-[250px] mr-2"

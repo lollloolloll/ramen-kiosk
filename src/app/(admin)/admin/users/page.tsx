@@ -8,7 +8,6 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // searchParams를 await으로 받아야 합니다
   const params = await searchParams;
 
   const page =

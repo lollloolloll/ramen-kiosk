@@ -197,6 +197,7 @@ export function RentalDialog({
     femaleCount: number;
   } | null>(null);
   const [isDirectInput, setIsDirectInput] = useState(false);
+  const [showSchoolPanel, setShowSchoolPanel] = useState(false);
 
   const isRentedMode = item?.isTimeLimited && item?.status === "RENTED";
   const estimatedWaitingTime = useMemo(() => {
@@ -553,6 +554,8 @@ export function RentalDialog({
     setSchoolName("");
     setYearSelectOpen(false);
     setIsConsentModalOpen(false);
+    setShowSchoolPanel(false); // 패널 닫기 초기화
+    setSchoolLevel(""); // 학교 레벨 초기화
     setTempConsent(false);
   };
 
@@ -634,7 +637,151 @@ export function RentalDialog({
   const handleRegisterError = (errors: any) => {
     toast.error("필수 정보를 모두 입력해주세요.");
   };
+  // 오른쪽 패널에 들어갈 학교 목록 컨텐츠
+  const renderSchoolPanel = () => {
+    if (!schoolLevel || schoolLevel === "해당없음") return null;
 
+    return (
+      <div className="flex flex-col h-full border-l pl-6 ml-2 animate-in fade-in slide-in-from-left-4 duration-500">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-lg text-slate-800">
+            {schoolLevel} 목록
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSchoolPanel(false)}
+            className="h-8 w-8 rounded-full"
+          >
+            ✕
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto pr-2 scrollbar-hidden">
+          <div className="grid grid-cols-2 gap-2 pb-4">
+            {SCHOOL_DATA[schoolLevel]?.map((school) => {
+              // 현재 선택된 상태인지 확인
+              // 주의: registerForm의 값은 '선덕고'이고 school은 '선덕'일 수 있음
+              const currentVal = registerForm.getValues("school");
+              const isSelected = currentVal && currentVal.startsWith(school);
+
+              return (
+                <Button
+                  key={school}
+                  type="button"
+                  variant={isSelected ? "default" : "outline"}
+                  onClick={() => {
+                    setIsDirectInput(false);
+                    setSchoolName(school);
+
+                    let finalName = school;
+                    let suffix = "";
+                    switch (schoolLevel) {
+                      case "초등학교":
+                        suffix = "초";
+                        break;
+                      case "중학교":
+                        suffix = "중";
+                        break;
+                      case "고등학교":
+                        suffix = "고";
+                        break;
+                      case "대학교":
+                        suffix = "대";
+                        break;
+                    }
+                    if (suffix && !finalName.endsWith(suffix))
+                      finalName += suffix;
+
+                    registerForm.setValue("school", finalName);
+                    registerForm.trigger("school");
+                    // 선택해도 패널은 유지 (사용자가 x 누르거나 다른거 누를때까지)
+                  }}
+                  className={cn(
+                    "h-12 w-full justify-center px-4 text-center transition-all",
+                    isSelected
+                      ? "bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)] ring-offset-1 ring-[oklch(0.75_0.12_165)]"
+                      : "border-slate-200 hover:border-[oklch(0.75_0.12_165)]"
+                  )}
+                >
+                  {school}
+                  {isSelected && <span className="text-xs">✓</span>}
+                </Button>
+              );
+            })}
+
+            <Button
+              type="button"
+              variant={isDirectInput ? "default" : "outline"}
+              onClick={() => {
+                setIsDirectInput(true);
+                setSchoolName("");
+                registerForm.setValue("school", "");
+              }}
+              className={cn(
+                "h-12 w-full justify-center px-4 text-center font-semibold border-dashed",
+                isDirectInput
+                  ? "bg-slate-800 text-white hover:bg-slate-700"
+                  : "text-slate-500 border-slate-300"
+              )}
+            >
+              ✎ 직접 입력
+            </Button>
+          </div>
+        </div>
+
+        {/* 직접 입력창 (패널 하단에 고정) */}
+        {isDirectInput && (
+          <div className="pt-4 border-t mt-auto animate-in slide-in-from-bottom-2">
+            <p className="text-xs text-muted-foreground mb-1">
+              학교 이름 직접 입력
+            </p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="예: 선덕"
+                value={schoolName}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\s/g, "");
+                  setSchoolName(val);
+
+                  let finalName = val;
+                  if (val) {
+                    let suffix = "";
+                    switch (schoolLevel) {
+                      case "초등학교":
+                        suffix = "초";
+                        break;
+                      case "중학교":
+                        suffix = "중";
+                        break;
+                      case "고등학교":
+                        suffix = "고";
+                        break;
+                      case "대학교":
+                        suffix = "대";
+                        break;
+                    }
+                    if (suffix && !finalName.endsWith(suffix))
+                      finalName += suffix;
+                  }
+                  registerForm.setValue("school", finalName);
+                }}
+                className="flex-1"
+              />
+              <Button
+                onClick={() => {
+                  if (schoolName) setShowSchoolPanel(false);
+                }}
+                className="bg-[oklch(0.75_0.12_165)]"
+              >
+                완료
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
   const renderStep = () => {
     const content = (() => {
       switch (step) {
@@ -770,7 +917,7 @@ export function RentalDialog({
                                 <span>대기자 ({waitingList.length}팀)</span>
                               </div>
 
-                              <div className="max-h-[200px] overflow-y-auto p-2 space-y-1">
+                              <div className="max-h-[200px] overflow-y-auto p-2 space-y-1 scrollbar-hidden">
                                 {waitingList.length === 0 ? (
                                   <div className="text-center py-8 text-sm text-gray-400">
                                     대기자가 없습니다.
@@ -932,7 +1079,7 @@ export function RentalDialog({
                     <FormDescription className="text-xs">
                       참여하는 친구들의 이름을 모두 입력해주세요.(본인 포함)
                     </FormDescription>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 max-h-48 overflow-y-auto pr-1 pt-3 pl-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 max-h-48 overflow-y-auto pr-1 pt-3 pl-1 scrollbar-hidden">
                       {fields.map((field, index) => {
                         const genderLabel =
                           field.gender === "남" ? "남자" : "여자";
@@ -1265,9 +1412,7 @@ export function RentalDialog({
                 <FormField
                   control={registerForm.control}
                   name="school"
-                  render={(
-                    { field, fieldState } // [수정] fieldState 추가
-                  ) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel
                         className={cn(fieldState.invalid && "text-red-500")}
@@ -1277,12 +1422,12 @@ export function RentalDialog({
                       </FormLabel>
 
                       <div className="space-y-4">
-                        {/* [수정] 에러 시 버튼 그룹 전체 빨간 테두리 */}
+                        {/* 학교 종류 버튼 그룹 */}
                         <div
                           ref={field.ref}
                           tabIndex={-1}
                           className={cn(
-                            "grid grid-cols-3 gap-2 rounded-md",
+                            "grid grid-cols-3 gap-2 rounded-md outline-none transition-all duration-300",
                             fieldState.invalid && "ring-1 ring-red-500 p-1"
                           )}
                         >
@@ -1299,8 +1444,26 @@ export function RentalDialog({
                               variant="outline"
                               onClick={() => {
                                 setSchoolLevel(level);
-                                setSchoolName("");
-                                setIsDirectInput(false);
+
+                                if (level === "해당없음") {
+                                  setShowSchoolPanel(false); // 패널 닫기
+                                  registerForm.setValue("school", "해당없음");
+                                  setSchoolName("");
+                                  setIsDirectInput(false);
+                                } else {
+                                  // 종류 선택 시 오른쪽 패널 열기
+                                  setShowSchoolPanel(true);
+                                  // 기존 선택된 학교가 새 레벨에 안 맞으면 이름 초기화
+                                  if (
+                                    !field.value?.endsWith(
+                                      level.substring(0, 1)
+                                    )
+                                  ) {
+                                    setSchoolName("");
+                                    registerForm.setValue("school", "");
+                                  }
+                                  setIsDirectInput(false);
+                                }
                               }}
                               className={cn(
                                 "h-12 text-base font-medium transition-all",
@@ -1314,87 +1477,10 @@ export function RentalDialog({
                           ))}
                         </div>
 
-                        {schoolLevel && schoolLevel !== "해당없음" && (
-                          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                              <p className="text-sm text-slate-500 mb-3 font-medium">
-                                학교를 선택해주세요
-                              </p>
-
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pr-1">
-                                {SCHOOL_DATA[schoolLevel]?.map((school) => (
-                                  <Button
-                                    key={school}
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setIsDirectInput(false);
-                                      setSchoolName(school);
-                                    }}
-                                    className={cn(
-                                      "h-12 w-full justify-center px-4 text-center",
-                                      !isDirectInput && schoolName === school
-                                        ? "border-2 border-[oklch(0.75_0.12_165)] text-[oklch(0.75_0.12_165)] bg-[oklch(0.75_0.12_165/0.05)]"
-                                        : "border-slate-200"
-                                    )}
-                                  >
-                                    {school}
-                                  </Button>
-                                ))}
-
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setIsDirectInput(true);
-                                    setSchoolName("");
-                                  }}
-                                  className={cn(
-                                    "h-12 w-full justify-center px-4 text-center font-semibold",
-                                    isDirectInput
-                                      ? "border-2 border-[oklch(0.75_0.12_165)] text-[oklch(0.75_0.12_165)] bg-[oklch(0.75_0.12_165/0.05)]"
-                                      : "text-slate-500 border-dashed border-slate-300"
-                                  )}
-                                >
-                                  ✎ 직접 입력
-                                </Button>
-                              </div>
-                            </div>
-
-                            {isDirectInput && (
-                              <div className="mt-3 animate-in fade-in duration-300">
-                                <FormControl>
-                                  <Input
-                                    placeholder={
-                                      schoolLevel === "초등학교" ||
-                                      "중학교" ||
-                                      "고등학교" ||
-                                      "대학교"
-                                        ? "예: 선덕 (자동으로 '선덕고'가 됩니다)"
-                                        : "학교 이름을 입력해주세요"
-                                    }
-                                    autoComplete="off"
-                                    autoCorrect="off"
-                                    lang="ko"
-                                    value={schoolName}
-                                    className={cn(
-                                      "h-12 text-lg focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!",
-                                      fieldState.invalid &&
-                                        "border-red-500! focus-visible:border-red-500!"
-                                    )}
-                                    onChange={(e) =>
-                                      setSchoolName(
-                                        e.target.value.replace(/\s/g, "")
-                                      )
-                                    }
-                                    autoFocus
-                                  />
-                                </FormControl>
-                                <p className="text-xs text-muted-foreground mt-1 px-1">
-                                  * 목록에 학교가 없을 경우 직접 입력해주세요.
-                                </p>
-                              </div>
-                            )}
+                        {/* 선택된 학교 표시 (패널이 열려있을 때 폼 안에서도 확인 가능하게) */}
+                        {field.value && field.value !== "해당없음" && (
+                          <div className="p-3 bg-[oklch(0.75_0.12_165/0.1)] rounded-md border border-[oklch(0.75_0.12_165/0.2)] text-[oklch(0.75_0.12_165)] font-bold text-center mx-auto w-fit">
+                            {field.value}
                           </div>
                         )}
                       </div>
@@ -1841,22 +1927,44 @@ export function RentalDialog({
       <Dialog
         open={open}
         onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            resetDialog();
-          }
+          if (!isOpen) resetDialog();
           onOpenChange(isOpen);
         }}
       >
         <DialogContent
           onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
-          className={`sm:max-w-[425px] transition-all duration-300 ${
+          className={cn(
+            "transition-all duration-300 ease-in-out gap-0", // gap-0 추가
             step === "success" || step === "waitingSuccess"
-              ? "p-0 border-0 overflow-hidden bg-transparent shadow-none" // 이 부분 필수
-              : ""
-          }`}
+              ? "sm:max-w-[425px] p-0 border-0 overflow-hidden bg-transparent shadow-none"
+              : showSchoolPanel
+              ? "sm:max-w-[850px] w-[90vw]" // 패널 열리면 넓어짐
+              : "sm:max-w-[425px]"
+          )}
         >
-          {renderStep()}
+          {/* Flex 컨테이너로 감싸서 좌우 배치 */}
+          <div className="flex h-full max-h-[85vh]">
+            {/* 왼쪽: 기존 폼 (너비 고정 또는 유동) */}
+            <div
+              className={cn(
+                "flex-1 overflow-y-auto transition-all scrollbar-hidden"
+                // 패널 열릴 때 왼쪽 폼 너비 조정이 필요하다면 여기에 스타일 추가
+                // showSchoolPanel ? "w-1/2" : "w-full" (flex-1이 알아서 처리함)
+              )}
+            >
+              {renderStep()}
+            </div>
+
+            {/* 오른쪽: 학교 선택 패널 (조건부 렌더링) */}
+            {showSchoolPanel && (
+              <div className="w-[400px] bg-slate-50/50 p-6 rounded-r-lg hidden sm:block">
+                {/* 모바일(sm이하)에서는 오른쪽 패널 숨기고 아래로 내리거나 다른 처리 필요할 수 있음. 
+                            하지만 산업용 모니터라면 보통 해상도가 sm 이상일 것입니다. */}
+                {renderSchoolPanel()}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1869,7 +1977,7 @@ export function RentalDialog({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-auto p-6 bg-muted/5">
+          <div className="flex-1 overflow-auto p-6 bg-muted/5 scrollbar-hidden">
             {!consentFile && (
               <div className="flex flex-col items-center justify-center py-16 space-y-4">
                 <FileText className="w-16 h-16 text-muted-foreground/50" />

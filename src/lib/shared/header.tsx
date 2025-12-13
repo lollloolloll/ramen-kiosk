@@ -3,7 +3,7 @@
 import { Menu, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
-import { downloadDatabase } from "@/lib/actions/backup";
+import { downloadDatabase, downloadFullBackup } from "@/lib/actions/backup";
 import Link from "next/link";
 
 interface HeaderProps {
@@ -15,7 +15,7 @@ export function Header({ onMenuClick, onSidebarToggle }: HeaderProps) {
   const handleBackup = async () => {
     if (!confirm("현재 데이터베이스(DB)를 백업하시겠습니까?")) return;
     try {
-      const result = await downloadDatabase();
+      const result = await downloadFullBackup();
       if (result.success && result.buffer) {
         const link = document.createElement("a");
         link.href = `data:${result.mimeType};base64,${result.buffer}`;

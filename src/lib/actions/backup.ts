@@ -1,7 +1,12 @@
 "use server";
 
 import { promises as fs } from "fs";
+import fsStats from "fs";
 import path from "path";
+import { exec } from "child_process";
+import { promisify } from "util"; // exec를 Promise처럼 사용하기 위함
+
+const execAsync = promisify(exec);
 
 export async function downloadDatabase() {
   // 1. 환경변수에서 경로 가져오기 (file:/app/data/local.db)
@@ -58,12 +63,92 @@ export async function downloadDatabase() {
     // 6. 엑셀 다운로드 방식(Base64)으로 반환
     return {
       success: true,
+      type: "db", // ✅ DB 다운로드 타입
       buffer: fileBuffer.toString("base64"),
       fileName: downloadFileName,
       mimeType: "application/x-sqlite3",
     };
   } catch (error) {
     console.error("데이터베이스 백업 처리 중 오류:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
+ * ✅ [추가] 이미지 포함 전체 백업 (DB + public/uploads)
+ * 도커 명령어를 실행하여 볼륨 전체를 백업합니다. (서버에 Docker CLI가 설치되어 있어야 함)
+ */
+export async function downloadFullBackup() {
+  const timestamp = new Date().toISOString().replace(/[:.-]/g, "_");
+  // 임시 파일명 (확장자는 tar.gz)
+  const backupFileName = `full_backup_${timestamp}.tar.gz`;
+  const backupFilePath = path.join(process.cwd(), backupFileName);
+
+  try {
+    // 1. 백업할 대상 폴더 경로 설정 (상대 경로 권장)
+    // process.cwd() 기준: "data" 폴더와 "public/uploads" 폴더
+    const targets = [];
+
+    // data 폴더 확인
+    if (fsStats.existsSync(path.join(process.cwd(), "data"))) {
+      targets.push("data");
+    }
+
+    // uploads 폴더 확인
+    if (fsStats.existsSync(path.join(process.cwd(), "public", "uploads"))) {
+      // tar 명령어에서 경로 문제를 피하기 위해 윈도우/리눅스 공통적으로 'public/uploads' 형태로 전달
+      targets.push("public/uploads");
+    }
+
+    if (targets.length === 0) {
+      return {
+        success: false,
+        error: "백업할 데이터 폴더(data 또는 uploads)가 없습니다.",
+      };
+    }
+
+    // 2. OS 내장 tar 명령어로 압축 실행
+    // -c: 생성, -z: gzip 압축, -f: 파일명 지정
+    // 윈도우 PowerShell/CMD 및 리눅스 쉘 모두에서 작동하도록 명령어 구성
+    const targetString = targets.join(" ");
+    const command = `tar -czf "${backupFileName}" ${targetString}`;
+
+    console.log(`백업 시작: ${command}`);
+
+    // 명령어 실행 (cwd 옵션으로 현재 프로젝트 루트에서 실행)
+    await execAsync(command, { cwd: process.cwd() });
+
+    // 3. 생성된 압축 파일 읽기
+    const fileBuffer = await fs.readFile(backupFilePath);
+
+    // 4. 임시 파일 삭제 (청소)
+    await fs.unlink(backupFilePath);
+
+    console.log("백업 완료 및 임시 파일 삭제됨");
+
+    // 5. 다운로드 정보 반환 (Base64)
+    return {
+      success: true,
+      type: "full",
+      buffer: fileBuffer.toString("base64"),
+      fileName: backupFileName,
+      mimeType: "application/gzip", // .tar.gz의 MIME 타입
+    };
+  } catch (error) {
+    console.error("전체 백업 처리 중 오류:", error);
+
+    // 에러 발생 시에도 혹시 생성된 임시 파일이 있다면 삭제 시도
+    try {
+      if (fsStats.existsSync(backupFilePath)) {
+        await fs.unlink(backupFilePath);
+      }
+    } catch (e) {
+      /* 무시 */
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),

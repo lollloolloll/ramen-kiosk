@@ -2,6 +2,7 @@
 
 import { promises as fs } from "fs";
 import fsStats from "fs";
+import os from "os";
 import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util"; // exec를 Promise처럼 사용하기 위함
@@ -83,23 +84,36 @@ export async function downloadDatabase() {
  */
 export async function downloadFullBackup() {
   const timestamp = new Date().toISOString().replace(/[:.-]/g, "_");
-  // 임시 파일명 (확장자는 tar.gz)
   const backupFileName = `full_backup_${timestamp}.tar.gz`;
-  const backupFilePath = path.join(process.cwd(), backupFileName);
+
+  // OS 확인
+  const isWindows = process.platform === "win32";
+
+  // 1. 실제 파일이 저장될 절대 경로 (Node.js 파일 읽기용)
+  let backupFilePath: string;
+
+  // 2. tar 명령어에 전달할 경로 (tar 명령어용)
+  let tarOutputPayload: string;
+
+  if (isWindows) {
+    // [Windows] 현재 폴더(cwd)에 저장.
+    // 절대 경로(C:\...)를 쓰면 tar가 콜론(:)을 인식 못해 에러 발생함.
+    backupFilePath = path.join(process.cwd(), backupFileName);
+    tarOutputPayload = backupFileName; // 파일명만 전달 (상대 경로)
+  } else {
+    // [Linux/Docker] 시스템 임시 폴더(/tmp)에 저장.
+    // 앱 루트(/app)는 권한이 없을 수 있으므로 /tmp 사용.
+    backupFilePath = path.join(os.tmpdir(), backupFileName);
+    tarOutputPayload = backupFilePath; // 절대 경로 전달
+  }
 
   try {
-    // 1. 백업할 대상 폴더 경로 설정 (상대 경로 권장)
-    // process.cwd() 기준: "data" 폴더와 "public/uploads" 폴더
+    // 3. 백업할 대상 폴더 확인
     const targets = [];
-
-    // data 폴더 확인
     if (fsStats.existsSync(path.join(process.cwd(), "data"))) {
       targets.push("data");
     }
-
-    // uploads 폴더 확인
     if (fsStats.existsSync(path.join(process.cwd(), "public", "uploads"))) {
-      // tar 명령어에서 경로 문제를 피하기 위해 윈도우/리눅스 공통적으로 'public/uploads' 형태로 전달
       targets.push("public/uploads");
     }
 
@@ -110,37 +124,35 @@ export async function downloadFullBackup() {
       };
     }
 
-    // 2. OS 내장 tar 명령어로 압축 실행
-    // -c: 생성, -z: gzip 압축, -f: 파일명 지정
-    // 윈도우 PowerShell/CMD 및 리눅스 쉘 모두에서 작동하도록 명령어 구성
+    // 4. tar 명령어 실행
     const targetString = targets.join(" ");
-    const command = `tar -czf "${backupFileName}" ${targetString}`;
+    // tarOutputPayload에는 Windows면 "파일명.tar.gz", Linux면 "/tmp/파일명.tar.gz"가 들어감
+    const command = `tar -czf "${tarOutputPayload}" ${targetString}`;
 
     console.log(`백업 시작: ${command}`);
 
-    // 명령어 실행 (cwd 옵션으로 현재 프로젝트 루트에서 실행)
+    // cwd 옵션을 주어 항상 프로젝트 루트에서 실행되도록 함
     await execAsync(command, { cwd: process.cwd() });
 
-    // 3. 생성된 압축 파일 읽기
+    // 5. 생성된 파일 읽기 (항상 절대 경로인 backupFilePath 사용)
     const fileBuffer = await fs.readFile(backupFilePath);
 
-    // 4. 임시 파일 삭제 (청소)
+    // 6. 임시 파일 삭제
     await fs.unlink(backupFilePath);
 
     console.log("백업 완료 및 임시 파일 삭제됨");
 
-    // 5. 다운로드 정보 반환 (Base64)
     return {
       success: true,
       type: "full",
       buffer: fileBuffer.toString("base64"),
       fileName: backupFileName,
-      mimeType: "application/gzip", // .tar.gz의 MIME 타입
+      mimeType: "application/gzip",
     };
   } catch (error) {
     console.error("전체 백업 처리 중 오류:", error);
 
-    // 에러 발생 시에도 혹시 생성된 임시 파일이 있다면 삭제 시도
+    // 에러 발생 시 청소
     try {
       if (fsStats.existsSync(backupFilePath)) {
         await fs.unlink(backupFilePath);

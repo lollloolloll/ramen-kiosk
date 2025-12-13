@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DataTable } from "@/components/ui/data-table";
+// 기존 DataTable 대신 SortableDataTable import
+import { SortableDataTable } from "@/components/ui/sortable-data-table";
 import { Item, columns } from "./columns";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,8 @@ import {
 import { AddItemForm } from "./AddItemForm";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { updateItemOrder } from "@/lib/actions/item"; // 액션 import
+import { toast } from "sonner";
 
 interface ItemPageClientProps {
   initialItems: Item[];
@@ -25,6 +28,25 @@ export function ItemPageClient({ initialItems }: ItemPageClientProps) {
   const filteredItems = initialItems.filter((item) =>
     showDeleted ? true : !item.isDeleted
   );
+
+  // 순서 변경 핸들러
+  const handleReorder = async (newItems: Item[]) => {
+    // 1. 변경된 순서대로 displayOrder 값 매핑
+    const itemsToUpdate = newItems.map((item, index) => ({
+      id: item.id,
+      displayOrder: index, // 배열 인덱스를 순서로 저장
+    }));
+
+    // 2. 서버 액션 호출 (낙관적 업데이트는 이미 Table 내부 state로 처리됨)
+    const result = await updateItemOrder(itemsToUpdate);
+
+    if (!result.success) {
+      toast.error("순서 저장에 실패했습니다.");
+      // 실패 시 원래대로 돌리는 로직이 필요하다면 여기에 추가 (router.refresh() 등)
+    } else {
+      toast.success("아이템 순서가 변경되었습니다.");
+    }
+  };
 
   return (
     <div className="container px-16 py-10">
@@ -52,7 +74,13 @@ export function ItemPageClient({ initialItems }: ItemPageClientProps) {
           </Dialog>
         </div>
       </div>
-      <DataTable columns={columns} data={filteredItems} />
+
+      {/* SortableDataTable 사용 */}
+      <SortableDataTable
+        columns={columns}
+        data={filteredItems}
+        onReorder={handleReorder}
+      />
     </div>
   );
 }

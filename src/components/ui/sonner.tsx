@@ -18,12 +18,24 @@ const Toaster = ({ ...props }: ToasterProps) => {
       position="top-center"
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      toastOptions={{
+        className: `
+          text-2xl font-semibold  
+          px-8 py-5               
+          w-auto                  
+          max-w-none             
+          whitespace-nowrap       
+          rounded-2xl
+          gap-4                   
+        `,
+      }}
       icons={{
-        success: <CircleCheckIcon className="size-4" />,
-        info: <InfoIcon className="size-4" />,
-        warning: <TriangleAlertIcon className="size-4" />,
-        error: <OctagonXIcon className="size-4" />,
-        loading: <Loader2Icon className="size-4 animate-spin" />,
+        // [변경 6] 글자가 커진 만큼 아이콘도 size-7 ~ size-8 정도로 키워줍니다.
+        success: <CircleCheckIcon className="size-7" />,
+        info: <InfoIcon className="size-7" />,
+        warning: <TriangleAlertIcon className="size-7" />,
+        error: <OctagonXIcon className="size-7" />,
+        loading: <Loader2Icon className="size-7 animate-spin" />,
       }}
       style={
         {

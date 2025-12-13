@@ -2,14 +2,17 @@
 
 import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, and, count, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { items, rentalRecords, waitingQueue } from "@drizzle/schema";
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
 import { processAndMutateExpiredRentals } from "./rental";
 export async function getAllItemsForAdmin() {
-  const allItems = await db.select().from(items);
+  const allItems = await db
+    .select()
+    .from(items)
+    .orderBy(asc(items.displayOrder));
 
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
@@ -53,13 +56,13 @@ export async function getAllItemsForAdmin() {
 
   return itemsWithStatusAndWaitingCount;
 }
-
 export async function getAllItems() {
   await processAndMutateExpiredRentals();
   const allItems = await db
     .select()
     .from(items)
-    .where(and(eq(items.isHidden, false), eq(items.isDeleted, false)));
+    .where(and(eq(items.isHidden, false), eq(items.isDeleted, false)))
+    .orderBy(asc(items.displayOrder)); // 👈 displayOrder 순서로 정렬
 
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
@@ -376,5 +379,23 @@ export async function toggleItemDeletedStatus(id: number, isDeleted: boolean) {
   } catch (error) {
     console.error("Failed to toggle item deleted status:", error);
     return { error: "아이템 삭제 상태 업데이트에 실패했습니다." };
+  }
+}
+export async function updateItemOrder(
+  newOrder: { id: number; displayOrder: number }[]
+) {
+  try {
+    for (const item of newOrder) {
+      await db
+        .update(items)
+        .set({ displayOrder: item.displayOrder })
+        .where(eq(items.id, item.id));
+    }
+
+    revalidatePath("/admin/items");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update item order:", error);
+    return { error: "순서 변경에 실패했습니다." };
   }
 }

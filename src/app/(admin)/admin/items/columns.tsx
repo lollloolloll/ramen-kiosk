@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { GripVertical, MoreHorizontal } from "lucide-react";
 import { items } from "@drizzle/schema";
 import { EditItemForm } from "./EditItemForm";
 import { DeleteItemDialog } from "./DeleteItemDialog";
@@ -36,6 +36,24 @@ interface ItemComputedFields {
 export type Item = BaseItem & ItemComputedFields;
 
 export const columns: ColumnDef<Item>[] = [
+  {
+    id: "drag-handle",
+    header: "",
+    cell: (context: any) => {
+      const { dragHandleProps } = context;
+
+      return (
+        <div
+          {...dragHandleProps}
+          className="cursor-grab active:cursor-grabbing p-2"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: "name",
     header: "Name",

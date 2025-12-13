@@ -631,6 +631,10 @@ export function RentalDialog({
 
   if (!item) return null;
 
+  const handleRegisterError = (errors: any) => {
+    toast.error("필수 정보를 모두 입력해주세요.");
+  };
+
   const renderStep = () => {
     const content = (() => {
       switch (step) {
@@ -1024,17 +1028,15 @@ export function RentalDialog({
             </Form>
           );
         case "register":
-          const watchedValues = registerForm.watch();
-          const isButtonDisabled =
-            !watchedValues.name ||
-            !watchedValues.phoneNumber ||
-            !watchedValues.gender ||
-            !watchedValues.birthDate ||
-            !watchedValues.school;
+          // [수정] isButtonDisabled 로직 제거 (버튼 항상 활성화하여 검증 유도)
           return (
             <Form {...registerForm} key="register">
               <form
-                onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
+                // [수정] handleSubmit에 에러 핸들러(handleRegisterError) 추가
+                onSubmit={registerForm.handleSubmit(
+                  handleRegisterSubmit,
+                  handleRegisterError
+                )}
                 className="space-y-4"
               >
                 <DialogHeader>
@@ -1045,10 +1047,13 @@ export function RentalDialog({
                     새로운 사용자를 등록합니다. 정보를 입력해주세요.
                   </DialogDescription>
                 </DialogHeader>
+
                 <FormField
                   control={registerForm.control}
                   name="name"
-                  render={({ field }) => (
+                  render={(
+                    { field, fieldState } // [수정] fieldState 추가
+                  ) => (
                     <FormItem>
                       <FormLabel>
                         이름
@@ -1061,27 +1066,34 @@ export function RentalDialog({
                           autoComplete="off"
                           autoCorrect="off"
                           lang="ko"
-                          className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
+                          // [수정] 에러 시 빨간 테두리 적용 (cn 및 fieldState.invalid 활용)
+                          className={cn(
+                            "focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!",
+                            fieldState.invalid &&
+                              "border-red-500! focus-visible:border-red-500!"
+                          )}
                           onChange={(e) =>
                             field.onChange(e.target.value.replace(/\s/g, ""))
                           }
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={registerForm.control}
                   name="phoneNumber"
-                  render={({ field }) => (
+                  render={(
+                    { field, fieldState } // [수정] fieldState 추가
+                  ) => (
                     <FormItem>
                       <FormLabel>
                         휴대폰 번호
                         <span className="text-[oklch(0.7_0.18_350)]">*</span>
                       </FormLabel>
                       <FormControl>
-                        {/* ✅ 수정: registerForm의 전화번호 필드도 type="text"로 변경 */}
                         <Input
                           placeholder="010-1234-5678"
                           type="text"
@@ -1089,28 +1101,43 @@ export function RentalDialog({
                           autoComplete="off"
                           autoCorrect="off"
                           {...field}
-                          className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
+                          // [수정] 에러 시 빨간 테두리 적용
+                          className={cn(
+                            "focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!",
+                            fieldState.invalid &&
+                              "border-red-500! focus-visible:border-red-500!"
+                          )}
                           onChange={(e) => {
                             field.onChange(formatPhoneNumber(e.target.value));
                           }}
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
-                {/* ... (이하 registerForm 내용 동일) ... */}
+
                 <FormField
                   control={registerForm.control}
                   name="gender"
-                  render={({ field }) => (
+                  render={(
+                    { field, fieldState } // [수정] fieldState 추가
+                  ) => (
                     <FormItem>
-                      <FormLabel>
+                      <FormLabel
+                        className={cn(fieldState.invalid && "text-red-500")}
+                      >
                         성별
                         <span className="text-[oklch(0.7_0.18_350)]">*</span>
                       </FormLabel>
                       <FormControl>
-                        <div className="flex gap-2">
+                        {/* [수정] 에러 시 전체 영역 빨간 테두리 */}
+                        <div
+                          className={cn(
+                            "flex gap-2 p-1 rounded-md",
+                            fieldState.invalid && "ring-1 ring-red-500"
+                          )}
+                        >
                           <Button
                             type="button"
                             variant={
@@ -1147,20 +1174,31 @@ export function RentalDialog({
                           </Button>
                         </div>
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={registerForm.control}
                   name="birthDate"
-                  render={({ field }) => (
+                  render={(
+                    { field, fieldState } // [수정] fieldState 추가
+                  ) => (
                     <FormItem>
-                      <FormLabel>
+                      <FormLabel
+                        className={cn(fieldState.invalid && "text-red-500")}
+                      >
                         생년월일
                         <span className="text-[oklch(0.7_0.18_350)]">*</span>
                       </FormLabel>
-                      <div className="flex gap-2">
+                      {/* [수정] 에러 시 빨간 테두리 컨테이너 추가 */}
+                      <div
+                        className={cn(
+                          "flex gap-2 rounded-md",
+                          fieldState.invalid && "ring-1 ring-red-500 p-1"
+                        )}
+                      >
                         <Select
                           onValueChange={setBirthYear}
                           value={birthYear}
@@ -1215,22 +1253,33 @@ export function RentalDialog({
                           </SelectContent>
                         </Select>
                       </div>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={registerForm.control}
                   name="school"
-                  render={() => (
+                  render={(
+                    { fieldState } // [수정] fieldState 추가
+                  ) => (
                     <FormItem>
-                      <FormLabel>
+                      <FormLabel
+                        className={cn(fieldState.invalid && "text-red-500")}
+                      >
                         학교
                         <span className="text-[oklch(0.7_0.18_350)]">*</span>
                       </FormLabel>
 
                       <div className="space-y-4">
-                        <div className="grid grid-cols-3 gap-2">
+                        {/* [수정] 에러 시 버튼 그룹 전체 빨간 테두리 */}
+                        <div
+                          className={cn(
+                            "grid grid-cols-3 gap-2 rounded-md",
+                            fieldState.invalid && "ring-1 ring-red-500 p-1"
+                          )}
+                        >
                           {[
                             "초등학교",
                             "중학교",
@@ -1277,7 +1326,7 @@ export function RentalDialog({
                                       setSchoolName(school);
                                     }}
                                     className={cn(
-                                      "h-12 w-full justify-center px-4 text-center", // 텍스트 왼쪽 정렬
+                                      "h-12 w-full justify-center px-4 text-center",
                                       !isDirectInput && schoolName === school
                                         ? "border-2 border-[oklch(0.75_0.12_165)] text-[oklch(0.75_0.12_165)] bg-[oklch(0.75_0.12_165/0.05)]"
                                         : "border-slate-200"
@@ -1287,13 +1336,12 @@ export function RentalDialog({
                                   </Button>
                                 ))}
 
-                                {/* 직접 입력 버튼 (목록 끝에 추가) */}
                                 <Button
                                   type="button"
                                   variant="outline"
                                   onClick={() => {
                                     setIsDirectInput(true);
-                                    setSchoolName(""); // 입력창 초기화
+                                    setSchoolName("");
                                   }}
                                   className={cn(
                                     "h-12 w-full justify-center px-4 text-center font-semibold",
@@ -1307,7 +1355,6 @@ export function RentalDialog({
                               </div>
                             </div>
 
-                            {/* 3. 직접 입력 인풋 (직접 입력 버튼 눌렀을 때만 하단에 표시) */}
                             {isDirectInput && (
                               <div className="mt-3 animate-in fade-in duration-300">
                                 <FormControl>
@@ -1324,7 +1371,11 @@ export function RentalDialog({
                                     autoCorrect="off"
                                     lang="ko"
                                     value={schoolName}
-                                    className="h-12 text-lg focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
+                                    className={cn(
+                                      "h-12 text-lg focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!",
+                                      fieldState.invalid &&
+                                        "border-red-500! focus-visible:border-red-500!"
+                                    )}
                                     onChange={(e) =>
                                       setSchoolName(
                                         e.target.value.replace(/\s/g, "")
@@ -1341,7 +1392,7 @@ export function RentalDialog({
                           </div>
                         )}
                       </div>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
@@ -1392,16 +1443,13 @@ export function RentalDialog({
                   >
                     뒤로
                   </Button>
+                  {/* [수정] isButtonDisabled 제거하여 항상 검증 로직 실행되도록 함 */}
                   <Button
                     type="submit"
-                    disabled={isSubmitting || isButtonDisabled}
+                    disabled={isSubmitting}
                     className="bg-[oklch(0.75_0.12_165)] hover:bg-[oklch(0.7_0.12_165)]"
                   >
-                    {isSubmitting
-                      ? "등록 중..."
-                      : isRentedMode
-                      ? "등록"
-                      : "등록"}
+                    {isSubmitting ? "등록 중..." : "등록"}
                   </Button>
                 </DialogFooter>
               </form>

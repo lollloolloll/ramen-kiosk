@@ -26,16 +26,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
           max-w-none             
           whitespace-nowrap       
           rounded-2xl
-          gap-4                   
+          [&>div]:gap-8           
         `,
+        style: {
+          gap: "1rem", // 👈 인라인 스타일로 강제
+        },
       }}
       icons={{
-        // [변경 6] 글자가 커진 만큼 아이콘도 size-7 ~ size-8 정도로 키워줍니다.
-        success: <CircleCheckIcon className="size-7" />,
-        info: <InfoIcon className="size-7" />,
-        warning: <TriangleAlertIcon className="size-7" />,
-        error: <OctagonXIcon className="size-7" />,
-        loading: <Loader2Icon className="size-7 animate-spin" />,
+        success: <CircleCheckIcon className="size-8" />,
+        info: <InfoIcon className="size-8" />,
+        warning: <TriangleAlertIcon className="size-8" />,
+        error: <OctagonXIcon className="size-8" />,
+        loading: <Loader2Icon className="size-8 animate-spin" />,
       }}
       style={
         {

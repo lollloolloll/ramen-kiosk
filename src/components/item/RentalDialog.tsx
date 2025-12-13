@@ -231,10 +231,6 @@ export function RentalDialog({
 
   const [yearSelectOpen, setYearSelectOpen] = useState(false);
 
-  // const isMobileOrTablet =
-  //   typeof window !== "undefined" &&
-  //   ("ontouchstart" in window || navigator.maxTouchPoints > 0);
-
   const identificationForm = useForm<IdentificationFormValues>({
     resolver: zodResolver(
       identificationSchema
@@ -563,7 +559,6 @@ export function RentalDialog({
   const handleWaitingListClick = async () => {
     if (!item) return;
 
-    // 이미 열려있으면 닫기
     if (showWaitingList) {
       setShowWaitingList(false);
       return;
@@ -571,10 +566,7 @@ export function RentalDialog({
 
     setIsLoadingWaitingList(true);
     try {
-      // 1. 대기자 명단 불러오기 (기존 로직)
       const waitingResult = await getWaitingListByItemId(item.id);
-
-      // 2. [추가] 현재 대여자 정보 불러오기
       const renterResult = await getCurrentRenter(item.id);
 
       if (waitingResult.error) {
@@ -586,10 +578,7 @@ export function RentalDialog({
         setWaitingList(waitingResult.data);
       }
 
-      // 현재 대여자 정보 설정
       if (renterResult.success && renterResult.data) {
-        // DB에서 가져온 날짜 타입이 string/Date/number 인지 확인 필요 (여기선 number/Date 가정)
-        // drizzle-sqlite에서 timestamp 모드에 따라 다름. 여기선 그대로 넣음.
         setCurrentRenter(renterResult.data as any);
       } else {
         setCurrentRenter(null);
@@ -675,6 +664,7 @@ export function RentalDialog({
                       className="rounded-lg border border-[oklch(0.75_0.12_165/0.2)] bg-linear-to-br from-[oklch(0.75_0.12_165/0.05)] to-[oklch(0.7_0.18_350/0.05)] p-4 space-y-3 cursor-pointer hover:from-[oklch(0.75_0.12_165/0.1)] hover:to-[oklch(0.7_0.18_350/0.1)] transition-colors"
                       onClick={handleWaitingListClick}
                     >
+                      {/* ... (생략된 현황 요약 카드 내용) ... */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)] animate-pulse" />
@@ -829,6 +819,9 @@ export function RentalDialog({
                       <FormControl>
                         <Input
                           placeholder="홍길동"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          lang="ko"
                           {...field}
                           className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                         />
@@ -844,9 +837,13 @@ export function RentalDialog({
                     <FormItem>
                       <FormLabel>휴대폰 번호</FormLabel>
                       <FormControl>
+                        {/* ✅ 수정: type="text"로 변경하여 OS 차원의 IME 리셋 방지 */}
                         <Input
                           placeholder="010-1234-5678"
-                          type="tel"
+                          type="text"
+                          inputMode="text"
+                          autoComplete="off"
+                          autoCorrect="off"
                           {...field}
                           className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                           onChange={(e) => {
@@ -917,7 +914,6 @@ export function RentalDialog({
                   ))}
                 </div>
 
-                {/* 참가자 이름 입력 필드 (enableParticipantTracking 활성화 시) */}
                 {item.enableParticipantTracking && fields.length > 0 && (
                   <div className="space-y-3 pt-4 border-t border-dashed">
                     <div className="flex items-center justify-between">
@@ -961,6 +957,8 @@ export function RentalDialog({
                                 <FormControl>
                                   <Input
                                     {...nameField}
+                                    autoComplete="off"
+                                    autoCorrect="off"
                                     placeholder="이름"
                                     className="h-8 mt-1 text-sm bg-white focus-visible:border-[oklch(0.75_0.12_165)]"
                                   />
@@ -1060,6 +1058,9 @@ export function RentalDialog({
                         <Input
                           placeholder="홍길동"
                           {...field}
+                          autoComplete="off"
+                          autoCorrect="off"
+                          lang="ko"
                           className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                           onChange={(e) =>
                             field.onChange(e.target.value.replace(/\s/g, ""))
@@ -1080,9 +1081,13 @@ export function RentalDialog({
                         <span className="text-[oklch(0.7_0.18_350)]">*</span>
                       </FormLabel>
                       <FormControl>
+                        {/* ✅ 수정: registerForm의 전화번호 필드도 type="text"로 변경 */}
                         <Input
                           placeholder="010-1234-5678"
-                          type="tel"
+                          type="text"
+                          inputMode="text"
+                          autoComplete="off"
+                          autoCorrect="off"
                           {...field}
                           className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                           onChange={(e) => {
@@ -1094,6 +1099,7 @@ export function RentalDialog({
                     </FormItem>
                   )}
                 />
+                {/* ... (이하 registerForm 내용 동일) ... */}
                 <FormField
                   control={registerForm.control}
                   name="gender"
@@ -1224,7 +1230,6 @@ export function RentalDialog({
                       </FormLabel>
 
                       <div className="space-y-4">
-                        {/* 1. 학교 급 선택 (버튼 그리드) */}
                         <div className="grid grid-cols-3 gap-2">
                           {[
                             "초등학교",
@@ -1235,11 +1240,11 @@ export function RentalDialog({
                           ].map((level) => (
                             <Button
                               key={level}
-                              type="button" // 폼 제출 방지
+                              type="button"
                               variant="outline"
                               onClick={() => {
                                 setSchoolLevel(level);
-                                setSchoolName(""); // 급 변경 시 이름 초기화
+                                setSchoolName("");
                                 setIsDirectInput(false);
                               }}
                               className={cn(
@@ -1254,7 +1259,6 @@ export function RentalDialog({
                           ))}
                         </div>
 
-                        {/* 2. 학교 이름 선택 (해당없음이 아니고, 급이 선택되었을 때 펼쳐짐) */}
                         {schoolLevel && schoolLevel !== "해당없음" && (
                           <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
@@ -1262,7 +1266,6 @@ export function RentalDialog({
                                 학교를 선택해주세요
                               </p>
 
-                              {/* 학교 목록 버튼 그리드 */}
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pr-1">
                                 {SCHOOL_DATA[schoolLevel]?.map((school) => (
                                   <Button
@@ -1317,6 +1320,9 @@ export function RentalDialog({
                                         ? "예: 선덕 (자동으로 '선덕고'가 됩니다)"
                                         : "학교 이름을 입력해주세요"
                                     }
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    lang="ko"
                                     value={schoolName}
                                     className="h-12 text-lg focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                                     onChange={(e) =>
@@ -1324,7 +1330,6 @@ export function RentalDialog({
                                         e.target.value.replace(/\s/g, "")
                                       )
                                     }
-                                    // 키오스크에서는 자동 포커스가 오히려 키보드를 가릴 수 있으니 상황에 따라 조정
                                     autoFocus
                                   />
                                 </FormControl>

@@ -18,13 +18,37 @@ import {
   desc,
   like,
   count,
-  countDistinct,
   or,
   inArray,
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { Workbook } from "exceljs";
 import { AnalyticsData } from "@/lib/types/analytics";
+
+// ----------------------------------------------------------------------
+// 유틸리티 함수
+// ----------------------------------------------------------------------
+
+function calculateAge(
+  birthDate: string | null,
+  referenceDate: Date = new Date()
+): number | null {
+  if (!birthDate) return null;
+  const birth = new Date(birthDate);
+  const targetDate = referenceDate;
+
+  let age = targetDate.getFullYear() - birth.getFullYear();
+  const m = targetDate.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && targetDate.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+// ----------------------------------------------------------------------
+// 서버 액션: 대여 관련
+// ----------------------------------------------------------------------
+
 export async function rentItem(
   userId: number,
   itemId: number,
@@ -36,15 +60,7 @@ export async function rentItem(
   try {
     // 1. 대여할 아이템 정보 조회
     const itemToRent = await db
-      .select({
-        id: items.id,
-        name: items.name,
-        category: items.category,
-        isTimeLimited: items.isTimeLimited,
-        rentalTimeMinutes: items.rentalTimeMinutes,
-        maxRentalsPerUser: items.maxRentalsPerUser,
-        enableParticipantTracking: items.enableParticipantTracking,
-      })
+      .select()
       .from(items)
       .where(and(eq(items.id, itemId), eq(items.isDeleted, false)))
       .get();
@@ -53,13 +69,9 @@ export async function rentItem(
       throw new Error("해당 아이템을 찾을 수 없습니다.");
     }
 
-    // 2. 대여하는 사용자 정보 조회
+    // 2. 대여하는 사용자 정보 조회 (스냅샷 저장을 위해 전체 필드 조회)
     const userToRent = await db
-      .select({
-        id: generalUsers.id,
-        name: generalUsers.name,
-        phoneNumber: generalUsers.phoneNumber,
-      })
+      .select()
       .from(generalUsers)
       .where(eq(generalUsers.id, userId))
       .get();
@@ -68,7 +80,7 @@ export async function rentItem(
       throw new Error("사용자 정보를 찾을 수 없습니다.");
     }
 
-    // [핵심 수정] 3. 시간제 아이템에만 적용되는 검증 로직
+    // 3. 시간제 아이템 검증 로직
     if (itemToRent.isTimeLimited) {
       // 3-1. 재고 확인: 현재 대여 중인 기록이 있는지 확인
       const currentRental = await db
@@ -115,7 +127,7 @@ export async function rentItem(
     }
     // 일반 아이템(isTimeLimited: false)은 위의 모든 검증 로직을 건너뜁니다.
 
-    // 4. 대여 기록 삽입
+    // 4. 대여 기록 삽입 (스냅샷 포함)
     const rentalDate = Math.floor(Date.now() / 1000);
     let returnDueDate: number | undefined = undefined;
 
@@ -131,10 +143,21 @@ export async function rentItem(
         rentalDate: rentalDate,
         maleCount: maleCount,
         femaleCount: femaleCount,
+
+        // --- 사용자 스냅샷 데이터 ---
+        // 1. 식별 정보: 탈퇴해도 기록 유지
         userName: userToRent.name,
         userPhone: userToRent.phoneNumber,
+        // 2. 변동 가능한 정보: 대여 시점의 학교 저장 (필수)
+        userSchool: userToRent.school,
+        // 3. 통계용 정보: 탈퇴 시 통계 왜곡 방지 (필수)
+        userGender: userToRent.gender,
+        userBirthDate: userToRent.birthDate,
+
+        // --- 아이템 스냅샷 데이터 ---
         itemName: itemToRent.name,
         itemCategory: itemToRent.category,
+
         returnDueDate: returnDueDate,
         isReturned: false,
       })
@@ -195,7 +218,7 @@ export async function returnItem(rentalRecordId: number) {
       throw new Error("유효하지 않은 반납 기록이거나 아이템 정보가 없습니다.");
     }
 
-    // 분리된 다음 대기자 처리 함수 호출
+    // 다음 대기자 처리
     await processNextInQueue(returnedRecord.itemsId);
 
     revalidatePath("/", "layout"); // 전체 경로 리프레시
@@ -213,6 +236,11 @@ export async function returnItem(rentalRecordId: number) {
     };
   }
 }
+
+// ----------------------------------------------------------------------
+// 내부 로직: 대기열 처리 및 만료 체크
+// ----------------------------------------------------------------------
+
 /**
  * [내부 사용 주의] DB의 만료된 대여 기록을 처리하지만, 캐시는 갱신하지 않습니다.
  * 렌더링 중에 안전하게 호출할 수 있습니다. (예: getAllItems)
@@ -280,7 +308,113 @@ export async function triggerExpiredRentalsCheck() {
     revalidatePath("/", "layout");
   }
 }
-// src/lib/actions/rental.ts
+
+/**
+ * 대기자 자동 대여 처리
+ * **중요**: 대기자가 실제로 대여를 시작할 때 현재 정보를 스냅샷으로 뜹니다.
+ */
+async function processNextInQueue(itemId: number) {
+  const itemInfo = await db.query.items.findFirst({
+    where: eq(items.id, itemId),
+  });
+
+  if (!itemInfo || !itemInfo.isTimeLimited) return;
+
+  let maxAttempts = 100;
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    attempts++;
+
+    const nextUserEntry = await db.query.waitingQueue.findFirst({
+      where: eq(waitingQueue.itemId, itemId),
+      orderBy: [asc(waitingQueue.requestDate)],
+    });
+
+    if (!nextUserEntry) break;
+
+    // 대여 자격 확인 (일일 대여 횟수)
+    let isEligible = true;
+    if (itemInfo.maxRentalsPerUser) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startOfDay = Math.floor(today.getTime() / 1000);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+      const endOfDayTimestamp = Math.floor(endOfDay.getTime() / 1000);
+
+      const [result] = await db
+        .select({ value: count() })
+        .from(rentalRecords)
+        .where(
+          and(
+            eq(rentalRecords.userId, nextUserEntry.userId),
+            eq(rentalRecords.itemsId, itemId),
+            gte(rentalRecords.rentalDate, startOfDay),
+            lte(rentalRecords.rentalDate, endOfDayTimestamp)
+          )
+        );
+
+      if (Number(result?.value || 0) >= itemInfo.maxRentalsPerUser) {
+        isEligible = false;
+      }
+    }
+
+    if (isEligible) {
+      // 대기자의 최신 정보 조회
+      const userToRent = await db.query.generalUsers.findFirst({
+        where: eq(generalUsers.id, nextUserEntry.userId),
+      });
+
+      if (userToRent) {
+        const rentalDate = Math.floor(Date.now() / 1000);
+        const returnDueDate =
+          rentalDate + (itemInfo.rentalTimeMinutes || 0) * 60;
+
+        // 자동 대여 기록 생성 (스냅샷 포함)
+        await db.insert(rentalRecords).values({
+          userId: nextUserEntry.userId,
+          itemsId: itemId,
+          rentalDate,
+          returnDueDate,
+
+          // 스냅샷 데이터
+          userName: userToRent.name,
+          userPhone: userToRent.phoneNumber,
+          userSchool: userToRent.school,
+          userGender: userToRent.gender,
+          userBirthDate: userToRent.birthDate,
+
+          itemName: itemInfo.name,
+          itemCategory: itemInfo.category,
+          isReturned: false,
+          maleCount: nextUserEntry.maleCount,
+          femaleCount: nextUserEntry.femaleCount,
+        });
+
+        await db
+          .delete(waitingQueue)
+          .where(eq(waitingQueue.id, nextUserEntry.id));
+        break; // 대여 성공 시 루프 종료
+      } else {
+        // 유저 정보 없음 (삭제됨) -> 대기열 삭제 후 다음 사람
+        await db
+          .delete(waitingQueue)
+          .where(eq(waitingQueue.id, nextUserEntry.id));
+      }
+    } else {
+      // 자격 미달 -> 대기열 삭제 후 다음 사람
+      await db
+        .delete(waitingQueue)
+        .where(eq(waitingQueue.id, nextUserEntry.id));
+    }
+  }
+}
+
+// ----------------------------------------------------------------------
+// 조회 및 통계 액션
+// ----------------------------------------------------------------------
+
 export async function getAvailableRentalYears() {
   try {
     // 1. DB에서는 날짜 계산 없이 raw 타임스탬프 값만 모두 가져옵니다.
@@ -356,6 +490,7 @@ export async function getRentalRecords(
         .from(rentalRecordPeople)
         .where(like(rentalRecordPeople.name, `%${filters.username}%`));
 
+      // 이름 검색 시: 현재 유저 테이블 OR 기록된 스냅샷 이름 검색
       whereConditions.push(
         or(
           like(
@@ -386,6 +521,9 @@ export async function getRentalRecords(
       whereConditions.push(eq(items.name, filters.itemName));
     }
 
+    // [중요] 우선순위 적용
+    // 학교: 스냅샷(rentalRecords.userSchool) 우선 -> 없으면 현재 정보
+    // 이름/폰: 현재 정보(generalUsers) 우선 -> 없으면(삭제됨) 스냅샷
     const baseQuery = db
       .select({
         id: rentalRecords.id,
@@ -393,6 +531,8 @@ export async function getRentalRecords(
         userId: generalUsers.id,
         userName: sql<string>`COALESCE(${generalUsers.name}, ${rentalRecords.userName})`,
         userPhone: sql<string>`COALESCE(${generalUsers.phoneNumber}, ${rentalRecords.userPhone})`,
+        // 학교는 과거 기록이 중요하므로 스냅샷 우선
+        userSchool: sql<string>`COALESCE(${rentalRecords.userSchool}, ${generalUsers.school})`,
         itemName: sql<string>`COALESCE(${items.name}, ${rentalRecords.itemName})`,
         itemCategory: sql<string>`COALESCE(${items.category}, ${rentalRecords.itemCategory})`,
         maleCount: rentalRecords.maleCount,
@@ -491,12 +631,14 @@ export async function getRentalRecordsByUserId(
       sortColumnMap[sort as keyof typeof sortColumnMap] ||
       rentalRecords.rentalDate;
 
-    // ✅ Solution: Build the complete query in one chain instead of reassigning
+    // 사용자 정보는 본인 조회이므로 크게 중요하진 않으나 일관성 유지
     const dataQuery = db
       .select({
         id: rentalRecords.id,
         rentalDate: rentalRecords.rentalDate,
         userName: sql<string>`COALESCE(${generalUsers.name}, ${rentalRecords.userName})`,
+        // 학교는 스냅샷 우선
+        userSchool: sql<string>`COALESCE(${rentalRecords.userSchool}, ${generalUsers.school})`,
         itemName: sql<string>`COALESCE(${items.name}, ${rentalRecords.itemName})`,
         itemCategory: sql<string>`COALESCE(${items.category}, ${rentalRecords.itemCategory})`,
         maleCount: rentalRecords.maleCount,
@@ -530,23 +672,11 @@ export async function getRentalRecordsByUserId(
     return { error: "사용자 대여 기록을 불러오는 데 실패했습니다." };
   }
 }
-function calculateAge(
-  birthDate: string | null,
-  referenceDate: Date = new Date()
-): number | null {
-  if (!birthDate) return null;
-  const birth = new Date(birthDate);
-  const targetDate = referenceDate; // 기준 날짜 사용
 
-  let age = targetDate.getFullYear() - birth.getFullYear();
-  const m = targetDate.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && targetDate.getDate() < birth.getDate())) {
-    age--;
-  }
-  return age;
-}
+// ----------------------------------------------------------------------
+// 통계 분석 (핵심 로직 변경)
+// ----------------------------------------------------------------------
 
-// 분석 데이터를 가져오는 메인 함수 (리팩토링 버전)
 export async function getRentalAnalytics(filters: {
   year: string;
   month: string | "all";
@@ -585,61 +715,77 @@ export async function getRentalAnalytics(filters: {
       whereConditions.push(eq(items.category, category));
     }
 
-    // [수정 1] 쿼리에서 '현재 아이템 정보'뿐만 아니라 '기록된(스냅샷) 아이템 정보'도 가져옵니다.
+    // [통계 조회] 스냅샷 컬럼 활용
     const baseQuery = db
       .select({
         rentalDate: rentalRecords.rentalDate,
         userId: rentalRecords.userId,
-        birthDate: generalUsers.birthDate,
-        gender: generalUsers.gender,
-        school: generalUsers.school,
 
-        // 현재 아이템 테이블 정보 (Join)
+        // 현재 사용자 정보
+        currentBirthDate: generalUsers.birthDate,
+        currentGender: generalUsers.gender,
+        currentSchool: generalUsers.school,
+
+        // 스냅샷 정보 (삭제/변경 대비)
+        snapBirthDate: rentalRecords.userBirthDate,
+        snapGender: rentalRecords.userGender,
+        snapSchool: rentalRecords.userSchool,
+
+        // 아이템 정보
         itemName: items.name,
         itemId: items.id,
         itemCategory: items.category,
-
-        // 대여 기록 테이블에 저장된 정보 (스냅샷 - 아이템 삭제 대비)
         recordItemId: rentalRecords.itemsId,
         recordItemName: rentalRecords.itemName,
         recordItemCategory: rentalRecords.itemCategory,
 
         maleCount: rentalRecords.maleCount,
         femaleCount: rentalRecords.femaleCount,
-        // peopleCount는 JS에서 계산 (SQL 계산 제거하여 null 안전성 확보)
       })
       .from(rentalRecords)
       .leftJoin(generalUsers, eq(rentalRecords.userId, generalUsers.id))
       .leftJoin(items, eq(rentalRecords.itemsId, items.id))
       .where(and(...whereConditions));
 
-    let records = await baseQuery;
+    let recordsRaw = await baseQuery;
 
-    records = records.map((r) => ({
-      ...r,
-      school: r.school ?? "기타",
-    }));
+    // 데이터 정제 및 우선순위 적용
+    const records = recordsRaw.map((r) => {
+      // 1. 학교: 기록된 스냅샷이 있으면 우선 사용 (과거 이력 보존), 없으면 현재 정보
+      const finalSchool = r.snapSchool ?? r.currentSchool ?? "기타";
 
+      // 2. 생년월일/성별: 현재 정보 우선(수정 반영), 없으면(삭제됨) 스냅샷 사용
+      const finalBirthDate = r.currentBirthDate ?? r.snapBirthDate;
+      const finalGender = r.currentGender ?? r.snapGender; // 현재 사용 안 하지만 로직상 확보
+
+      return {
+        ...r,
+        school: finalSchool,
+        birthDate: finalBirthDate,
+        // (필요 시 gender: finalGender 추가 가능)
+      };
+    });
+
+    // 나이 필터링
+    let filteredRecords = records;
     if (ageGroup && ageGroup !== "all") {
-      records = records.filter((r) => {
+      filteredRecords = records.filter((r) => {
         if (!r.birthDate) return false;
-
-        // [수정] 대여 날짜(rentalDate) 기준 나이 계산
         const age = calculateAge(r.birthDate, new Date(r.rentalDate * 1000));
-
         if (age === null) return false;
+
         if (ageGroup === "child" && age <= 12) return true;
         if (ageGroup === "teen" && age > 12 && age <= 18) return true;
         if (ageGroup === "adult" && age > 18) return true;
         return false;
       });
     }
-    const totalRentals = records.length;
-    const uniqueUsers = new Set(records.map((r) => r.userId)).size;
 
-    // [수정 2] 모든 통계 집계 시 Fallback 로직 적용 (itemId || recordItemId)
-    const itemCounts = records.reduce((acc, r) => {
-      // items 테이블에 없으면 rentalRecords에 저장된 ID 사용
+    const totalRentals = filteredRecords.length;
+    const uniqueUsers = new Set(filteredRecords.map((r) => r.userId)).size;
+
+    // 아이템 통계 (스냅샷 fallback 적용)
+    const itemCounts = filteredRecords.reduce((acc, r) => {
       const id = r.itemId || r.recordItemId;
       const name = r.itemName || r.recordItemName;
       const category = r.itemCategory || r.recordItemCategory || "Unknown";
@@ -660,14 +806,10 @@ export async function getRentalAnalytics(filters: {
       Object.values(itemCounts).sort((a, b) => b.rentals - a.rentals)[0] ||
       null;
 
-    const categoryCounts = records.reduce((acc, r) => {
-      // 카테고리도 Fallback 적용
+    const categoryCounts = filteredRecords.reduce((acc, r) => {
       const category = r.itemCategory || r.recordItemCategory;
       if (category) {
-        acc[category] = acc[category] || {
-          name: category,
-          rentals: 0,
-        };
+        acc[category] = acc[category] || { name: category, rentals: 0 };
         acc[category].rentals++;
       }
       return acc;
@@ -682,11 +824,10 @@ export async function getRentalAnalytics(filters: {
       teen: { count: 0, uniqueUsers: new Set<number | null>() },
       adult: { count: 0, uniqueUsers: new Set<number | null>() },
     };
-    records.forEach((r) => {
-      if (r.birthDate) {
-        // [수정] 대여 날짜(rentalDate) 기준 나이 계산
-        const age = calculateAge(r.birthDate, new Date(r.rentalDate * 1000));
 
+    filteredRecords.forEach((r) => {
+      if (r.birthDate) {
+        const age = calculateAge(r.birthDate, new Date(r.rentalDate * 1000));
         if (age !== null) {
           if (age <= 12) {
             ageGroupStats.child.count++;
@@ -704,7 +845,7 @@ export async function getRentalAnalytics(filters: {
 
     const categoryStats = Object.entries(categoryCounts)
       .map(([name, data]) => {
-        const itemsInCategory = records.filter(
+        const itemsInCategory = filteredRecords.filter(
           (r) => (r.itemCategory || r.recordItemCategory) === name
         );
         const topItemsInCategory = Object.values(
@@ -751,13 +892,14 @@ export async function getRentalAnalytics(filters: {
     const hourStats = Array(24)
       .fill(0)
       .map((_, i) => ({ name: `${i}시`, count: 0 }));
-    records.forEach((r) => {
+
+    filteredRecords.forEach((r) => {
       const date = new Date(r.rentalDate * 1000);
       dayOfWeekStats[date.getDay()].count++;
       hourStats[date.getHours()].count++;
     });
 
-    const genderCounts = records.reduce(
+    const genderCounts = filteredRecords.reduce(
       (acc, r) => {
         acc.male += r.maleCount || 0;
         acc.female += r.femaleCount || 0;
@@ -771,6 +913,7 @@ export async function getRentalAnalytics(filters: {
       { name: "여성", value: genderCounts.female },
     ].filter((g) => g.value > 0);
 
+    // 학교 랭킹
     const schoolCounts: {
       [school: string]: {
         school: string;
@@ -778,8 +921,9 @@ export async function getRentalAnalytics(filters: {
         users: Set<number>;
       };
     } = {};
-    records.forEach((r) => {
-      if (r.userId && r.school) {
+
+    filteredRecords.forEach((r) => {
+      if (r.school) {
         if (!schoolCounts[r.school]) {
           schoolCounts[r.school] = {
             school: r.school,
@@ -788,7 +932,7 @@ export async function getRentalAnalytics(filters: {
           };
         }
         schoolCounts[r.school].totalRentals += 1;
-        schoolCounts[r.school].users.add(r.userId);
+        if (r.userId) schoolCounts[r.school].users.add(r.userId);
       }
     });
     const schoolRankings = Object.values(schoolCounts)
@@ -799,16 +943,14 @@ export async function getRentalAnalytics(filters: {
       }))
       .sort((a, b) => b.totalRentals - a.totalRentals);
 
-    // --------------------------------------------------------------
-    // [수정 3] 인원수별 통계 집계 (공란 문제 해결 핵심 로직)
-    // --------------------------------------------------------------
+    // 인원수별 통계
     const peopleItemStats: {
       [key: number]: {
         [itemId: number]: { itemId: number; itemName: string; rentals: number };
       };
     } = {};
 
-    records.forEach((r) => {
+    filteredRecords.forEach((r) => {
       // 1. 인원수 합산 (JS 계산)
       const p = (r.maleCount || 0) + (r.femaleCount || 0);
 
@@ -887,6 +1029,7 @@ export async function getRentalAnalytics(filters: {
     };
   } catch (error) {
     console.error("Error fetching rental analytics:", error);
+    // 빈 데이터 반환 (에러 시에도 UI가 깨지지 않도록)
     return {
       kpis: {
         totalRentals: 0,
@@ -909,6 +1052,7 @@ export async function getRentalAnalytics(filters: {
     };
   }
 }
+
 export async function exportRentalRecordsToExcel(
   filters: {
     username?: string;
@@ -918,7 +1062,6 @@ export async function exportRentalRecordsToExcel(
   } = {}
 ) {
   try {
-    // 페이지네이션 없이 필터링된 모든 대여 기록을 가져옵니다.
     const { data, error } = await getRentalRecords({
       ...filters,
       per_page: 999999,
@@ -936,6 +1079,7 @@ export async function exportRentalRecordsToExcel(
       { header: "ID", key: "id", width: 10 },
       { header: "대여 날짜", key: "rentalDate", width: 25 },
       { header: "사용자 이름", key: "userName", width: 15 },
+      { header: "학교", key: "userSchool", width: 15 },
       { header: "아이템 이름", key: "itemName", width: 20 },
       { header: "아이템 카테고리", key: "itemCategory", width: 15 },
       { header: "남자 인원", key: "maleCount", width: 10 },
@@ -947,36 +1091,26 @@ export async function exportRentalRecordsToExcel(
       cell.fill = {
         type: "pattern",
         pattern: "solid",
-        fgColor: { argb: "FFD3D3D3" }, // 회색
+        fgColor: { argb: "FFD3D3D3" },
       };
-      cell.font = {
-        bold: true,
-      };
-      cell.alignment = {
-        vertical: "middle",
-        horizontal: "center",
-      };
+      cell.font = { bold: true };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
     });
 
-    // 모든 데이터 셀에 가운데 정렬 적용
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber > 0) {
-        // 헤더 행 제외
         row.eachCell((cell) => {
-          cell.alignment = {
-            vertical: "middle",
-            horizontal: "center",
-          };
+          cell.alignment = { vertical: "middle", horizontal: "center" };
         });
       }
     });
 
-    // 데이터 추가
     data.forEach((record) => {
       worksheet.addRow({
         id: record.id,
-        rentalDate: new Date(record.rentalDate * 1000).toLocaleString("ko-KR"), // UNIX 타임스탬프를 사람이 읽기 쉬운 형식으로 변환
+        rentalDate: new Date(record.rentalDate * 1000).toLocaleString("ko-KR"),
         userName: record.userName,
+        userSchool: record.userSchool, // 스냅샷 우선 적용된 값
         itemName: record.itemName,
         itemCategory: record.itemCategory,
         maleCount: record.maleCount,
@@ -1058,20 +1192,20 @@ export async function getActiveRentalsWithWaitCount() {
     return { success: true, data: activeRentals };
   } catch (error) {
     console.error("Error fetching active rentals with wait count:", error);
-    return {
-      error: "활성 대여 목록을 불러오는 데 실패했습니다.",
-    };
+    return { error: "활성 대여 목록을 불러오는 데 실패했습니다." };
   }
 }
 
-// 특정 아이템의 현재 대여 정보를 가져오는 액션
 export async function getCurrentRenter(itemId: number) {
   try {
+    // 현재 대여자는 스냅샷보다는 현재 정보를 보여주는 것이 일반적일 수 있으나
+    // 일관성을 위해 COALESCE 사용 가능. 여기서는 정보 확인 용도이므로 스냅샷+현재 혼용
     const record = await db
       .select({
         id: rentalRecords.id,
-        userName: generalUsers.name, // generalUsers와 조인하여 최신 이름 가져옴
-        userPhone: generalUsers.phoneNumber, // 필요하다면 전화번호 뒷자리 등 식별용
+        userName: sql<string>`COALESCE(${generalUsers.name}, ${rentalRecords.userName})`,
+        userPhone: sql<string>`COALESCE(${generalUsers.phoneNumber}, ${rentalRecords.userPhone})`,
+        userSchool: sql<string>`COALESCE(${rentalRecords.userSchool}, ${generalUsers.school})`, // 스냅샷 우선
         rentalDate: rentalRecords.rentalDate,
         returnDueDate: rentalRecords.returnDueDate,
         maleCount: rentalRecords.maleCount,
@@ -1202,122 +1336,6 @@ export async function checkUserRentalStatus(userId: number, itemId: number) {
       isWaiting: false,
       error: "사용자 대여 상태 확인 중 오류가 발생했습니다.",
     };
-  }
-}
-async function processNextInQueue(itemId: number) {
-  const itemInfo = await db.query.items.findFirst({
-    where: eq(items.id, itemId),
-  });
-
-  if (!itemInfo || !itemInfo.isTimeLimited) {
-    // 시간제 아이템이 아니면 처리할 필요 없음
-    return;
-  }
-
-  // 최대 시도 횟수 제한 (안전장치)
-  let maxAttempts = 100;
-  let attempts = 0;
-
-  while (attempts < maxAttempts) {
-    attempts++;
-
-    const nextUserEntry = await db.query.waitingQueue.findFirst({
-      where: eq(waitingQueue.itemId, itemId),
-      orderBy: [asc(waitingQueue.requestDate)],
-    });
-
-    if (!nextUserEntry) {
-      // 더 이상 대기자 없음
-      break;
-    }
-
-    // 1. 횟수 제한 체크
-    let isEligible = true;
-    if (itemInfo.maxRentalsPerUser) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const startOfDay = Math.floor(today.getTime() / 1000);
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      const endOfDayTimestamp = Math.floor(endOfDay.getTime() / 1000);
-
-      const [result] = await db
-        .select({ value: count() })
-        .from(rentalRecords)
-        .where(
-          and(
-            eq(rentalRecords.userId, nextUserEntry.userId),
-            eq(rentalRecords.itemsId, itemId),
-            gte(rentalRecords.rentalDate, startOfDay),
-            lte(rentalRecords.rentalDate, endOfDayTimestamp)
-          )
-        );
-
-      // SQLite count 결과를 명시적으로 Number로 변환
-      if (Number(result?.value || 0) >= itemInfo.maxRentalsPerUser) {
-        isEligible = false;
-      }
-    }
-
-    if (isEligible) {
-      // 2. 사용자 정보 조회
-      const userToRent = await db.query.generalUsers.findFirst({
-        where: eq(generalUsers.id, nextUserEntry.userId),
-      });
-
-      if (userToRent) {
-        // 3. 자동 대여 처리
-        const rentalDate = Math.floor(Date.now() / 1000);
-        const returnDueDate =
-          rentalDate + (itemInfo.rentalTimeMinutes || 0) * 60;
-
-        await db.insert(rentalRecords).values({
-          userId: nextUserEntry.userId,
-          itemsId: itemId,
-          rentalDate,
-          returnDueDate,
-          userName: userToRent.name,
-          userPhone: userToRent.phoneNumber,
-          itemName: itemInfo.name,
-          itemCategory: itemInfo.category,
-          isReturned: false,
-          maleCount: nextUserEntry.maleCount,
-          femaleCount: nextUserEntry.femaleCount,
-        });
-
-        // 대기열에서 제거
-        await db
-          .delete(waitingQueue)
-          .where(eq(waitingQueue.id, nextUserEntry.id));
-
-        // 대여 완료, 더 이상 처리 불필요
-        break;
-      } else {
-        // 사용자 정보가 없는 경우 (삭제된 사용자)
-        // 대기열에서만 제거하고 다음 대기자 확인
-        await db
-          .delete(waitingQueue)
-          .where(eq(waitingQueue.id, nextUserEntry.id));
-
-        console.warn(
-          `User ${nextUserEntry.userId} not found, removed from waiting queue`
-        );
-        // continue로 다음 대기자 시도
-      }
-    } else {
-      // 횟수 초과자는 대기열에서 제거하고 다음 대기자 확인
-      await db
-        .delete(waitingQueue)
-        .where(eq(waitingQueue.id, nextUserEntry.id));
-
-      // continue로 다음 대기자 시도
-    }
-  }
-
-  if (attempts >= maxAttempts) {
-    console.error(
-      `processNextInQueue exceeded max attempts for item ${itemId}`
-    );
   }
 }
 

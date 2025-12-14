@@ -72,6 +72,9 @@ export const rentalRecords = sqliteTable("rental_records", {
   // 사용자 삭제 시에도 기록을 위해 기본 정보 저장
   userName: text("user_name"), // 대여 시점의 사용자 이름
   userPhone: text("user_phone"), // 대여 시점의 전화번호
+  userSchool: text("user_school"), //대여 시점의 사용자 학교
+  userGender: text("user_gender"), // '남' | '여'
+  userBirthDate: text("user_birth_date"), // 'YYYY-MM-DD' (나이 계산용)
 
   itemsId: integer("items_id").references(() => items.id, {
     onDelete: "set null",

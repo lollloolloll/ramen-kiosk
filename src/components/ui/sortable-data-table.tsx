@@ -92,12 +92,6 @@ export function SortableDataTable<
   TValue
 >({ columns, data, onReorder }: SortableDataTableProps<TData, TValue>) {
   const [items, setItems] = useState<TData[]>(data);
-
-  // 데이터가 외부에서 변경되면 내부 상태 동기화
-  useEffect(() => {
-    setItems(data);
-  }, [data]);
-
   const table = useReactTable({
     data: items,
     columns,

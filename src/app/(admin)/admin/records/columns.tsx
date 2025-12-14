@@ -18,6 +18,7 @@ export type RentalRecord = {
   id: number;
   userId: number; // Added userId
   userPhone: string | null;
+  userSchool: string | null;
   rentalDate: Date | null;
   userName: string | null;
   itemName: string | null;
@@ -32,11 +33,18 @@ export const columns: ColumnDef<RentalRecord>[] = [
   },
   {
     accessorKey: "userName",
-    header: "User",
+    header: "사용자",
+  },
+  {
+    accessorKey: "userSchool",
+    header: "학교",
+    cell: ({ row }) => {
+      return <div>{row.getValue("userSchool") || "-"}</div>;
+    },
   },
   {
     accessorKey: "itemName",
-    header: "Item",
+    header: "물품",
   },
   {
     header: "대여인원",
@@ -48,7 +56,7 @@ export const columns: ColumnDef<RentalRecord>[] = [
   },
   {
     accessorKey: "rentalDate",
-    header: "Date",
+    header: "대여일시",
     size: 180, // Adjust this value as needed
     cell: ({ row }) => {
       const timestampInSeconds = row.getValue("rentalDate") as number;

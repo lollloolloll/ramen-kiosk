@@ -77,8 +77,9 @@ export function ItemPageClient({ initialItems }: ItemPageClientProps) {
 
       {/* SortableDataTable 사용 */}
       <SortableDataTable
-        columns={columns}
+        key={filteredItems.length} // 또는 key={JSON.stringify(data)}
         data={filteredItems}
+        columns={columns}
         onReorder={handleReorder}
       />
     </div>

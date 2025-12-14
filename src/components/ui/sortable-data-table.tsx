@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -92,15 +92,24 @@ export function SortableDataTable<
   TValue
 >({ columns, data, onReorder }: SortableDataTableProps<TData, TValue>) {
   const [items, setItems] = useState<TData[]>(data);
+
+  // 🔥 드래그 중인지 추적
+  const isDraggingRef = useRef(false);
+
+  // 🔥 드래그 중이 아닐 때만 외부 data 동기화
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setItems(data);
+    }
+  }, [data]);
+
   const table = useReactTable({
     data: items,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    // 정렬 로직이 드래그 앤 드롭과 충돌하지 않도록 설정
     manualSorting: true,
   });
 
-  // 🔥 센서 설정: 8px 이상 움직여야 드래그로 인식 (클릭과 구분하기 위함)
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -115,6 +124,8 @@ export function SortableDataTable<
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
+    isDraggingRef.current = false; // 🔥 드래그 종료
+
     if (over && active.id !== over.id) {
       setItems((currentItems) => {
         const oldIndex = currentItems.findIndex(
@@ -124,17 +135,21 @@ export function SortableDataTable<
 
         const newOrder = arrayMove(currentItems, oldIndex, newIndex);
 
-        // 부모 컴포넌트에 변경 알림
         onReorder(newOrder);
         return newOrder;
       });
     }
   }
 
+  function handleDragStart() {
+    isDraggingRef.current = true; // 🔥 드래그 시작
+  }
+
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <div className="rounded-md border">

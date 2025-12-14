@@ -375,6 +375,7 @@ export async function toggleItemDeletedStatus(id: number, isDeleted: boolean) {
   try {
     await db.update(items).set({ isDeleted }).where(eq(items.id, id));
     revalidatePath("/admin/items");
+    revalidatePath("/kiosk"); // 키오스크 페이지도 업데이트
     return { success: true };
   } catch (error) {
     console.error("Failed to toggle item deleted status:", error);
@@ -393,6 +394,7 @@ export async function updateItemOrder(
     }
 
     revalidatePath("/admin/items");
+    revalidatePath("/kiosk"); // 키오스크 페이지도 업데이트
     return { success: true };
   } catch (error) {
     console.error("Failed to update item order:", error);

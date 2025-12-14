@@ -1250,7 +1250,7 @@ export function RentalDialog({
                           tabIndex={-1}
                           className={cn(
                             "flex gap-2 p-1 rounded-md",
-                            fieldState.invalid && "ring-1 ring-red-500"
+                            fieldState.invalid && "border border-red-500" // ring-1 → border
                           )}
                         >
                           <Button
@@ -1297,9 +1297,7 @@ export function RentalDialog({
                 <FormField
                   control={registerForm.control}
                   name="birthDate"
-                  render={(
-                    { field, fieldState } // [수정] fieldState 활용
-                  ) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel
                         className={cn(
@@ -1318,7 +1316,7 @@ export function RentalDialog({
                           "flex gap-2 rounded-md",
                           fieldState.invalid &&
                             registerForm.formState.isSubmitted &&
-                            "ring-1 ring-red-500 p-1"
+                            "border border-red-500 p-1" // ring-1 → border
                         )}
                       >
                         <Select
@@ -1417,13 +1415,12 @@ export function RentalDialog({
                       </FormLabel>
 
                       <div className="space-y-4">
-                        {/* 학교 종류 버튼 그룹 */}
                         <div
                           ref={field.ref}
                           tabIndex={-1}
                           className={cn(
                             "grid grid-cols-3 gap-2 rounded-md outline-none transition-all duration-300",
-                            fieldState.invalid && "ring-1 ring-red-500 p-1"
+                            fieldState.invalid && "border border-red-500 p-1" // ring-1 → border
                           )}
                         >
                           {[

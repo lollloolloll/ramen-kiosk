@@ -24,7 +24,7 @@ import {
   createGeneralUser,
 } from "@/lib/actions/generalUser";
 import { toast } from "sonner";
-import { useForm, useFieldArray, Resolver } from "react-hook-form";
+import { useForm, useFieldArray, Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { generalUserSchema } from "@/lib/validators/generalUser";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -175,23 +175,13 @@ export function RentalDialog({
   const [countdown, setCountdown] = useState(5);
   const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
   const [showWaitingList, setShowWaitingList] = useState(false);
-  const [waitingList, setWaitingList] = useState<
-    Array<{
-      id: number;
-      userId: number | null;
-      requestDate: number | null;
-      userName: string | null;
-      maleCount: number;
-      femaleCount: number;
-      position: number;
-    }>
-  >([]);
+  const [waitingList, setWaitingList] = useState<any[]>([]);
   const [isLoadingWaitingList, setIsLoadingWaitingList] = useState(false);
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const [tempConsent, setTempConsent] = useState(false);
   const [currentRenter, setCurrentRenter] = useState<{
     userName: string | null;
-    rentalDate: number | null; // DB 타입에 따라 Date 또는 number
+    rentalDate: number | null;
     returnDueDate: number | null;
     maleCount: number;
     femaleCount: number;
@@ -204,22 +194,17 @@ export function RentalDialog({
     if (!item || !item.isTimeLimited || !item.rentalTimeMinutes) {
       return 0;
     }
-
     const waitingCount = item.waitingCount ?? 0;
     const rentalTime = item.rentalTimeMinutes;
-
     const waitingTimeForQueue = waitingCount * rentalTime;
-
     let remainingTimeForCurrentRental = 0;
     if (item.status === "RENTED" && item.returnDueDate) {
       const nowInSeconds = Math.floor(Date.now() / 1000);
       const remainingSeconds = item.returnDueDate - nowInSeconds;
-
       if (remainingSeconds > 0) {
         remainingTimeForCurrentRental = Math.ceil(remainingSeconds / 60);
       }
     }
-
     return remainingTimeForCurrentRental + waitingTimeForQueue;
   }, [item]);
 
@@ -231,6 +216,11 @@ export function RentalDialog({
   const [schoolName, setSchoolName] = useState("");
 
   const [yearSelectOpen, setYearSelectOpen] = useState(false);
+  const [dialogKey, setDialogKey] = useState(0);
+  const formScrollRef = useRef<HTMLDivElement>(null);
+
+  // [추가 1] 패널에서 클릭했는지 확인하는 Ref
+  const isPanelClickRef = useRef(false);
 
   const identificationForm = useForm<IdentificationFormValues>({
     resolver: zodResolver(
@@ -245,11 +235,6 @@ export function RentalDialog({
     },
   });
 
-  const { fields, replace } = useFieldArray({
-    control: identificationForm.control,
-    name: "participants",
-  });
-
   const registerForm = useForm<GeneralUserFormValues>({
     resolver: zodResolver(generalUserSchema) as Resolver<GeneralUserFormValues>,
     defaultValues: {
@@ -261,6 +246,41 @@ export function RentalDialog({
       personalInfoConsent: false,
     },
   });
+  const { fields, replace } = useFieldArray({
+    control: identificationForm.control,
+    name: "participants",
+  });
+
+  // [추가 2] 학교 값이 바뀌는 것을 감시
+  const watchedSchool = useWatch({
+    control: registerForm.control,
+    name: "school",
+  });
+  useEffect(() => {
+    if (isPanelClickRef.current && formScrollRef.current) {
+      const scrollToBottom = () => {
+        if (formScrollRef.current) {
+          // scrollHeight를 다시 계산하여 최신 값 사용
+          const maxScroll =
+            formScrollRef.current.scrollHeight -
+            formScrollRef.current.clientHeight;
+          formScrollRef.current.scrollTo({
+            top: maxScroll,
+            behavior: "smooth",
+          });
+          isPanelClickRef.current = false;
+        }
+      };
+
+      // 패널이 처음 열릴 때를 대비해 충분한 시간 대기
+      if (showSchoolPanel) {
+        setTimeout(scrollToBottom, 250);
+      } else {
+        // 패널이 이미 열려있으면 바로 실행
+        setTimeout(scrollToBottom, 100);
+      }
+    }
+  }, [watchedSchool, showSchoolPanel]);
 
   const maleCount = identificationForm.watch("maleCount") ?? 0;
   const femaleCount = identificationForm.watch("femaleCount") ?? 0;
@@ -270,7 +290,6 @@ export function RentalDialog({
       replace([]);
       return;
     }
-
     const currentParticipants = identificationForm.getValues("participants");
 
     // 성별별로 기존 참가자 분리
@@ -278,7 +297,6 @@ export function RentalDialog({
     const existingFemales = currentParticipants.filter(
       (p) => p.gender === "여"
     );
-
     const newParticipants: Array<{ name: string; gender: "남" | "여" }> = [];
 
     // 남자 참가자 - 기존 값 유지하고 부족하면 빈 값 추가
@@ -290,7 +308,6 @@ export function RentalDialog({
     for (let i = 0; i < femaleCount; i++) {
       newParticipants.push(existingFemales[i] || { name: "", gender: "여" });
     }
-
     replace(newParticipants);
   }, [
     maleCount,
@@ -300,37 +317,24 @@ export function RentalDialog({
     identificationForm,
   ]);
 
-  useEffect(() => {
-    if (birthYear && birthMonth && birthDay) {
-      registerForm.setValue(
-        "birthDate",
-        `${birthYear}-${birthMonth}-${birthDay}`
-      );
-    } else {
-      registerForm.setValue("birthDate", "");
-    }
-  }, [birthYear, birthMonth, birthDay, registerForm]);
+  // [수정 포인트 1] 문제의 원인이었던 useEffect 제거
+  // birthYear, birthMonth, birthDay가 변경될 때마다 폼을 업데이트하던 useEffect를 삭제했습니다.
+  // 대신 Select의 onValueChange에서 직접 처리합니다.
 
   useEffect(() => {
     if (schoolLevel === "해당없음") {
       registerForm.setValue("school", "해당없음");
       return;
     }
-
     if (!schoolName) {
       registerForm.setValue("school", "");
       return;
     }
-
-    // 1. 목록에서 선택한 경우: 풀네임이므로 그대로 저장
     if (!isDirectInput) {
       registerForm.setValue("school", schoolName);
-    }
-    // 2. 직접 입력한 경우: 편의를 위해 접미사 자동 완성 (단, 중복 방지)
-    else {
+    } else {
       let finalName = schoolName;
       let suffix = "";
-
       switch (schoolLevel) {
         case "초등학교":
           suffix = "초";
@@ -345,13 +349,9 @@ export function RentalDialog({
           suffix = "대";
           break;
       }
-
-      // 사용자가 이미 "정의여고"를 입력했거나 "선덕고"를 입력했으면 접미사를 붙이지 않음
-
       if (suffix && !finalName.endsWith(suffix)) {
         finalName += suffix;
       }
-
       registerForm.setValue("school", finalName);
     }
   }, [schoolLevel, schoolName, isDirectInput, registerForm]);
@@ -369,16 +369,15 @@ export function RentalDialog({
           return prev - 1;
         });
       }, 1000);
-
       return () => clearInterval(timer);
     }
   }, [step]);
 
+  // ... (handleIdentificationSubmit, handleRegisterSubmit, handleRental, handleWaiting 생략 - 기존과 동일) ...
   const handleIdentificationSubmit = async (
     values: IdentificationFormValues
   ) => {
     if (!item) return;
-
     if (item.enableParticipantTracking && values.participants) {
       const hasEmptyName = values.participants.some(
         (p) => !p.name || p.name.trim().length === 0
@@ -388,7 +387,6 @@ export function RentalDialog({
         return;
       }
     }
-
     setIsSubmitting(true);
     try {
       const user = await findUserByNameAndPhone(
@@ -397,9 +395,7 @@ export function RentalDialog({
       );
       if (user) {
         const status = await checkUserRentalStatus(user.id, item.id);
-        if (status.error) {
-          throw new Error(status.error);
-        }
+        if (status.error) throw new Error(status.error);
         if (status.isRenting) {
           toast.error("이미 대여 중인 아이템입니다.");
           return;
@@ -408,7 +404,6 @@ export function RentalDialog({
           toast.error("이미 대기열에 등록된 아이템입니다.");
           return;
         }
-
         if (isRentedMode) {
           await handleWaiting(user.id, values.maleCount, values.femaleCount);
         } else {
@@ -440,20 +435,18 @@ export function RentalDialog({
     setIsSubmitting(true);
     try {
       const result = await createGeneralUser(values);
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
+      if (result.error) throw new Error(result.error);
       if (result.user) {
         toast.success("회원가입이 완료되었습니다.");
 
+        // [수정] 회원가입 완료 시 학교 패널 닫기
+        setShowSchoolPanel(false);
         identificationForm.setValue("name", values.name, {
           shouldValidate: true,
         });
         identificationForm.setValue("phoneNumber", values.phoneNumber, {
           shouldValidate: true,
         });
-
         setStep("identification");
       }
     } catch (error) {
@@ -484,9 +477,7 @@ export function RentalDialog({
         femaleCount,
         participants
       );
-      if (result.error) {
-        throw new Error(result.error);
-      }
+      if (result.error) throw new Error(result.error);
       setStep("success");
     } catch (error) {
       toast.error(
@@ -514,9 +505,7 @@ export function RentalDialog({
         maleCount,
         femaleCount
       );
-      if (result.error) {
-        throw new Error(result.error);
-      }
+      if (result.error) throw new Error(result.error);
       setWaitingPosition(result.waitingPosition ?? null);
       setStep("waitingSuccess");
     } catch (error) {
@@ -529,6 +518,7 @@ export function RentalDialog({
   };
 
   const closeDialog = () => {
+    resetDialog();
     onOpenChange(false);
   };
 
@@ -544,11 +534,17 @@ export function RentalDialog({
     setWaitingPosition(null);
     setShowWaitingList(false);
     setWaitingList([]);
+
+    // 폼 완전 초기화
     identificationForm.reset();
     registerForm.reset();
+
+    // 로컬 상태 초기화
     setBirthYear(undefined);
     setBirthMonth(undefined);
     setBirthDay(undefined);
+    setYearSelectOpen(false);
+
     setIsDirectInput(false);
     setSchoolLevel("");
     setSchoolName("");
@@ -560,33 +556,26 @@ export function RentalDialog({
   };
 
   const handleWaitingListClick = async () => {
+    // ... (기존과 동일)
     if (!item) return;
-
     if (showWaitingList) {
       setShowWaitingList(false);
       return;
     }
-
     setIsLoadingWaitingList(true);
     try {
       const waitingResult = await getWaitingListByItemId(item.id);
       const renterResult = await getCurrentRenter(item.id);
-
       if (waitingResult.error) {
         toast.error(waitingResult.error);
         return;
       }
-
-      if (waitingResult.data) {
-        setWaitingList(waitingResult.data);
-      }
-
+      if (waitingResult.data) setWaitingList(waitingResult.data);
       if (renterResult.success && renterResult.data) {
         setCurrentRenter(renterResult.data as any);
       } else {
         setCurrentRenter(null);
       }
-
       setShowWaitingList(true);
     } catch (error) {
       toast.error("정보를 불러오는 중 오류가 발생했습니다.");
@@ -617,13 +606,10 @@ export function RentalDialog({
       (_, i) => currentYear - i
     );
   }, []);
-
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
-
   const days = useMemo(() => {
-    if (!birthYear || !birthMonth) {
+    if (!birthYear || !birthMonth)
       return Array.from({ length: 31 }, (_, i) => i + 1);
-    }
     const daysInMonth = new Date(
       parseInt(birthYear),
       parseInt(birthMonth),
@@ -637,8 +623,10 @@ export function RentalDialog({
   const handleRegisterError = (errors: any) => {
     toast.error("필수 정보를 모두 입력해주세요.");
   };
-  // 오른쪽 패널에 들어갈 학교 목록 컨텐츠
+
+  // ... (renderSchoolPanel, renderStep 등 나머지 렌더링 로직은 그대로 사용하되, birthDate Select 부분만 수정) ...
   const renderSchoolPanel = () => {
+    // ... (기존 코드와 동일)
     if (!schoolLevel || schoolLevel === "해당없음") return null;
 
     return (
@@ -656,15 +644,11 @@ export function RentalDialog({
             ✕
           </Button>
         </div>
-
         <div className="flex-1 overflow-y-auto pr-2 scrollbar-hidden">
           <div className="grid grid-cols-2 gap-2 pb-4">
             {SCHOOL_DATA[schoolLevel]?.map((school) => {
-              // 현재 선택된 상태인지 확인
-              // 주의: registerForm의 값은 '선덕고'이고 school은 '선덕'일 수 있음
               const currentVal = registerForm.getValues("school");
               const isSelected = currentVal && currentVal.startsWith(school);
-
               return (
                 <Button
                   key={school}
@@ -673,7 +657,6 @@ export function RentalDialog({
                   onClick={() => {
                     setIsDirectInput(false);
                     setSchoolName(school);
-
                     let finalName = school;
                     let suffix = "";
                     switch (schoolLevel) {
@@ -692,10 +675,10 @@ export function RentalDialog({
                     }
                     if (suffix && !finalName.endsWith(suffix))
                       finalName += suffix;
+                    isPanelClickRef.current = true;
 
                     registerForm.setValue("school", finalName);
                     registerForm.trigger("school");
-                    // 선택해도 패널은 유지 (사용자가 x 누르거나 다른거 누를때까지)
                   }}
                   className={cn(
                     "h-12 w-full justify-center px-4 text-center transition-all",
@@ -709,7 +692,6 @@ export function RentalDialog({
                 </Button>
               );
             })}
-
             <Button
               type="button"
               variant={isDirectInput ? "default" : "outline"}
@@ -794,6 +776,7 @@ export function RentalDialog({
                 )}
                 className="space-y-4"
               >
+                {/* ... 헤더 및 기타 필드 ... */}
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
                     {isRentedMode
@@ -827,7 +810,6 @@ export function RentalDialog({
                           예상 대기시간 {estimatedWaitingTime}분
                         </span>
                       </div>
-
                       <div className="flex items-baseline gap-4">
                         <div className="flex items-baseline gap-1">
                           <span className="text-sm text-muted-foreground">
@@ -853,7 +835,6 @@ export function RentalDialog({
                           </span>
                         </div>
                       </div>
-
                       <div className="pt-2 border-t border-[oklch(0.75_0.12_165/0.1)] flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
                           터치하여 상세 정보 {showWaitingList ? "닫기" : "보기"}
@@ -916,7 +897,6 @@ export function RentalDialog({
                                 <span>대기 순서</span>
                                 <span>대기자 ({waitingList.length}팀)</span>
                               </div>
-
                               <div className="max-h-[200px] overflow-y-auto p-2 space-y-1 scrollbar-hidden">
                                 {waitingList.length === 0 ? (
                                   <div className="text-center py-8 text-sm text-gray-400">
@@ -988,7 +968,6 @@ export function RentalDialog({
                     <FormItem>
                       <FormLabel>휴대폰 번호</FormLabel>
                       <FormControl>
-                        {/* ✅ 수정: type="text"로 변경하여 OS 차원의 IME 리셋 방지 */}
                         <Input
                           placeholder="010-1234-5678"
                           type="text"
@@ -1020,7 +999,6 @@ export function RentalDialog({
                           <FormLabel>{item.label}</FormLabel>
                           <FormControl>
                             <div className="flex items-center rounded-md border border-input bg-background p-1">
-                              {/* 감소 버튼 */}
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -1035,16 +1013,12 @@ export function RentalDialog({
                               >
                                 <Minus className="h-4 w-4" />
                               </Button>
-
-                              {/* 숫자 표시 (읽기 전용 입력창) */}
                               <Input
                                 {...field}
                                 type="number"
                                 readOnly
                                 className="h-8 flex-1 border-0 bg-transparent text-center focus-visible:ring-0 shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
-
-                              {/* 증가 버튼 */}
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -1065,6 +1039,7 @@ export function RentalDialog({
                   ))}
                 </div>
 
+                {/* 참가자 이름 입력 필드 (기존과 동일) */}
                 {item.enableParticipantTracking && fields.length > 0 && (
                   <div className="space-y-3 pt-4 border-t border-dashed">
                     <div className="flex items-center justify-between">
@@ -1088,7 +1063,6 @@ export function RentalDialog({
                             .slice(0, index)
                             .filter((f) => f.gender === field.gender).length +
                           1;
-
                         return (
                           <FormField
                             key={field.id}
@@ -1129,13 +1103,8 @@ export function RentalDialog({
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      // 1. 현재 identificationForm에 입력된 값을 가져옵니다.
                       const currentValues = identificationForm.getValues();
-
-                      // 2. 단계 변경
                       setStep("register");
-
-                      // 3. 가져온 값을 회원가입 폼(registerForm)에 넣어줍니다.
                       registerForm.setValue("name", currentValues.name);
                       registerForm.setValue(
                         "phoneNumber",
@@ -1174,18 +1143,18 @@ export function RentalDialog({
               </form>
             </Form>
           );
+
         case "register":
-          // [수정] isButtonDisabled 로직 제거 (버튼 항상 활성화하여 검증 유도)
           return (
             <Form {...registerForm} key="register">
               <form
-                // [수정] handleSubmit에 에러 핸들러(handleRegisterError) 추가
                 onSubmit={registerForm.handleSubmit(
                   handleRegisterSubmit,
                   handleRegisterError
                 )}
                 className="space-y-4"
               >
+                {/* ... 헤더 및 이름, 폰번호, 성별 필드는 기존과 동일 ... */}
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black text-[oklch(0.75_0.12_165)]">
                     사용자 등록
@@ -1194,13 +1163,10 @@ export function RentalDialog({
                     새로운 사용자를 등록합니다. 정보를 입력해주세요.
                   </DialogDescription>
                 </DialogHeader>
-
                 <FormField
                   control={registerForm.control}
                   name="name"
-                  render={(
-                    { field, fieldState } // [수정] fieldState 추가
-                  ) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel>
                         이름
@@ -1213,7 +1179,6 @@ export function RentalDialog({
                           autoComplete="off"
                           autoCorrect="off"
                           lang="ko"
-                          // [수정] 에러 시 빨간 테두리 적용 (cn 및 fieldState.invalid 활용)
                           className={cn(
                             "focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!",
                             fieldState.invalid &&
@@ -1228,13 +1193,10 @@ export function RentalDialog({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={registerForm.control}
                   name="phoneNumber"
-                  render={(
-                    { field, fieldState } // [수정] fieldState 추가
-                  ) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel>
                         휴대폰 번호
@@ -1248,28 +1210,33 @@ export function RentalDialog({
                           autoComplete="off"
                           autoCorrect="off"
                           {...field}
-                          // [수정] 에러 시 빨간 테두리 적용
                           className={cn(
                             "focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!",
                             fieldState.invalid &&
+                              registerForm.formState.isSubmitted &&
                               "border-red-500! focus-visible:border-red-500!"
                           )}
                           onChange={(e) => {
-                            field.onChange(formatPhoneNumber(e.target.value));
+                            const formatted = formatPhoneNumber(e.target.value);
+                            field.onChange(formatted);
+                            if (
+                              registerForm.formState.isSubmitted ||
+                              fieldState.invalid
+                            ) {
+                              registerForm.trigger("phoneNumber");
+                            }
                           }}
+                          maxLength={13}
                         />
                       </FormControl>
                       <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={registerForm.control}
                   name="gender"
-                  render={(
-                    { field, fieldState } // [수정] fieldState 추가
-                  ) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel
                         className={cn(fieldState.invalid && "text-red-500")}
@@ -1278,7 +1245,6 @@ export function RentalDialog({
                         <span className="text-[oklch(0.7_0.18_350)]">*</span>
                       </FormLabel>
                       <FormControl>
-                        {/* [수정] 에러 시 전체 영역 빨간 테두리 */}
                         <div
                           ref={field.ref}
                           tabIndex={-1}
@@ -1332,26 +1298,38 @@ export function RentalDialog({
                   control={registerForm.control}
                   name="birthDate"
                   render={(
-                    { field, fieldState } // [수정] fieldState 추가
+                    { field, fieldState } // [수정] fieldState 활용
                   ) => (
                     <FormItem>
                       <FormLabel
-                        className={cn(fieldState.invalid && "text-red-500")}
+                        className={cn(
+                          fieldState.invalid &&
+                            registerForm.formState.isSubmitted &&
+                            "text-red-500"
+                        )}
                       >
                         생년월일
                         <span className="text-[oklch(0.7_0.18_350)]">*</span>
                       </FormLabel>
-                      {/* [수정] 에러 시 빨간 테두리 컨테이너 추가 */}
                       <div
                         ref={field.ref}
                         tabIndex={-1}
                         className={cn(
                           "flex gap-2 rounded-md",
-                          fieldState.invalid && "ring-1 ring-red-500 p-1"
+                          fieldState.invalid &&
+                            registerForm.formState.isSubmitted &&
+                            "ring-1 ring-red-500 p-1"
                         )}
                       >
                         <Select
-                          onValueChange={setBirthYear}
+                          onValueChange={(value) => {
+                            setBirthYear(value);
+                            // 즉시 값을 조합하여 폼에 전달. Month/Day가 없으면 빈 값 취급
+                            field.onChange(
+                              `${value}-${birthMonth || ""}-${birthDay || ""}`
+                            );
+                            registerForm.clearErrors("birthDate");
+                          }}
                           value={birthYear}
                           open={yearSelectOpen}
                           onOpenChange={setYearSelectOpen}
@@ -1370,8 +1348,15 @@ export function RentalDialog({
                             ))}
                           </SelectContent>
                         </Select>
+
                         <Select
-                          onValueChange={setBirthMonth}
+                          onValueChange={(value) => {
+                            setBirthMonth(value);
+                            field.onChange(
+                              `${birthYear || ""}-${value}-${birthDay || ""}`
+                            );
+                            registerForm.clearErrors("birthDate");
+                          }}
                           value={birthMonth}
                         >
                           <SelectTrigger className="focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]!">
@@ -1388,7 +1373,17 @@ export function RentalDialog({
                             ))}
                           </SelectContent>
                         </Select>
-                        <Select onValueChange={setBirthDay} value={birthDay}>
+
+                        <Select
+                          onValueChange={(value) => {
+                            setBirthDay(value);
+                            field.onChange(
+                              `${birthYear || ""}-${birthMonth || ""}-${value}`
+                            );
+                            registerForm.clearErrors("birthDate");
+                          }}
+                          value={birthDay}
+                        >
                           <SelectTrigger className="focus:outline-none! focus:ring-0! focus:ring-offset-0! focus:border-2! focus:border-[oklch(0.75_0.12_165)]! data-[state=open]:border-2! data-[state=open]:border-[oklch(0.75_0.12_165)]!">
                             <SelectValue placeholder="일" />
                           </SelectTrigger>
@@ -1446,7 +1441,7 @@ export function RentalDialog({
                                 setSchoolLevel(level);
 
                                 if (level === "해당없음") {
-                                  setShowSchoolPanel(false); // 패널 닫기
+                                  setShowSchoolPanel(false);
                                   registerForm.setValue("school", "해당없음");
                                   setSchoolName("");
                                   setIsDirectInput(false);
@@ -1530,12 +1525,14 @@ export function RentalDialog({
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => setStep("identification")}
+                    onClick={() => {
+                      setStep("identification");
+                      setShowSchoolPanel(false);
+                    }}
                     disabled={isSubmitting}
                   >
                     뒤로
                   </Button>
-                  {/* [수정] isButtonDisabled 제거하여 항상 검증 로직 실행되도록 함 */}
                   <Button
                     type="submit"
                     disabled={isSubmitting}
@@ -1909,17 +1906,7 @@ export function RentalDialog({
           );
       }
     })();
-
-    // [수정됨] 컨텐츠를 감싸는 스크롤 컨테이너
-    // pb-60 (약 240px)을 추가하여 키보드가 올라왔을 때도 스크롤할 여유 공간을 충분히 확보
-    return (
-      <div
-        className={`max-h-[80vh] overflow-y-auto overflow-x-hidden p-1 scrollbar-hidden mobile-padding
-      `}
-      >
-        {content}
-      </div>
-    );
+    return content;
   };
 
   return (
@@ -1927,15 +1914,21 @@ export function RentalDialog({
       <Dialog
         open={open}
         onOpenChange={(isOpen) => {
-          if (!isOpen) resetDialog();
+          if (isOpen) {
+            setDialogKey((prev) => prev + 1);
+            resetDialog();
+          } else {
+            resetDialog();
+          }
           onOpenChange(isOpen);
         }}
       >
         <DialogContent
+          key={dialogKey}
           onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
           className={cn(
-            "transition-all duration-300 ease-in-out gap-0", // gap-0 추가
+            "transition-all duration-300 ease-in-out gap-0",
             step === "success" || step === "waitingSuccess"
               ? "sm:max-w-[425px] p-0 border-0 overflow-hidden bg-transparent shadow-none"
               : showSchoolPanel
@@ -1947,10 +1940,9 @@ export function RentalDialog({
           <div className="flex h-full max-h-[85vh]">
             {/* 왼쪽: 기존 폼 (너비 고정 또는 유동) */}
             <div
+              ref={formScrollRef}
               className={cn(
                 "flex-1 overflow-y-auto transition-all scrollbar-hidden"
-                // 패널 열릴 때 왼쪽 폼 너비 조정이 필요하다면 여기에 스타일 추가
-                // showSchoolPanel ? "w-1/2" : "w-full" (flex-1이 알아서 처리함)
               )}
             >
               {renderStep()}
@@ -1959,8 +1951,6 @@ export function RentalDialog({
             {/* 오른쪽: 학교 선택 패널 (조건부 렌더링) */}
             {showSchoolPanel && (
               <div className="w-[400px] bg-slate-50/50 p-6 rounded-r-lg hidden sm:block">
-                {/* 모바일(sm이하)에서는 오른쪽 패널 숨기고 아래로 내리거나 다른 처리 필요할 수 있음. 
-                            하지만 산업용 모니터라면 보통 해상도가 sm 이상일 것입니다. */}
                 {renderSchoolPanel()}
               </div>
             )}
@@ -1971,13 +1961,14 @@ export function RentalDialog({
       {/* 동의서 모달 */}
       <Dialog open={isConsentModalOpen} onOpenChange={setIsConsentModalOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+          {/* 기존 내용 유지 */}
           <DialogHeader className="px-6 py-4 border-b bg-linear-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)]">
             <DialogTitle className="text-2xl font-bold text-[oklch(0.75_0.12_165)]">
               개인정보 수집 및 이용 동의서
             </DialogTitle>
           </DialogHeader>
-
           <div className="flex-1 overflow-auto p-6 bg-muted/5 scrollbar-hidden">
+            {/* ... 파일 미리보기 로직 ... */}
             {!consentFile && (
               <div className="flex flex-col items-center justify-center py-16 space-y-4">
                 <FileText className="w-16 h-16 text-muted-foreground/50" />

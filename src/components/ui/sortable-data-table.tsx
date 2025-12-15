@@ -127,20 +127,20 @@ export function SortableDataTable<
     isDraggingRef.current = false; // 🔥 드래그 종료
 
     if (over && active.id !== over.id) {
-      setItems((currentItems) => {
-        const oldIndex = currentItems.findIndex(
-          (item) => item.id === active.id
-        );
-        const newIndex = currentItems.findIndex((item) => item.id === over.id);
+      // 1. 현재 items 상태를 기반으로 인덱스 찾기
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
 
-        const newOrder = arrayMove(currentItems, oldIndex, newIndex);
+      // 2. 새로운 배열 생성
+      const newOrder = arrayMove(items, oldIndex, newIndex);
 
-        onReorder(newOrder);
-        return newOrder;
-      });
+      // 3. UI 즉시 업데이트 (여기서 화면이 즉각 반응함)
+      setItems(newOrder);
+
+      // 4. 서버 동기화 (사이드 이펙트는 상태 업데이트 밖에서 실행)
+      onReorder(newOrder);
     }
   }
-
   function handleDragStart() {
     isDraggingRef.current = true; // 🔥 드래그 시작
   }

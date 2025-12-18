@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 interface RecordsPageProps {
   searchParams: Promise<{
-    username?: string;
+    search?: string;
     from?: string;
     to?: string;
     category?: string;
@@ -22,14 +22,14 @@ interface RecordsPageProps {
 
 export default async function RecordsPage({ searchParams }: RecordsPageProps) {
   const params = await searchParams;
-  const { username, from, to, category, item } = params;
+  const { search, from, to, category, item } = params;
   const page = Number(params.page) || 1;
   const per_page = Number(params.per_page) || 10;
   const sort = params.sort || "rentalDate";
   const order = params.order || "desc";
 
   const filters = {
-    username,
+    search,
     startDate: from,
     endDate: to,
     itemName: item,

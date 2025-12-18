@@ -391,15 +391,15 @@ export function RentalAnalyticsClient({
                   <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center">
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-[oklch(0.75_0.12_165)]" />
-                      아동 (만 12세 이하)
+                      아동 (만 8세 이하)
                     </span>
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-[oklch(0.7_0.18_350)]" />
-                      청소년 (만 13~18세)
+                      청소년 (만 9~24세)
                     </span>
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-[oklch(0.65_0.15_280)]" />
-                      성인 (만 19세 이상)
+                      성인 (만 25세 이상)
                     </span>
                   </div>
                 </div>

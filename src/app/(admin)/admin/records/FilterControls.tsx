@@ -26,9 +26,8 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [username, setUsername] = React.useState(
-    searchParams.get("username") || ""
-  );
+  const [search, setSearch] = React.useState(searchParams.get("search") || "");
+
   const [fromDate, setFromDate] = React.useState<Date | undefined>(
     searchParams.get("from") ? new Date(searchParams.get("from")!) : undefined
   );
@@ -38,7 +37,7 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
   const [item, setItem] = React.useState(searchParams.get("item") || "all");
 
   const prevFiltersRef = React.useRef({
-    username: searchParams.get("username") || "",
+    search: searchParams.get("search") || "",
     fromDate: searchParams.get("from") || "",
     toDate: searchParams.get("to") || "",
     item: searchParams.get("item") || "all",
@@ -53,13 +52,14 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
     };
 
     return {
-      username,
+      search,
       startDate: fromDate ? formatDate(fromDate) : undefined,
       endDate: toDate ? formatDate(toDate) : undefined,
       itemName: item && item !== "all" ? item : undefined,
     };
-  }, [username, fromDate, toDate, item]);
+  }, [search, fromDate, toDate, item]);
 
+  // Debounce 및 URL 업데이트 로직
   React.useEffect(() => {
     const formatDate = (date: Date) => {
       const year = date.getFullYear();
@@ -68,24 +68,24 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
       return `${year}-${month}-${day}`;
     };
 
-    const currentFilters = {
-      username,
+    const currentFiltersState = {
+      search,
       fromDate: fromDate ? formatDate(fromDate) : "",
       toDate: toDate ? formatDate(toDate) : "",
       item,
     };
 
     const filtersChanged =
-      currentFilters.username !== prevFiltersRef.current.username ||
-      currentFilters.fromDate !== prevFiltersRef.current.fromDate ||
-      currentFilters.toDate !== prevFiltersRef.current.toDate ||
-      currentFilters.item !== prevFiltersRef.current.item;
+      currentFiltersState.search !== prevFiltersRef.current.search ||
+      currentFiltersState.fromDate !== prevFiltersRef.current.fromDate ||
+      currentFiltersState.toDate !== prevFiltersRef.current.toDate ||
+      currentFiltersState.item !== prevFiltersRef.current.item;
 
     if (!filtersChanged) {
       return;
     }
 
-    prevFiltersRef.current = currentFilters;
+    prevFiltersRef.current = currentFiltersState;
 
     const handler = setTimeout(() => {
       const currentParams = new URLSearchParams(searchParams.toString());
@@ -94,7 +94,8 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
 
       const newParams = new URLSearchParams();
 
-      if (username) newParams.set("username", username);
+      if (search) newParams.set("search", search);
+
       if (fromDate) newParams.set("from", formatDate(fromDate));
       if (toDate) newParams.set("to", formatDate(toDate));
       if (item && item !== "all") newParams.set("item", item);
@@ -105,12 +106,12 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
       newParams.set("page", "1");
 
       router.push(`/admin/records?${newParams.toString()}`);
-    }, 500);
+    }, 500); // 0.5초 Debounce
 
     return () => {
       clearTimeout(handler);
     };
-  }, [username, fromDate, toDate, item, router, searchParams, currentFilters]);
+  }, [search, fromDate, toDate, item, router, searchParams]);
 
   const handleSortChange = (newSortOrder: string) => {
     const params = new URLSearchParams(searchParams);
@@ -128,16 +129,17 @@ export function FilterControls({ items, sort, order }: FilterControlsProps) {
   };
 
   return (
-    <div className="flex items-end space-x-4 mb-6 w-full">
+    <div className="flex items-end space-x-4 mb-6 w-full flex-wrap gap-y-4">
       <div>
-        <Label>이름</Label>
+        <Label>검색</Label>
         <Input
-          placeholder="이름..."
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="max-w-sm"
+          placeholder="이름 또는 학교..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-[200px]"
         />
       </div>
+
       <div>
         <Label>From</Label>
         <DatePicker date={fromDate} setDate={setFromDate} />

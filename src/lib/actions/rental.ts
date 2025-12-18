@@ -464,7 +464,7 @@ export async function getAllItemNames() {
 
 export async function getRentalRecords(
   filters: {
-    username?: string;
+    search?: string;
     startDate?: string;
     endDate?: string;
     itemName?: string;
@@ -484,19 +484,27 @@ export async function getRentalRecords(
     const offset = (page - 1) * per_page;
 
     const whereConditions = [];
-    if (filters.username) {
+    if (filters.search) {
+      // 1. 동반자 이름 검색용 서브쿼리
       const participantRecordIds = db
         .selectDistinct({ recordId: rentalRecordPeople.rentalRecordId })
         .from(rentalRecordPeople)
-        .where(like(rentalRecordPeople.name, `%${filters.username}%`));
+        .where(like(rentalRecordPeople.name, `%${filters.search}%`));
 
-      // 이름 검색 시: 현재 유저 테이블 OR 기록된 스냅샷 이름 검색
+      // 2. OR 조건으로 통합
       whereConditions.push(
         or(
+          // A. 사용자 이름 (현재 정보 또는 스냅샷)
           like(
             sql`COALESCE(${generalUsers.name}, ${rentalRecords.userName})`,
-            `%${filters.username}%`
+            `%${filters.search}%`
           ),
+          // B. 학교 이름 (스냅샷 또는 현재 정보)
+          like(
+            sql`COALESCE(${rentalRecords.userSchool}, ${generalUsers.school})`,
+            `%${filters.search}%`
+          ),
+          // C. 동반자 이름
           inArray(rentalRecords.id, participantRecordIds)
         )
       );
@@ -829,10 +837,10 @@ export async function getRentalAnalytics(filters: {
       if (r.birthDate) {
         const age = calculateAge(r.birthDate, new Date(r.rentalDate * 1000));
         if (age !== null) {
-          if (age <= 12) {
+          if (age <= 8) {
             ageGroupStats.child.count++;
             ageGroupStats.child.uniqueUsers.add(r.userId);
-          } else if (age <= 18) {
+          } else if (age <= 24) {
             ageGroupStats.teen.count++;
             ageGroupStats.teen.uniqueUsers.add(r.userId);
           } else {

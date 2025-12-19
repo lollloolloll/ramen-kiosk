@@ -270,9 +270,9 @@ export async function processAndMutateExpiredRentals(): Promise<boolean> {
       return false; // 변경된 내용이 없음을 알림
     }
 
-    console.log(
-      `Silently processing ${expiredRentals.length} expired rentals...`
-    );
+    // console.log(
+    //   `Silently processing ${expiredRentals.length} expired rentals...`
+    // );
 
     for (const record of expiredRentals) {
       await db

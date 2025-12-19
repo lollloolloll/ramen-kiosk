@@ -67,21 +67,21 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
 
   // 타이머 리셋 함수
   const resetInactivityTimer = () => {
-    console.log("Resetting inactivity timer");
+    // console.log("Resetting inactivity timer");
 
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
 
     if (isDialogOpen) {
-      console.log("Dialog is open, not setting timer");
+      // console.log("Dialog is open, not setting timer");
       return;
     }
 
     inactivityTimerRef.current = setTimeout(() => {
-      console.log(
-        "Inactivity timeout - redirecting to home with promotion flag"
-      );
+      // console.log(
+      //   "Inactivity timeout - redirecting to home with promotion flag"
+      // );
 
       // 🆕 홍보물 표시 플래그 설정 후 리다이렉트
       const promotionPayload = {
@@ -134,33 +134,33 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
   // 다이얼로그 상태 변경 감지
   useEffect(() => {
     if (isDialogOpen) {
-      console.log("Dialog opened, clearing timer");
+      // console.log("Dialog opened, clearing timer");
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
       }
     } else if (!showPromotion) {
-      console.log("Dialog closed, restarting timer");
+      // console.log("Dialog closed, restarting timer");
       resetInactivityTimer();
     }
   }, [isDialogOpen, showPromotion]);
 
   // 홍보물 닫기 핸들러
   const handleClosePromotion = () => {
-    console.log("Promotion closed by user");
+    // console.log("Promotion closed by user");
     setShowPromotion(false);
     resetInactivityTimer();
   };
 
   // LazyCheck 핸들러
   const handleLazyCheck = async () => {
-    console.log("Triggering lazy check from kiosk promotion...");
+    // console.log("Triggering lazy check from kiosk promotion...");
     await processAndMutateExpiredRentals();
   };
 
   const handleOrder = (item: Item) => {
     setSelectedItem(item);
     setIsDialogOpen(true);
-    console.log("Dialog opened for item:", item.name);
+    // console.log("Dialog opened for item:", item.name);
   };
 
   return (

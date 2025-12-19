@@ -60,7 +60,7 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
   const total_count = rentalResult.total_count || 0;
   const itemNames = itemNamesResult.data;
 
-  console.log("records===", records);
+  // console.log("records===", records);
   return (
     <div className="py-10 px-16">
       <h1 className="text-3xl font-bold mb-6">대여 기록</h1>

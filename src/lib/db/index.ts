@@ -21,11 +21,11 @@ const DATABASE_DIR = path.dirname(DATABASE_PATH);
 
 // 데이터베이스 디렉토리가 없으면 생성
 if (!fs.existsSync(DATABASE_DIR)) {
-  console.log(`[DB] Creating database directory: ${DATABASE_DIR}`);
+  // console.log(`[DB] Creating database directory: ${DATABASE_DIR}`);
   fs.mkdirSync(DATABASE_DIR, { recursive: true });
 }
 
-console.log(`[DB] Using database at: ${DATABASE_PATH}`);
+// console.log(`[DB] Using database at: ${DATABASE_PATH}`);
 
 const sqlite = new Database(DATABASE_PATH);
 

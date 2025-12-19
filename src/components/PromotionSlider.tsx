@@ -26,6 +26,7 @@ interface PromotionSliderProps {
   autoPlayInterval?: number;
   onLazyCheck?: () => Promise<void>;
   userInteractionTimeout?: number;
+  lazyCheckInterval?: number; // 체크 주기 (기본값 60초)
 }
 
 export function PromotionSlider({
@@ -35,6 +36,7 @@ export function PromotionSlider({
   autoPlayInterval = 10000,
   onLazyCheck,
   userInteractionTimeout = 5 * 1000,
+  lazyCheckInterval = 60 * 1000, // 1분마다 체크
 }: PromotionSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -46,8 +48,10 @@ export function PromotionSlider({
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const ytPlayerRef = useRef<any>(null); // YouTube API 인스턴스 저장
   const isMutedRef = useRef(isMuted); // ✅ isMuted의 현재값을 ref로 관리
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null); // 슬라이드 자동 넘김용
   const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const lazyCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Touch handling
   const touchStartX = useRef<number>(0);
@@ -55,7 +59,7 @@ export function PromotionSlider({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentItem = items[currentIndex];
-  // video나 url(유튜브)은 내부 로직으로 넘기므로 타이머 제외
+  // video나 url(유튜브)은 내부 로직으로 넘기므로 슬라이드 타이머 제외
   const isVideoOrExternalUrl =
     currentItem?.type === "video" || currentItem?.type === "url";
 
@@ -86,12 +90,32 @@ export function PromotionSlider({
     }
   }, []);
 
-  // Lazy Check
+  // ----------------------------------------------------------------------
+  // [핵심 수정] 독립적인 Lazy Check 루프
+  // 슬라이드 전환(`currentIndex`)과 무관하게 일정 주기마다 실행됨
+  // ----------------------------------------------------------------------
   useEffect(() => {
-    if (onLazyCheck) {
-      onLazyCheck().catch((err) => console.error("LazyCheck failed:", err));
-    }
-  }, [currentIndex, onLazyCheck]);
+    if (!onLazyCheck) return;
+
+    // 1. 마운트 시 최초 1회 즉시 실행 (선택 사항, 필요 없으면 제거 가능)
+    onLazyCheck().catch((err) =>
+      console.error("Initial LazyCheck failed:", err)
+    );
+
+    // 2. 주기적 실행 설정
+    lazyCheckTimerRef.current = setInterval(() => {
+      // console.log("🕒 Triggering periodic lazy check (Interval)...");
+      onLazyCheck().catch((err) =>
+        console.error("Periodic LazyCheck failed:", err)
+      );
+    }, lazyCheckInterval);
+
+    return () => {
+      if (lazyCheckTimerRef.current) {
+        clearInterval(lazyCheckTimerRef.current);
+      }
+    };
+  }, [onLazyCheck, lazyCheckInterval]); // 의존성에서 currentIndex 제거됨!
 
   // ✅ 음소거 상태 동기화 (HTML Video + YouTube API) - 리플레이 방지
   useEffect(() => {
@@ -164,12 +188,12 @@ export function PromotionSlider({
     userInteracted,
   ]);
 
-  // HTML5 Video 제어 (슬라이드 변경 시)
+  // HTML5 Video 제어
   useEffect(() => {
     items.forEach((item, index) => {
       const video = videoRefs.current[item.id];
       if (video) {
-        video.muted = isMutedRef.current; // ✅ ref 사용
+        video.muted = isMutedRef.current;
         if (index === currentIndex && item.type === "video") {
           video.currentTime = 0;
           video.play().catch(() => {});
@@ -178,11 +202,9 @@ export function PromotionSlider({
         }
       }
     });
-  }, [currentIndex, items]); // ✅ isMuted 제거
+  }, [currentIndex, items]);
 
-  // ---------------------------------------------------------
-  // [핵심 수정] YouTube IFrame API 제어 로직
-  // ---------------------------------------------------------
+  // YouTube IFrame API 제어 로직
   useEffect(() => {
     // 1. 기존 플레이어 정리
     if (ytPlayerRef.current) {
@@ -225,7 +247,7 @@ export function PromotionSlider({
               onStateChange: (event: any) => {
                 // YT.PlayerState.ENDED === 0
                 if (event.data === 0) {
-                  console.log("✅ YouTube Ended (API Event)! Moving next...");
+                  // console.log("✅ YouTube Ended (API Event)! Moving next...");
                   if (items.length > 1) {
                     goToNext();
                   } else {
@@ -289,7 +311,7 @@ export function PromotionSlider({
         await document.documentElement.requestFullscreen();
       }
     } catch (err) {
-      console.log("Fullscreen request failed:", err);
+      // console.log("Fullscreen request failed:", err);
     }
   };
 
@@ -385,18 +407,10 @@ export function PromotionSlider({
           />
         ) : currentItem.type === "url" ? (
           <div className="relative w-full h-full">
-            {/* 
-               [조작 방지 핵심] 
-               1. z-10 오버레이: iframe 위의 투명 레이어가 클릭을 가로챕니다. (스와이프/클릭 가능)
-               2. pointer-events-none (하단 div): iframe 자체에 이벤트를 전달하지 않습니다.
-            */}
             <div
               className="absolute inset-0 z-10"
               style={{ cursor: "pointer" }}
-              // 오버레이가 스와이프 이벤트를 부모(container)로 전달하도록 별도 핸들러를 막지 않음
             />
-
-            {/* API가 이 div를 iframe으로 교체합니다 */}
             <div
               id="youtube-player-div"
               className="w-full h-full pointer-events-none" // CSS로도 조작 방지

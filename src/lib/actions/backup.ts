@@ -55,7 +55,7 @@ export async function downloadDatabase() {
   }
 
   try {
-    console.log(`백업 성공 경로: ${usedPath}`); // 디버깅용: 어디서 찾았는지 로그 출력
+    // console.log(`백업 성공 경로: ${usedPath}`); // 디버깅용: 어디서 찾았는지 로그 출력
 
     // 5. 현재 시간으로 파일명 생성
     const timestamp = new Date().toISOString().replace(/[:.-]/g, "_");
@@ -129,7 +129,7 @@ export async function downloadFullBackup() {
     // tarOutputPayload에는 Windows면 "파일명.tar.gz", Linux면 "/tmp/파일명.tar.gz"가 들어감
     const command = `tar -czf "${tarOutputPayload}" ${targetString}`;
 
-    console.log(`백업 시작: ${command}`);
+    // console.log(`백업 시작: ${command}`);
 
     // cwd 옵션을 주어 항상 프로젝트 루트에서 실행되도록 함
     await execAsync(command, { cwd: process.cwd() });
@@ -140,7 +140,7 @@ export async function downloadFullBackup() {
     // 6. 임시 파일 삭제
     await fs.unlink(backupFilePath);
 
-    console.log("백업 완료 및 임시 파일 삭제됨");
+    // console.log("백업 완료 및 임시 파일 삭제됨");
 
     return {
       success: true,

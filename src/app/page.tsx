@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PromotionSlider } from "@/components/PromotionSlider";
@@ -74,9 +74,9 @@ export default function Home() {
 
           // 3. 합치기
           setPromotionItems([...fileItems, ...urlItems]);
-          console.log(
-            `Loaded ${fileItems.length + urlItems.length} promotion items`
-          );
+          // console.log(
+          //   `Loaded ${fileItems.length + urlItems.length} promotion items`
+          // );
         }
       } catch (error) {
         console.error("Error fetching promotion files:", error);
@@ -105,13 +105,13 @@ export default function Home() {
           payload.timestamp &&
           now - payload.timestamp < payload.ttl
         ) {
-          console.log("Valid promotion flag from kiosk - showing promotion");
+          // console.log("Valid promotion flag from kiosk - showing promotion");
           sessionStorage.removeItem("showPromotionOnHome");
           setShowPromotion(true);
           hasCheckedKioskFlag.current = true;
           return;
         } else {
-          console.log("Expired promotion flag - ignoring");
+          // console.log("Expired promotion flag - ignoring");
           sessionStorage.removeItem("showPromotionOnHome");
         }
       } catch (e) {
@@ -204,11 +204,11 @@ export default function Home() {
       setShowPromotion(true);
     }, INACTIVITY_TIMEOUT);
   };
-
-  const handleLazyCheck = async () => {
-    console.log("Triggering lazy check from promotion screen...");
+  const handleLazyCheck = useCallback(async () => {
+    // console.log("🕒 Triggering periodic lazy check...");
+    // revalidate가 포함된 trigger 함수를 사용하거나 process 함수를 사용
     await processAndMutateExpiredRentals();
-  };
+  }, []);
 
   return (
     <>
@@ -245,7 +245,7 @@ export default function Home() {
                 await document.documentElement.requestFullscreen();
               }
             } catch (err) {
-              console.log("Fullscreen request failed:", err);
+              // console.log("Fullscreen request failed:", err);
             }
           }}
         >

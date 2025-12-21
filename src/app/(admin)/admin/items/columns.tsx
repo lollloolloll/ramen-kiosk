@@ -119,6 +119,14 @@ export const columns: ColumnDef<Item>[] = [
     },
   },
   {
+    accessorKey: "isAutomaticGenderCount",
+    header: "성별 자동 입력",
+    cell: ({ row }) => {
+      const isAutomaticGenderCount = row.original.isAutomaticGenderCount;
+      return <span>{isAutomaticGenderCount ? "예" : "아니오"}</span>;
+    },
+  },
+  {
     accessorKey: "isTimeLimited",
     header: "대여 제한 여부",
     cell: ({ row }) => {

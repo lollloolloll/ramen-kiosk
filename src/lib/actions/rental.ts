@@ -48,6 +48,7 @@ function calculateAge(
 // ----------------------------------------------------------------------
 // 서버 액션: 대여 관련
 // ----------------------------------------------------------------------
+// lib/actions/rental.ts
 
 export async function rentItem(
   userId: number,
@@ -58,27 +59,37 @@ export async function rentItem(
 ) {
   await triggerExpiredRentalsCheck();
   try {
-    // 1. 대여할 아이템 정보 조회
     const itemToRent = await db
       .select()
       .from(items)
       .where(and(eq(items.id, itemId), eq(items.isDeleted, false)))
       .get();
-
-    if (!itemToRent) {
-      throw new Error("해당 아이템을 찾을 수 없습니다.");
-    }
-
-    // 2. 대여하는 사용자 정보 조회 (스냅샷 저장을 위해 전체 필드 조회)
     const userToRent = await db
       .select()
       .from(generalUsers)
       .where(eq(generalUsers.id, userId))
       .get();
 
-    if (!userToRent) {
-      throw new Error("사용자 정보를 찾을 수 없습니다.");
+    if (!itemToRent || !userToRent) throw new Error("정보를 찾을 수 없습니다.");
+
+    // --- 성별 카운트 및 참여자 자동 할당 로직 ---
+    let finalMaleCount = maleCount;
+    let finalFemaleCount = femaleCount;
+    let finalParticipants = participants || [];
+
+    // 자동 카운트가 활성화(true) 되어있다면
+    if (itemToRent.isAutomaticGenderCount) {
+      finalMaleCount = userToRent.gender === "남" ? 1 : 0;
+      finalFemaleCount = userToRent.gender === "여" ? 1 : 0;
+
+      // 참여자 추적도 켜져있다면 본인을 참여자 명단에 자동 추가
+      if (itemToRent.enableParticipantTracking) {
+        finalParticipants = [
+          { name: userToRent.name, gender: userToRent.gender as "남" | "여" },
+        ];
+      }
     }
+    // ------------------------------------------
 
     // 3. 시간제 아이템 검증 로직
     if (itemToRent.isTimeLimited) {
@@ -125,12 +136,9 @@ export async function rentItem(
         }
       }
     }
-    // 일반 아이템(isTimeLimited: false)은 위의 모든 검증 로직을 건너뜁니다.
 
-    // 4. 대여 기록 삽입 (스냅샷 포함)
     const rentalDate = Math.floor(Date.now() / 1000);
     let returnDueDate: number | undefined = undefined;
-
     if (itemToRent.isTimeLimited && itemToRent.rentalTimeMinutes) {
       returnDueDate = rentalDate + itemToRent.rentalTimeMinutes * 60;
     }
@@ -138,40 +146,30 @@ export async function rentItem(
     const [newRental] = await db
       .insert(rentalRecords)
       .values({
-        userId: userId,
+        userId,
         itemsId: itemId,
-        rentalDate: rentalDate,
-        maleCount: maleCount,
-        femaleCount: femaleCount,
-
-        // --- 사용자 스냅샷 데이터 ---
-        // 1. 식별 정보: 탈퇴해도 기록 유지
+        maleCount: finalMaleCount,
+        femaleCount: finalFemaleCount,
         userName: userToRent.name,
         userPhone: userToRent.phoneNumber,
-        // 2. 변동 가능한 정보: 대여 시점의 학교 저장 (필수)
         userSchool: userToRent.school,
-        // 3. 통계용 정보: 탈퇴 시 통계 왜곡 방지 (필수)
         userGender: userToRent.gender,
         userBirthDate: userToRent.birthDate,
-
-        // --- 아이템 스냅샷 데이터 ---
         itemName: itemToRent.name,
         itemCategory: itemToRent.category,
-
-        returnDueDate: returnDueDate,
+        rentalDate,
+        returnDueDate,
         isReturned: false,
       })
       .returning({ id: rentalRecords.id });
 
-    // 5. 참여자 정보 저장 (enableParticipantTracking이 true인 경우에만)
+    // 참여자 정보 저장 (사용자 입력 또는 자동 생성된 본인 데이터)
     if (
       itemToRent.enableParticipantTracking &&
-      participants &&
-      participants.length > 0 &&
+      finalParticipants.length > 0 &&
       newRental?.id
     ) {
-      // 빈 이름은 제외하고 저장
-      const validParticipants = participants.filter(
+      const validParticipants = finalParticipants.filter(
         (p) => p.name.trim() !== ""
       );
 

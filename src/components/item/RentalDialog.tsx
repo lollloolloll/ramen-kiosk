@@ -60,27 +60,21 @@ interface RentalDialogProps {
 
 type Step = "identification" | "register" | "success" | "waitingSuccess";
 
-const identificationSchema = z
-  .object({
-    name: z.string().min(1, "이름을 입력해주세요."),
-    phoneNumber: z.string().min(1, "휴대폰 번호를 입력해주세요."),
-    maleCount: z.number().optional().default(0),
-    femaleCount: z.number().optional().default(0),
-    participants: z
-      .array(
-        z.object({
-          name: z.string().min(1, "이름을 입력해주세요."),
-          gender: z.enum(["남", "여"]),
-        })
-      )
-      .optional()
-      .default([]),
-  })
-  .refine((data) => data.maleCount + data.femaleCount > 0, {
-    message: "대여 인원은 최소 1명 이상이어야 합니다.",
-    path: ["maleCount", "femaleCount"],
-  });
-
+const identificationSchema = z.object({
+  name: z.string().min(1, "이름을 입력해주세요."),
+  phoneNumber: z.string().min(1, "휴대폰 번호를 입력해주세요."),
+  maleCount: z.number().optional().default(0),
+  femaleCount: z.number().optional().default(0),
+  participants: z
+    .array(
+      z.object({
+        name: z.string().min(1, "이름을 입력해주세요."),
+        gender: z.enum(["남", "여"]),
+      })
+    )
+    .optional()
+    .default([]),
+});
 type IdentificationFormValues = z.infer<typeof identificationSchema>;
 type GeneralUserFormValues = z.infer<typeof generalUserSchema>;
 
@@ -286,7 +280,8 @@ export function RentalDialog({
   const femaleCount = identificationForm.watch("femaleCount") ?? 0;
 
   useEffect(() => {
-    if (!item?.enableParticipantTracking) {
+    // 자동 카운트 모드이거나 참여자 추적을 안 하면 리스트를 비움 (UI 숨김 처리)
+    if (item?.isAutomaticGenderCount || !item?.enableParticipantTracking) {
       replace([]);
       return;
     }
@@ -313,8 +308,8 @@ export function RentalDialog({
     maleCount,
     femaleCount,
     item?.enableParticipantTracking,
+    item?.isAutomaticGenderCount,
     replace,
-    identificationForm,
   ]);
 
   // [수정 포인트 1] 문제의 원인이었던 useEffect 제거
@@ -378,15 +373,24 @@ export function RentalDialog({
     values: IdentificationFormValues
   ) => {
     if (!item) return;
-    if (item.enableParticipantTracking && values.participants) {
-      const hasEmptyName = values.participants.some(
-        (p) => !p.name || p.name.trim().length === 0
-      );
-      if (hasEmptyName) {
-        toast.error("모든 참여자의 이름을 입력해주세요.");
+
+    // 자동 카운트가 꺼져있을 때(수동 입력 모드)만 인원수 체크
+    if (!item.isAutomaticGenderCount) {
+      if (values.maleCount + values.femaleCount === 0) {
+        toast.error("대여 인원을 최소 1명 이상 설정해주세요.");
         return;
       }
+
+      // 수동 입력 모드 + 참여자 추적 활성화 시 이름 체크
+      if (item.enableParticipantTracking && values.participants) {
+        const hasEmptyName = values.participants.some((p) => !p.name?.trim());
+        if (hasEmptyName) {
+          toast.error("모든 참여자의 이름을 입력해주세요.");
+          return;
+        }
+      }
     }
+
     setIsSubmitting(true);
     try {
       const user = await findUserByNameAndPhone(
@@ -985,119 +989,125 @@ export function RentalDialog({
                     </FormItem>
                   )}
                 />
-                <div className="flex gap-4">
-                  {[
-                    { name: "maleCount", label: "남자 인원" },
-                    { name: "femaleCount", label: "여자 인원" },
-                  ].map((item) => (
-                    <FormField
-                      key={item.name}
-                      control={identificationForm.control}
-                      name={item.name as "maleCount" | "femaleCount"}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel>{item.label}</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center rounded-md border border-input bg-background p-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 rounded-sm hover:bg-slate-100"
-                                onClick={() =>
-                                  field.onChange(
-                                    Math.max(0, (field.value || 0) - 1)
-                                  )
-                                }
-                                disabled={!field.value || field.value <= 0}
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <Input
-                                {...field}
-                                type="number"
-                                readOnly
-                                className="h-8 flex-1 border-0 bg-transparent text-center focus-visible:ring-0 shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 rounded-sm hover:bg-slate-100"
-                                onClick={() =>
-                                  field.onChange((field.value || 0) + 1)
-                                }
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ))}
-                </div>
-
-                {/* 참가자 이름 입력 필드 (기존과 동일) */}
-                {item.enableParticipantTracking && fields.length > 0 && (
-                  <div className="space-y-3 pt-4 border-t border-dashed">
-                    <div className="flex items-center justify-between">
-                      <FormLabel className="flex items-center gap-2 font-semibold">
-                        <Users className="w-4 h-4" />
-                        함께하는 친구들 이름
-                      </FormLabel>
-                      <span className="text-xs font-medium bg-red-50 text-red-500 px-2 py-0.5 rounded-full">
-                        필수
-                      </span>
-                    </div>
-                    <FormDescription className="text-xs">
-                      참여하는 친구들의 이름을 모두 입력해주세요.(본인 포함)
-                    </FormDescription>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 max-h-48 overflow-y-auto pr-1 pt-3 pl-1 scrollbar-hidden">
-                      {fields.map((field, index) => {
-                        const genderLabel =
-                          field.gender === "남" ? "남자" : "여자";
-                        const genderIndex =
-                          fields
-                            .slice(0, index)
-                            .filter((f) => f.gender === field.gender).length +
-                          1;
-                        return (
-                          <FormField
-                            key={field.id}
-                            control={identificationForm.control}
-                            name={`participants.${index}.name`}
-                            render={({ field: nameField }) => (
-                              <FormItem className="relative bg-gray-50 p-2 rounded-lg border">
-                                <span
-                                  className={`absolute -top-2.5 left-2 text-[10px] px-2 py-0.5 rounded-full font-bold text-white shadow-sm z-10 ${
-                                    field.gender === "남"
-                                      ? "bg-blue-400"
-                                      : "bg-pink-400"
-                                  }`}
+                {/* 1. 성별 인원 입력: 옵션이 켜져 있을 때만 보임 */}
+                {!item.isAutomaticGenderCount && (
+                  <div className="flex gap-4">
+                    {[
+                      { name: "maleCount", label: "남자 인원" },
+                      { name: "femaleCount", label: "여자 인원" },
+                    ].map((item) => (
+                      <FormField
+                        key={item.name}
+                        control={identificationForm.control}
+                        name={item.name as "maleCount" | "femaleCount"}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>{item.label}</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center rounded-md border border-input bg-background p-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0 rounded-sm hover:bg-slate-100"
+                                  onClick={() =>
+                                    field.onChange(
+                                      Math.max(0, (field.value || 0) - 1)
+                                    )
+                                  }
+                                  disabled={!field.value || field.value <= 0}
                                 >
-                                  {genderLabel} {genderIndex}
-                                </span>
-                                <FormControl>
-                                  <Input
-                                    {...nameField}
-                                    autoComplete="off"
-                                    autoCorrect="off"
-                                    placeholder="이름"
-                                    className="h-8 mt-1 text-sm bg-white focus-visible:border-[oklch(0.75_0.12_165)]"
-                                  />
-                                </FormControl>
-                                <FormMessage className="text-[10px]" />
-                              </FormItem>
-                            )}
-                          />
-                        );
-                      })}
-                    </div>
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  readOnly
+                                  className="h-8 flex-1 border-0 bg-transparent text-center focus-visible:ring-0 shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0 rounded-sm hover:bg-slate-100"
+                                  onClick={() =>
+                                    field.onChange((field.value || 0) + 1)
+                                  }
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
                   </div>
                 )}
-
+                {/* 2. 참여자 이름 입력: 
+       성별 인원 입력을 받을 때만 친구 이름을 입력받는 것이 논리적으로 맞음.
+       isAutomaticGenderCount가 꺼져 있으면 "본인 1명"으로 간주하므로 입력칸을 숨김. 
+*/}
+                {!item.isAutomaticGenderCount &&
+                  item.enableParticipantTracking &&
+                  fields.length > 0 && (
+                    <div className="space-y-3 pt-4 border-t border-dashed">
+                      <div className="flex items-center justify-between">
+                        <FormLabel className="flex items-center gap-2 font-semibold">
+                          <Users className="w-4 h-4" />
+                          함께하는 친구들 이름
+                        </FormLabel>
+                        <span className="text-xs font-medium bg-red-50 text-red-500 px-2 py-0.5 rounded-full">
+                          필수
+                        </span>
+                      </div>
+                      <FormDescription className="text-xs">
+                        참여하는 친구들의 이름을 모두 입력해주세요.(본인 포함)
+                      </FormDescription>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 max-h-48 overflow-y-auto pr-1 pt-3 pl-1 scrollbar-hidden">
+                        {fields.map((field, index) => {
+                          const genderLabel =
+                            field.gender === "남" ? "남자" : "여자";
+                          const genderIndex =
+                            fields
+                              .slice(0, index)
+                              .filter((f) => f.gender === field.gender).length +
+                            1;
+                          return (
+                            <FormField
+                              key={field.id}
+                              control={identificationForm.control}
+                              name={`participants.${index}.name`}
+                              render={({ field: nameField }) => (
+                                <FormItem className="relative bg-gray-50 p-2 rounded-lg border">
+                                  <span
+                                    className={`absolute -top-2.5 left-2 text-[10px] px-2 py-0.5 rounded-full font-bold text-white shadow-sm z-10 ${
+                                      field.gender === "남"
+                                        ? "bg-blue-400"
+                                        : "bg-pink-400"
+                                    }`}
+                                  >
+                                    {genderLabel} {genderIndex}
+                                  </span>
+                                  <FormControl>
+                                    <Input
+                                      {...nameField}
+                                      autoComplete="off"
+                                      autoCorrect="off"
+                                      placeholder="이름"
+                                      className="h-8 mt-1 text-sm bg-white focus-visible:border-[oklch(0.75_0.12_165)]"
+                                    />
+                                  </FormControl>
+                                  <FormMessage className="text-[10px]" />
+                                </FormItem>
+                              )}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 <DialogFooter className="gap-2 sm:justify-between">
                   <Button
                     type="button"

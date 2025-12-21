@@ -31,6 +31,9 @@ export const items = sqliteTable("items", {
   })
     .default(false)
     .notNull(),
+  isAutomaticGenderCount: integer("is_automatic_gender_count", { mode: "boolean" })
+    .default(true)
+    .notNull(),
 });
 
 export const users = sqliteTable(

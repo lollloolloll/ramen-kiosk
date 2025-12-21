@@ -21,12 +21,13 @@ import {
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { triggerExpiredRentalsCheck } from "./rental";
+// lib/actions/waiting.ts
 
 export async function addToWaitingList(
   userId: number,
   itemId: number,
-  maleCount: number,
-  femaleCount: number
+  maleCount: number = 0,
+  femaleCount: number = 0
 ) {
   await triggerExpiredRentalsCheck();
   try {
@@ -42,10 +43,19 @@ export async function addToWaitingList(
       throw new Error("아이템 또는 사용자 정보를 찾을 수 없습니다.");
     }
 
-    // 시간제 대여 아이템인지 확인
     if (!item.isTimeLimited) {
       throw new Error("이 아이템은 대기열을 지원하지 않습니다.");
     }
+
+    // --- 성별 카운트 자동 할당 로직 추가 (rentItem과 동일) ---
+    let finalMaleCount = maleCount;
+    let finalFemaleCount = femaleCount;
+
+    if (item.isAutomaticGenderCount) {
+      finalMaleCount = user.gender === "남" ? 1 : 0;
+      finalFemaleCount = user.gender === "여" ? 1 : 0;
+    }
+    // --------------------------------------------------
 
     // 2. 이미 대기열에 있는지 확인
     const existingWaiting = await db.query.waitingQueue.findFirst({
@@ -59,13 +69,13 @@ export async function addToWaitingList(
       throw new Error("이미 해당 아이템의 대기열에 등록되어 있습니다.");
     }
 
-    // 3. 대기열에 추가
+    // 3. 대기열에 추가 (최종 결정된 인원수 저장)
     await db.insert(waitingQueue).values({
       userId,
       itemId,
       requestDate: Math.floor(Date.now() / 1000),
-      maleCount,
-      femaleCount,
+      maleCount: finalMaleCount,
+      femaleCount: finalFemaleCount,
     });
 
     // 4. 현재 대기 순번 계산
@@ -86,14 +96,10 @@ export async function addToWaitingList(
     };
   } catch (error) {
     return {
-      error:
-        error instanceof Error
-          ? error.message
-          : "대기열 등록 중 오류가 발생했습니다.",
+      error: error instanceof Error ? error.message : "오류 발생",
     };
   }
 }
-
 export async function getWaitingQueueEntries(filters: {
   page?: number;
   per_page?: number;

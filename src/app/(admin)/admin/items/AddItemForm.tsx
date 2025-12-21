@@ -71,6 +71,7 @@ const formSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
   enableParticipantTracking: z.boolean().default(false),
+  isAutomaticGenderCount: z.boolean().default(true),
 });
 
 export function AddItemForm() {
@@ -85,6 +86,7 @@ export function AddItemForm() {
       rentalTimeMinutes: undefined,
       maxRentalsPerUser: undefined,
       enableParticipantTracking: false,
+      isAutomaticGenderCount: false,
     },
   });
 
@@ -106,6 +108,10 @@ export function AddItemForm() {
     if (values.maxRentalsPerUser !== undefined) {
       formData.append("maxRentalsPerUser", String(values.maxRentalsPerUser));
     }
+    formData.append(
+      "isAutomaticGenderCount",
+      String(values.isAutomaticGenderCount)
+    );
 
     if (values.imageUrl instanceof File) {
       const file = values.imageUrl;
@@ -214,7 +220,27 @@ export function AddItemForm() {
                 </FormItem>
               )}
             />
-
+            <FormField
+              control={form.control}
+              name="isAutomaticGenderCount"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">성별 자동 입력</FormLabel>
+                    <FormDescription>
+                      대여 시 사용자의 성별을 바탕으로 성별이
+                      입력됩니다
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="isTimeLimited"

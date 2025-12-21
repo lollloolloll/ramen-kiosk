@@ -8,6 +8,11 @@ import { db } from "@/lib/db";
 import { items, rentalRecords, waitingQueue } from "@drizzle/schema";
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
 import { processAndMutateExpiredRentals } from "./rental";
+
+// ----------------------------------------------------------------------
+// 조회 관련 액션
+// ----------------------------------------------------------------------
+
 export async function getAllItemsForAdmin() {
   const allItems = await db
     .select()
@@ -16,7 +21,7 @@ export async function getAllItemsForAdmin() {
 
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
-      let status: "RENTED" | "AVAILABLE";
+      let status: "RENTED" | "AVAILABLE" = "AVAILABLE";
       let returnDueDate: number | null = null;
 
       if (item.isTimeLimited) {
@@ -31,11 +36,7 @@ export async function getAllItemsForAdmin() {
         if (currentRental) {
           status = "RENTED";
           returnDueDate = currentRental.returnDueDate;
-        } else {
-          status = "AVAILABLE";
         }
-      } else {
-        status = "AVAILABLE";
       }
 
       const waitingCountResult = await db
@@ -56,41 +57,35 @@ export async function getAllItemsForAdmin() {
 
   return itemsWithStatusAndWaitingCount;
 }
+
 export async function getAllItems() {
   await processAndMutateExpiredRentals();
   const allItems = await db
     .select()
     .from(items)
     .where(and(eq(items.isHidden, false), eq(items.isDeleted, false)))
-    .orderBy(asc(items.displayOrder)); // 👈 displayOrder 순서로 정렬
+    .orderBy(asc(items.displayOrder));
 
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
-      let status: "RENTED" | "AVAILABLE";
-      let returnDueDate: number | null = null; // ADDED: 반납 예정 시간 저장 변수
+      let status: "RENTED" | "AVAILABLE" = "AVAILABLE";
+      let returnDueDate: number | null = null;
 
       if (item.isTimeLimited) {
-        // CHANGED: isReturned가 false인 가장 최근 기록을 조회합니다.
-        // id 뿐만 아니라 returnDueDate도 가져옵니다.
         const currentRental = await db.query.rentalRecords.findFirst({
           where: and(
             eq(rentalRecords.itemsId, item.id),
             eq(rentalRecords.isReturned, false)
           ),
-          orderBy: [desc(rentalRecords.rentalDate)], // 가장 최근 대여 기록 확인
+          orderBy: [desc(rentalRecords.rentalDate)],
         });
 
         if (currentRental) {
           status = "RENTED";
-          returnDueDate = currentRental.returnDueDate; // ADDED: 조회된 반납 예정 시간을 할당합니다.
-        } else {
-          status = "AVAILABLE";
+          returnDueDate = currentRental.returnDueDate;
         }
-      } else {
-        status = "AVAILABLE";
       }
 
-      // OPTIMIZED: 대기자 수를 더 효율적으로 계산합니다.
       const waitingCountResult = await db
         .select({ value: count() })
         .from(waitingQueue)
@@ -101,8 +96,8 @@ export async function getAllItems() {
       return {
         ...item,
         status,
-        waitingCount, // 계산된 대기자 수
-        returnDueDate, // ADDED: 최종 반환 객체에 returnDueDate를 포함합니다.
+        waitingCount,
+        returnDueDate,
       };
     })
   );
@@ -110,8 +105,11 @@ export async function getAllItems() {
   return itemsWithStatusAndWaitingCount;
 }
 
+// ----------------------------------------------------------------------
+// 생성/수정/삭제 액션
+// ----------------------------------------------------------------------
+
 export async function addItem(formData: FormData) {
-  // 1. 기본 필드 추출 및 검증
   const name = formData.get("name") as string;
   const category = formData.get("category") as string;
 
@@ -119,13 +117,13 @@ export async function addItem(formData: FormData) {
     return { error: "필수 필드를 모두 입력해주세요." };
   }
 
-  // 2. FormData를 객체로 변환
   const data = {
     name,
     category,
     isTimeLimited: formData.get("isTimeLimited") === "true",
     enableParticipantTracking:
       formData.get("enableParticipantTracking") === "true",
+    isAutomaticGenderCount: formData.get("isAutomaticGenderCount") === "true", // 추가
     rentalTimeMinutes: formData.get("rentalTimeMinutes")
       ? parseInt(formData.get("rentalTimeMinutes") as string, 10)
       : undefined,
@@ -135,14 +133,12 @@ export async function addItem(formData: FormData) {
     imageUrl: undefined as string | undefined,
   };
 
-  // 3. 이미지 처리
   const imageFile = formData.get("image") as File | null;
   if (imageFile && imageFile.size > 0) {
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     await mkdir(uploadsDir, { recursive: true });
 
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    // 안전한 파일명 처리 (공백 외에 다른 특수문자도 처리)
     const safeName = imageFile.name
       .replace(/\s+/g, "_")
       .replace(/[^\w\.-]/g, "");
@@ -155,29 +151,23 @@ export async function addItem(formData: FormData) {
       await writeFile(filePath, buffer);
       data.imageUrl = `/uploads/${filename}`;
     } catch (error) {
-      console.error("Failed to write image file:", error);
       return { error: "이미지 파일 저장에 실패했습니다." };
     }
   }
 
-  // 4. Zod 유효성 검사
   const validatedResult = itemSchema.safeParse(data);
   if (!validatedResult.success) {
-    console.error("Validation error:", validatedResult.error.flatten());
     return { error: "유효하지 않은 데이터입니다." };
   }
 
-  // 5. DB 삽입
   try {
     await db.insert(items).values(validatedResult.data);
     revalidatePath("/admin/items");
     return { success: true };
   } catch (error) {
-    console.error("Failed to add item:", error);
     return { error: "아이템 추가에 실패했습니다." };
   }
 }
-// lib/actions/item.ts (updateItem 함수 부분만 교체)
 
 export async function updateItem(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
@@ -189,6 +179,9 @@ export async function updateItem(formData: FormData) {
   const isTimeLimited = formData.get("isTimeLimited") === "true";
   const enableParticipantTracking =
     formData.get("enableParticipantTracking") === "true";
+  const isAutomaticGenderCount =
+    formData.get("isAutomaticGenderCount") === "true"; // 추가
+
   const rentalTimeMinutes = formData.get("rentalTimeMinutes")
     ? parseInt(formData.get("rentalTimeMinutes") as string)
     : undefined;
@@ -196,29 +189,20 @@ export async function updateItem(formData: FormData) {
     ? parseInt(formData.get("maxRentalsPerUser") as string)
     : undefined;
 
-  if (isNaN(id)) {
-    return { error: "유효하지 않은 ID입니다." };
-  }
+  if (isNaN(id)) return { error: "유효하지 않은 ID입니다." };
 
-  // 기존 아이템 조회
   const [existingItem] = await db.select().from(items).where(eq(items.id, id));
-  if (!existingItem) {
-    return { error: "존재하지 않는 아이템입니다." };
-  }
+  if (!existingItem) return { error: "존재하지 않는 아이템입니다." };
 
-  // 파일 삭제 헬퍼 함수
   const deleteFileFromDisk = async (url: string) => {
     try {
       const filePath = path.join(process.cwd(), "public", url);
       await unlink(filePath);
-    } catch (error) {
-      console.warn(`파일 삭제 실패 (${url}):`, error);
-    }
+    } catch (error) {}
   };
 
   let newImageUrl: string | undefined | null;
 
-  // 1. 새 이미지 저장 로직 (업로드는 먼저 수행해야 함)
   if (imageFile && imageFile.size > 0) {
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     try {
@@ -229,72 +213,41 @@ export async function updateItem(formData: FormData) {
         .replace(/[^\w\.-]/g, "");
       const filename = `${uniqueSuffix}-${safeName}`;
       const filePath = path.join(uploadsDir, filename);
-
       const bytes = await imageFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      await writeFile(filePath, buffer);
-
+      await writeFile(filePath, Buffer.from(bytes));
       newImageUrl = `/uploads/${filename}`;
     } catch (error) {
       return { error: "이미지 파일 저장에 실패했습니다." };
     }
-  }
-  // 2. 이미지 삭제 요청
-  else if (deleteImage) {
+  } else if (deleteImage) {
     newImageUrl = null;
-  }
-  // 3. 기존 유지
-  else if (imageUrlFromForm) {
+  } else if (imageUrlFromForm) {
     newImageUrl = imageUrlFromForm;
   }
 
-  // 업데이트할 데이터 객체 생성
-  const dataToUpdate: {
-    name?: string;
-    category?: string;
-    imageUrl?: string | null;
-    isTimeLimited?: boolean;
-    enableParticipantTracking?: boolean;
-    rentalTimeMinutes?: number;
-    maxRentalsPerUser?: number;
-  } = {};
+  const dataToUpdate: any = {
+    name,
+    category,
+    isTimeLimited,
+    enableParticipantTracking,
+    isAutomaticGenderCount, // 추가
+    rentalTimeMinutes,
+    maxRentalsPerUser,
+  };
 
-  if (name) dataToUpdate.name = name;
-  if (category) dataToUpdate.category = category;
+  if (newImageUrl !== undefined) dataToUpdate.imageUrl = newImageUrl;
 
-  // 이미지 경로 할당
-  if (newImageUrl !== undefined) {
-    dataToUpdate.imageUrl = newImageUrl;
-  }
-
-  dataToUpdate.isTimeLimited = isTimeLimited;
-  dataToUpdate.enableParticipantTracking = enableParticipantTracking;
-
-  if (rentalTimeMinutes !== undefined)
-    dataToUpdate.rentalTimeMinutes = rentalTimeMinutes;
-  if (maxRentalsPerUser !== undefined)
-    dataToUpdate.maxRentalsPerUser = maxRentalsPerUser;
-
-  // 🔥 [중요] 유효성 검사 먼저 수행!
-  // 여기서 실패하면 파일 삭제 로직이 실행되지 않아 안전함
   const validatedData = updateItemSchema.safeParse({ id, ...dataToUpdate });
-
-  if (!validatedData.success) {
-    console.error(validatedData.error);
-    // 만약 새 파일을 업로드했는데 검증 실패했다면, 방금 올린 파일도 지워주는게 좋음 (선택사항)
-    return { error: "유효하지 않은 데이터입니다." };
-  }
+  if (!validatedData.success) return { error: "유효하지 않은 데이터입니다." };
 
   try {
-    // DB 업데이트
+    // 1. DB 업데이트
     await db.update(items).set(validatedData.data).where(eq(items.id, id));
 
-    // ✅ DB 업데이트가 성공하면 그때 기존 파일을 삭제합니다.
+    // 2. 파일 정리
     if (deleteImage && existingItem.imageUrl) {
       await deleteFileFromDisk(existingItem.imageUrl);
-    }
-    // 새 파일로 교체된 경우에도 기존 파일 삭제
-    else if (
+    } else if (
       newImageUrl &&
       newImageUrl !== existingItem.imageUrl &&
       existingItem.imageUrl
@@ -302,10 +255,11 @@ export async function updateItem(formData: FormData) {
       await deleteFileFromDisk(existingItem.imageUrl);
     }
 
-    // 대기열 및 렌탈 정보 정리
-    await db.delete(waitingQueue).where(eq(waitingQueue.itemId, id));
-
-    if (dataToUpdate.isTimeLimited) {
+    // 3. 🔥 설정 변경 감지: 시간제 대여가 활성에서 비활성으로 바뀔 때만 정리
+    if (existingItem.isTimeLimited && !isTimeLimited) {
+      // 대기열 삭제
+      await db.delete(waitingQueue).where(eq(waitingQueue.itemId, id));
+      // 현재 대여 중인 항목 강제 반납 처리
       await db
         .update(rentalRecords)
         .set({

@@ -58,6 +58,7 @@ const updateItemClientSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
   enableParticipantTracking: z.boolean().default(false).optional(),
+  isAutomaticGenderCount: z.boolean().default(true),
 });
 
 type UpdateItemSchema = z.infer<typeof updateItemClientSchema>;
@@ -81,6 +82,7 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
       rentalTimeMinutes: item.rentalTimeMinutes ?? undefined,
       maxRentalsPerUser: item.maxRentalsPerUser ?? undefined,
       enableParticipantTracking: item.enableParticipantTracking || false,
+      isAutomaticGenderCount: item.isAutomaticGenderCount ?? false,
     },
   });
 
@@ -92,6 +94,10 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
     formData.append("id", item.id.toString());
     formData.append("name", values.name);
     formData.append("category", values.category);
+    formData.append(
+      "isAutomaticGenderCount",
+      String(values.isAutomaticGenderCount)
+    );
     formData.append("isTimeLimited", String(values.isTimeLimited));
     formData.append(
       "enableParticipantTracking",
@@ -247,6 +253,29 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
                           이미지가 삭제되었습니다.
                         </div>
                       )}
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isAutomaticGenderCount"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          성별 자동 입력
+                        </FormLabel>
+                        <FormDescription>
+                          대여 시 사용자의 성별을 바탕으로 인원수를 자동
+                          계산합니다.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />

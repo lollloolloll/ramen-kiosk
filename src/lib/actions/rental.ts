@@ -780,9 +780,9 @@ export async function getRentalAnalytics(filters: {
         const age = calculateAge(r.birthDate, new Date(r.rentalDate * 1000));
         if (age === null) return false;
 
-        if (ageGroup === "child" && age <= 12) return true;
-        if (ageGroup === "teen" && age > 12 && age <= 18) return true;
-        if (ageGroup === "adult" && age > 18) return true;
+        if (ageGroup === "child" && age <= 8) return true;
+        if (ageGroup === "teen" && age > 8 && age <= 24) return true;
+        if (ageGroup === "adult" && age > 24) return true;
         return false;
       });
     }

@@ -18,15 +18,19 @@ const Toaster = ({ ...props }: ToasterProps) => {
       position="top-center"
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      visibleToasts={1}
+      expand={false}
       toastOptions={{
         className: `
-          text-2xl font-semibold  
+          text-3xl font-bold 
           px-8 py-5               
           whitespace-nowrap       
           rounded-2xl
           [&>div]:gap-8
-          
-          [&_[data-description]]:text-xl
+             
+          [&_[data-title]]:text-3xl             
+          [&_[data-title]]:font-bold  
+          [&_[data-description]]:text-2xl
           [&_[data-description]]:text-foreground
           [&_[data-description]]:font-medium
           [&_[data-description]]:mt-1

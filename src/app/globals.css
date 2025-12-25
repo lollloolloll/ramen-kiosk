@@ -135,6 +135,11 @@
   width: fit-content !important;
   max-width: none !important;
 }
+
+/* 특정 클래스가 있는 토스트의 "부모 컨테이너"를 타겟 */
+[data-sonner-toaster]:has([data-sonner-toast].top-margin-warning) {
+  top: 10% !important;
+}
 @media (max-width: 1024px) {
   .mobile-padding {
     padding-bottom: 240px; /* pb-60 */

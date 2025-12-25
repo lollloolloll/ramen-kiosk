@@ -304,7 +304,8 @@ export function PromotionSlider({
     }
   };
 
-  const handleSlideClick = async () => {
+  // ✅ [수정됨] useEffect에서 사용하기 위해 useCallback으로 감쌈
+  const handleSlideClick = useCallback(async () => {
     if (onClose) onClose();
     try {
       if (!document.fullscreenElement) {
@@ -313,7 +314,30 @@ export function PromotionSlider({
     } catch (err) {
       // console.log("Fullscreen request failed:", err);
     }
-  };
+  }, [onClose]);
+
+  // ✅ [추가됨] 키보드 입력 핸들러 (기존 handleSlideClick 로직 재사용)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        goToPrevious();
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        goToNext();
+        return;
+      }
+      if (e.key.toLowerCase() === "m") {
+        setIsMuted((prev) => !prev);
+        return;
+      }
+      // 그 외 키: 클릭과 동일하게 동작 (닫기 + 전체화면)
+      handleSlideClick();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [goToNext, goToPrevious, handleSlideClick]);
 
   const handleStopPropagation = (e: React.TouchEvent | React.MouseEvent) => {
     e.stopPropagation();

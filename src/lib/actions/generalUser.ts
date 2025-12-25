@@ -2,20 +2,57 @@
 
 import { db } from "@/lib/db";
 import { generalUsers, users } from "@drizzle/schema";
-import { eq, asc, desc, like, or, sql } from "drizzle-orm";
+import { eq, asc, desc, like, or, sql, and } from "drizzle-orm";
 import { generalUserSchema } from "@/lib/validators/generalUser";
 import { revalidatePath } from "next/cache";
 
+export type UserCheckResult =
+  | { status: "found"; user: typeof generalUsers.$inferSelect }
+  | { status: "phone_exists_name_mismatch" }
+  | { status: "name_exists_phone_mismatch" }
+  | { status: "not_found" };
+
+// 기존 함수 이름을 그대로 쓰면서 기능만 업그레이드
 export async function findUserByNameAndPhone(
   name: string,
   phoneNumber: string
-) {
-  const user = await db.query.generalUsers.findFirst({
-    where: (users, { and }) =>
-      and(eq(users.name, name), eq(users.phoneNumber, phoneNumber)),
-  });
+): Promise<UserCheckResult> {
+  // 리턴 타입 변경
 
-  return user;
+  // 1. 이름이나 전화번호 중 하나라도 맞는게 있는지 한 번에 조회 (효율적)
+  const users = await db
+    .select()
+    .from(generalUsers)
+    .where(
+      or(eq(generalUsers.name, name), eq(generalUsers.phoneNumber, phoneNumber))
+    );
+
+  // 결과가 없으면 완전 신규
+  if (users.length === 0) {
+    return { status: "not_found" };
+  }
+
+  // 2. 조회된 결과들을 분석
+  const exactMatch = users.find(
+    (u) => u.name === name && u.phoneNumber === phoneNumber
+  );
+  if (exactMatch) {
+    return { status: "found", user: exactMatch };
+  }
+
+  const phoneMatch = users.find((u) => u.phoneNumber === phoneNumber);
+  if (phoneMatch) {
+    // 전화번호는 있는데 이름이 다름 (전화번호 중복/오타)
+    return { status: "phone_exists_name_mismatch" };
+  }
+
+  const nameMatch = users.find((u) => u.name === name);
+  if (nameMatch) {
+    // 이름은 있는데 전화번호가 다름 (★ 전화번호 오타 가능성 높음 ★)
+    return { status: "name_exists_phone_mismatch" };
+  }
+
+  return { status: "not_found" };
 }
 
 export async function createGeneralUser(data: unknown) {

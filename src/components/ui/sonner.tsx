@@ -22,17 +22,17 @@ const Toaster = ({ ...props }: ToasterProps) => {
         className: `
           text-2xl font-semibold  
           px-8 py-5               
-          w-auto                  
-          max-w-none             
           whitespace-nowrap       
           rounded-2xl
-          [&>div]:gap-8           
+          [&>div]:gap-8
+          
+          [&_[data-description]]:text-xl
+          [&_[data-description]]:text-foreground
+          [&_[data-description]]:font-medium
+          [&_[data-description]]:mt-1
         `,
         style: {
           gap: "1rem",
-          width: "auto", // 👈 추가
-          maxWidth: "90vw", // 👈 화면의 90%까지만
-          minWidth: "fit-content", // 👈 내용에 맞게
         },
       }}
       icons={{

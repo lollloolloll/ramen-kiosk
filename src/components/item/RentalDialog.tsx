@@ -393,13 +393,21 @@ export function RentalDialog({
 
     setIsSubmitting(true);
     try {
-      const user = await findUserByNameAndPhone(
+      // 1. 결과 받아오기
+      const result = await findUserByNameAndPhone(
         values.name,
         values.phoneNumber
       );
-      if (user) {
+
+      // ---------------------------------------------------------
+      // CASE A: 사용자 찾음 (로그인 성공)
+      // ---------------------------------------------------------
+      if (result.status === "found" && result.user) {
+        const user = result.user; // 여기서 user 변수를 꺼내야 합니다.
+
         const status = await checkUserRentalStatus(user.id, item.id);
         if (status.error) throw new Error(status.error);
+
         if (status.isRenting) {
           toast.error("이미 대여 중인 아이템입니다.");
           return;
@@ -408,6 +416,7 @@ export function RentalDialog({
           toast.error("이미 대기열에 등록된 아이템입니다.");
           return;
         }
+
         if (isRentedMode) {
           await handleWaiting(user.id, values.maleCount, values.femaleCount);
         } else {
@@ -418,11 +427,39 @@ export function RentalDialog({
             values.participants
           );
         }
-      } else {
-        toast.info("등록된 사용자가 아닙니다. 신규 등록을 진행해주세요.");
-        setStep("register");
-        registerForm.setValue("name", values.name);
-        registerForm.setValue("phoneNumber", values.phoneNumber);
+      }
+
+      // ---------------------------------------------------------
+      // CASE B: [핵심] 이름은 있는데 전화번호가 다름 (오타 감지)
+      // ---------------------------------------------------------
+      else if (result.status === "name_exists_phone_mismatch") {
+        toast.warning(`'${values.name}'님은 이미 등록되어 있습니다.`, {
+          description:
+            "전화번호를 잘못 입력했는지 확인해주세요! (처음이라면 '신규 등록' 클릭)",
+          duration: 6000,
+        });
+        // *중요* 여기서 return을 해서 자동으로 가입창으로 넘어가는 것을 막습니다.
+        return;
+      }
+
+      // ---------------------------------------------------------
+      // CASE C: 전화번호는 있는데 이름이 다름
+      // ---------------------------------------------------------
+      else if (result.status === "phone_exists_name_mismatch") {
+        toast.warning("이미 등록된 전화번호입니다.", {
+          description: "입력하신 이름과 일치하지 않습니다.",
+        });
+        return;
+      }
+
+      // ---------------------------------------------------------
+      // CASE D: 완전 신규 유저
+      // ---------------------------------------------------------
+      else {
+        toast.info("등록된 사용자가 아닙니다.", {
+          description: "신규 등록 페이지로 이동합니다.",
+        });
+        proceedToRegister(values);
       }
     } catch (error) {
       toast.error(
@@ -433,6 +470,14 @@ export function RentalDialog({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // [필수 추가] 중복되는 가입 이동 로직을 함수로 분리
+  const proceedToRegister = (values: IdentificationFormValues) => {
+    setStep("register");
+    registerForm.setValue("name", values.name);
+    registerForm.setValue("phoneNumber", values.phoneNumber);
+    setShowSchoolPanel(false);
   };
 
   const handleRegisterSubmit = async (values: GeneralUserFormValues) => {

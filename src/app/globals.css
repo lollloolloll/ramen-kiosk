@@ -119,6 +119,22 @@
 .scrollbar-hidden::-webkit-scrollbar {
   display: none; /* Chrome, Safari */
 }
+[data-sonner-toaster][data-y-position="top"] {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  width: fit-content !important;
+  max-width: none !important;
+}
+
+[data-sonner-toast] {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  width: fit-content !important;
+  max-width: none !important;
+}
 @media (max-width: 1024px) {
   .mobile-padding {
     padding-bottom: 240px; /* pb-60 */

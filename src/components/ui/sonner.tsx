@@ -25,18 +25,20 @@ const Toaster = ({ ...props }: ToasterProps) => {
         className: `
           group toast
           font-sans
-          bg-white/95 backdrop-blur-md 
-          border border-slate-200/60
-          shadow-[0_8px_30px_rgb(0,0,0,0.08)]
+          bg-white/95 dark:bg-slate-900/95 backdrop-blur-md 
+          border border-slate-200/60 dark:border-slate-700/60
+          shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)]
           rounded-3xl
           px-6 py-5
           flex items-center
-          gap-4
+          gap-12
         `,
         classNames: {
           toast: "w-auto min-w-[380px] max-w-[90vw]",
-          title: "text-2xl font-bold text-slate-800 leading-tight",
-          description: "text-lg font-medium text-slate-500 mt-0.5 leading-snug",
+          title:
+            "text-2xl font-bold text-slate-800 dark:text-slate-100 leading-tight",
+          description:
+            "text-lg font-medium text-slate-500 dark:text-slate-400 mt-0.5 leading-snug",
           actionButton:
             "bg-slate-900 text-white font-bold rounded-xl px-4 py-2",
           cancelButton:
@@ -45,7 +47,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       icons={{
         success: (
-          <div className="shrink-0rounded-full bg-[oklch(0.75_0.12_165/0.1)]">
+          <div className="shrink-0 p-2 rounded-full bg-[oklch(0.75_0.12_165/0.1)]">
             <CircleCheckIcon className="size-8 text-[oklch(0.75_0.12_165)]" />
           </div>
         ),

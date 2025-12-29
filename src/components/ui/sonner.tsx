@@ -27,11 +27,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
           font-sans
           bg-white/95 dark:bg-slate-900/95 backdrop-blur-md 
           border border-slate-200/60 dark:border-slate-700/60
-          shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)]
+          shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8_30px_rgb(0,0,0,0.4)]
           rounded-3xl
           px-6 py-5
-          flex items-center
-          gap-12
+          !flex !items-center
         `,
         classNames: {
           toast: "w-auto min-w-[380px] max-w-[90vw]",
@@ -47,27 +46,27 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       icons={{
         success: (
-          <div className="shrink-0 p-2 rounded-full bg-[oklch(0.75_0.12_165/0.1)]">
+          <div className="shrink-0 p-2 rounded-full bg-[oklch(0.75_0.12_165/0.1)] mr-8">
             <CircleCheckIcon className="size-8 text-[oklch(0.75_0.12_165)]" />
           </div>
         ),
         info: (
-          <div className="shrink-0 p-2 rounded-full bg-slate-100">
+          <div className="shrink-0 p-2 rounded-full bg-slate-100 mr-8">
             <InfoIcon className="size-8 text-slate-600" />
           </div>
         ),
         warning: (
-          <div className="shrink-0 p-2 rounded-full bg-amber-50">
+          <div className="shrink-0 p-2 rounded-full bg-amber-50 mr-8">
             <TriangleAlertIcon className="size-8 text-amber-500" />
           </div>
         ),
         error: (
-          <div className="shrink-0 p-2 rounded-full bg-[oklch(0.7_0.18_350/0.1)]">
+          <div className="shrink-0 p-2 rounded-full bg-[oklch(0.7_0.18_350/0.1)] mr-8">
             <OctagonXIcon className="size-8 text-[oklch(0.7_0.18_350)]" />
           </div>
         ),
         loading: (
-          <div className="shrink-0 p-2 rounded-full bg-slate-50">
+          <div className="shrink-0 p-2 rounded-full bg-slate-50 mr-8">
             <Loader2Icon className="size-8 text-slate-400 animate-spin" />
           </div>
         ),

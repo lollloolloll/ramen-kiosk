@@ -119,6 +119,9 @@
 .scrollbar-hidden::-webkit-scrollbar {
   display: none; /* Chrome, Safari */
 }
+[data-sonner-toast] [data-icon] {
+  margin-right: 1.5rem !important; /* 16px */
+}
 [data-sonner-toaster][data-y-position="top"] {
   left: 50% !important;
   right: auto !important;
@@ -134,6 +137,9 @@
   transform: none !important;
   width: fit-content !important;
   max-width: none !important;
+}
+[data-sonner-toast] [data-content] {
+  margin-left: 0.5rem !important;
 }
 
 /* 특정 클래스가 있는 토스트의 "부모 컨테이너"를 타겟 */

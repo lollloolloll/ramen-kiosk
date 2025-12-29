@@ -31,7 +31,9 @@ export const items = sqliteTable("items", {
   })
     .default(false)
     .notNull(),
-  isAutomaticGenderCount: integer("is_automatic_gender_count", { mode: "boolean" })
+  isAutomaticGenderCount: integer("is_automatic_gender_count", {
+    mode: "boolean",
+  })
     .default(true)
     .notNull(),
 });
@@ -60,7 +62,10 @@ export const generalUsers = sqliteTable(
     consentFilePath: text("consent_file_path"),
   },
   (table) => [
-    uniqueIndex("general_users_phone_number_unique").on(table.phoneNumber),
+    uniqueIndex("general_users_name_phone_unique").on(
+      table.name,
+      table.phoneNumber
+    ),
   ]
 );
 

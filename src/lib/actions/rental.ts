@@ -249,6 +249,7 @@ export async function processAndMutateExpiredRentals(): Promise<boolean> {
   try {
     const now = Math.floor(Date.now() / 1000);
 
+    // 1. 만료되었는데 아직 반납 안 된 기록들 조회
     const expiredRentals = await db
       .select({
         id: rentalRecords.id,
@@ -268,26 +269,25 @@ export async function processAndMutateExpiredRentals(): Promise<boolean> {
       return false; // 변경된 내용이 없음을 알림
     }
 
-    // console.log(
-    //   `Silently processing ${expiredRentals.length} expired rentals...`
-    // );
-
+    // 2. 각 만료 기록에 대해 '반납' 처리 후 '대기자 승급' 실행
     for (const record of expiredRentals) {
+      // A. 반납 처리
       await db
         .update(rentalRecords)
         .set({
           isReturned: true,
-          returnDate: record.returnDueDate,
-          isManualReturn: false,
+          returnDate: record.returnDueDate, // 반납 예정일시를 실제 반납일시로 기록 (시간 초과 시점)
+          isManualReturn: false, // 시스템 자동 반납
         })
         .where(eq(rentalRecords.id, record.id));
 
+      // B. ★★★ 대기자가 있다면 즉시 자동 대여 처리 ★★★
       if (record.itemsId) {
         await processNextInQueue(record.itemsId);
       }
     }
 
-    return true; // 변경된 내용이 있음을 알림
+    return true; // 변경사항 있음
   } catch (error) {
     console.error("Error during silent mutation of expired rentals:", error);
     return false;
@@ -312,100 +312,79 @@ export async function triggerExpiredRentalsCheck() {
  * **중요**: 대기자가 실제로 대여를 시작할 때 현재 정보를 스냅샷으로 뜹니다.
  */
 async function processNextInQueue(itemId: number) {
-  const itemInfo = await db.query.items.findFirst({
-    where: eq(items.id, itemId),
-  });
+  try {
+    // 1. 아이템 정보 조회
+    const itemInfo = await db.query.items.findFirst({
+      where: eq(items.id, itemId),
+    });
 
-  if (!itemInfo || !itemInfo.isTimeLimited) return;
+    // 시간제 아이템이 아니면 패스
+    if (!itemInfo || !itemInfo.isTimeLimited) return;
 
-  let maxAttempts = 100;
-  let attempts = 0;
-
-  while (attempts < maxAttempts) {
-    attempts++;
-
+    // 2. 1순위 대기자 조회
     const nextUserEntry = await db.query.waitingQueue.findFirst({
       where: eq(waitingQueue.itemId, itemId),
       orderBy: [asc(waitingQueue.requestDate)],
     });
 
-    if (!nextUserEntry) break;
+    // 대기자가 없으면 종료
+    if (!nextUserEntry) return;
 
-    // 대여 자격 확인 (일일 대여 횟수)
-    let isEligible = true;
-    if (itemInfo.maxRentalsPerUser) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const startOfDay = Math.floor(today.getTime() / 1000);
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      const endOfDayTimestamp = Math.floor(endOfDay.getTime() / 1000);
+    // 3. 대기자 정보 조회 (삭제되었을 수도 있으므로 확인)
+    const userToRent = await db.query.generalUsers.findFirst({
+      where: eq(generalUsers.id, nextUserEntry.userId),
+    });
 
-      const [result] = await db
-        .select({ value: count() })
-        .from(rentalRecords)
-        .where(
-          and(
-            eq(rentalRecords.userId, nextUserEntry.userId),
-            eq(rentalRecords.itemsId, itemId),
-            gte(rentalRecords.rentalDate, startOfDay),
-            lte(rentalRecords.rentalDate, endOfDayTimestamp)
-          )
-        );
-
-      if (Number(result?.value || 0) >= itemInfo.maxRentalsPerUser) {
-        isEligible = false;
-      }
-    }
-
-    if (isEligible) {
-      // 대기자의 최신 정보 조회
-      const userToRent = await db.query.generalUsers.findFirst({
-        where: eq(generalUsers.id, nextUserEntry.userId),
-      });
-
-      if (userToRent) {
-        const rentalDate = Math.floor(Date.now() / 1000);
-        const returnDueDate =
-          rentalDate + (itemInfo.rentalTimeMinutes || 0) * 60;
-
-        // 자동 대여 기록 생성 (스냅샷 포함)
-        await db.insert(rentalRecords).values({
-          userId: nextUserEntry.userId,
-          itemsId: itemId,
-          rentalDate,
-          returnDueDate,
-
-          // 스냅샷 데이터
-          userName: userToRent.name,
-          userPhone: userToRent.phoneNumber,
-          userSchool: userToRent.school,
-          userGender: userToRent.gender,
-          userBirthDate: userToRent.birthDate,
-
-          itemName: itemInfo.name,
-          itemCategory: itemInfo.category,
-          isReturned: false,
-          maleCount: nextUserEntry.maleCount,
-          femaleCount: nextUserEntry.femaleCount,
-        });
-
-        await db
-          .delete(waitingQueue)
-          .where(eq(waitingQueue.id, nextUserEntry.id));
-        break; // 대여 성공 시 루프 종료
-      } else {
-        // 유저 정보 없음 (삭제됨) -> 대기열 삭제 후 다음 사람
-        await db
-          .delete(waitingQueue)
-          .where(eq(waitingQueue.id, nextUserEntry.id));
-      }
-    } else {
-      // 자격 미달 -> 대기열 삭제 후 다음 사람
+    // 유저 정보가 없으면 대기열에서만 지우고 종료
+    if (!userToRent) {
       await db
         .delete(waitingQueue)
         .where(eq(waitingQueue.id, nextUserEntry.id));
+      return;
     }
+
+    // 4. [자동 대여 실행]
+    // 여기서 별도의 자격 검증(일일 한도 등)을 엄격하게 하기보다는,
+    // 이미 대기열에 등록된 사용자는 '이용 권한이 있다'고 보고 승급시키는 것이
+    // "자동화" 관점에서 끊김이 없습니다.
+
+    const rentalDate = Math.floor(Date.now() / 1000);
+    const returnDueDate = rentalDate + (itemInfo.rentalTimeMinutes || 0) * 60;
+
+    // 트랜잭션 처럼 순차 실행 (대기열 삭제 -> 대여 기록 생성)
+    // 에러가 나도 대기열이 막히는 것보다는, 일단 대기열을 비워주는게 낫습니다.
+
+    // A. 대기열에서 삭제 (먼저 지워야 UI에서 "대기 1팀"이 사라짐)
+    await db.delete(waitingQueue).where(eq(waitingQueue.id, nextUserEntry.id));
+
+    // B. 대여 기록 생성
+    await db.insert(rentalRecords).values({
+      userId: nextUserEntry.userId,
+      itemsId: itemId,
+      rentalDate,
+      returnDueDate,
+
+      // 스냅샷 데이터
+      userName: userToRent.name,
+      userPhone: userToRent.phoneNumber,
+      userSchool: userToRent.school,
+      userGender: userToRent.gender,
+      userBirthDate: userToRent.birthDate,
+
+      itemName: itemInfo.name,
+      itemCategory: itemInfo.category,
+      isReturned: false,
+      maleCount: nextUserEntry.maleCount,
+      femaleCount: nextUserEntry.femaleCount,
+    });
+
+    console.log(
+      `Auto-promoted waiting user ${userToRent.name} for item ${itemInfo.name}`
+    );
+  } catch (error) {
+    console.error("Failed to process next in queue:", error);
+    // 여기서 에러가 나더라도 다음 lazyCheck때 다시 시도되거나,
+    // 최소한 시스템이 멈추지는 않아야 합니다.
   }
 }
 

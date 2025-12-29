@@ -1,6 +1,6 @@
 import { getAllGeneralUsers } from "@/lib/actions/generalUser";
 import { UsersPageClient } from "./UsersPageClient";
-
+import { processAndMutateExpiredRentals } from "@/lib/actions/rental";
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage({
@@ -8,6 +8,8 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  await processAndMutateExpiredRentals();
+
   const params = await searchParams;
 
   const page =

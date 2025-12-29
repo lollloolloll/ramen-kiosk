@@ -402,7 +402,7 @@ export function RentalDialog({
       // ---------------------------------------------------------
       // CASE A: 사용자 찾음 (로그인 성공)
       // ---------------------------------------------------------
-      if (result.status === "found" && result.user) {
+      if (result.status === "exact_match" && result.user) {
         const user = result.user; // 여기서 user 변수를 꺼내야 합니다.
 
         const status = await checkUserRentalStatus(user.id, item.id);
@@ -441,12 +441,8 @@ export function RentalDialog({
       }
 
       // CASE C: 전화번호는 있는데 이름이 다름
-      else if (result.status === "phone_exists_name_mismatch") {
-        toast.warning("이미 등록된 전화번호입니다.", {
-          description: "입력하신 이름과 일치하지 않습니다.",
-          duration: 6000,
-          className: "!gap-6 top-margin-warning",
-        });
+      else if (result.status === "family_exists") {
+        proceedToRegister(values);
         return;
       }
 

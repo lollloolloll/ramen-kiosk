@@ -3,6 +3,7 @@ import { getRentalRecords } from "@/lib/actions/rental";
 import { RecordsPageClient } from "./RecordsPageClient";
 import { FilterControls } from "./FilterControls";
 import { getDistinctItemNames } from "@/lib/actions/item";
+import { processAndMutateExpiredRentals } from "@/lib/actions/rental";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,8 @@ interface RecordsPageProps {
 }
 
 export default async function RecordsPage({ searchParams }: RecordsPageProps) {
+  await processAndMutateExpiredRentals();
+
   const params = await searchParams;
   const { search, from, to, category, item } = params;
   const page = Number(params.page) || 1;

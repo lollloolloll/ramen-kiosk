@@ -1283,12 +1283,14 @@ export async function checkUserRentalStatus(userId: number, itemId: number) {
       };
     }
 
+    const now = Math.floor(Date.now() / 1000);
+
     // 1. 현재 대여 중인지 확인
     if (item.isTimeLimited) {
       const currentRental = await db
         .select({
           id: rentalRecords.id,
-          returnDueDate: rentalRecords.returnDueDate, // 반납 예정일 필요
+          returnDueDate: rentalRecords.returnDueDate, // [중요] 마감 시간 확인을 위해 추가
         })
         .from(rentalRecords)
         .where(
@@ -1301,7 +1303,14 @@ export async function checkUserRentalStatus(userId: number, itemId: number) {
         .get();
 
       if (currentRental) {
-        return { isRenting: true, isWaiting: false, error: null };
+        // [핵심 수정] 본인이 빌리고 있더라도, '반납 시간'이 지났다면
+        // 재등록/갱신을 위해 '대여 중이 아님'으로 통과시킵니다.
+        if (currentRental.returnDueDate && currentRental.returnDueDate < now) {
+          // 통과 (아래 대기열 체크 로직으로 넘어감)
+        } else {
+          // 정상 대여 중이면 차단
+          return { isRenting: true, isWaiting: false, error: null };
+        }
       }
     }
 
@@ -1325,9 +1334,7 @@ export async function checkUserRentalStatus(userId: number, itemId: number) {
         ),
       });
 
-      const now = Math.floor(Date.now() / 1000);
-
-      // 상황 1: 자리가 비어있음 (좀비 상태)
+      // 자리가 비었거나(좀비), 현재 사용자가 연체 중이면 -> 재등록 허용 (isWaiting: false)
       if (!activeRental) {
         // 대기 중이지만, 사실상 바로 빌릴 수 있는 상태이므로
         // 클라이언트가 addToWaitingList를 호출하게 유도하기 위해 waiting=false로 속임
@@ -1336,7 +1343,6 @@ export async function checkUserRentalStatus(userId: number, itemId: number) {
 
       // 상황 2: 누군가 쓰고 있지만, 반납 예정 시간이 지남 (연체 상태)
       if (activeRental.returnDueDate && activeRental.returnDueDate < now) {
-        // 갱신을 위해 재등록 허용
         return { isRenting: false, isWaiting: false, error: null };
       }
 

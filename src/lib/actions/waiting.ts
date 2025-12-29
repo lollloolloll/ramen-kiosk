@@ -7,21 +7,13 @@ import {
   generalUsers,
   waitingQueue,
 } from "@drizzle/schema";
-import {
-  eq,
-  and,
-  gte,
-  lte,
-  sql,
-  asc,
-  desc,
-  like,
-  count,
-  countDistinct,
-} from "drizzle-orm";
+import { eq, and, gte, lte, sql, asc, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { triggerExpiredRentalsCheck } from "./rental";
-// lib/actions/waiting.ts
+import { triggerExpiredRentalsCheck } from "./rental"; // 경로 확인 필요
+
+// ----------------------------------------------------------------------
+// 대기열 등록 액션
+// ----------------------------------------------------------------------
 
 export async function addToWaitingList(
   userId: number,
@@ -30,34 +22,27 @@ export async function addToWaitingList(
   femaleCount: number = 0
 ) {
   await triggerExpiredRentalsCheck();
+
   try {
-    // 1. 아이템 및 사용자 정보 조회
     const [item, user] = await Promise.all([
       db.query.items.findFirst({ where: eq(items.id, itemId) }),
-      db.query.generalUsers.findFirst({
-        where: eq(generalUsers.id, userId),
-      }),
+      db.query.generalUsers.findFirst({ where: eq(generalUsers.id, userId) }),
     ]);
 
-    if (!item || !user) {
-      throw new Error("아이템 또는 사용자 정보를 찾을 수 없습니다.");
-    }
-
-    if (!item.isTimeLimited) {
+    if (!item || !user) throw new Error("정보를 찾을 수 없습니다.");
+    if (!item.isTimeLimited)
       throw new Error("이 아이템은 대기열을 지원하지 않습니다.");
-    }
 
-    // --- 성별 카운트 자동 할당 로직 추가 (rentItem과 동일) ---
     let finalMaleCount = maleCount;
     let finalFemaleCount = femaleCount;
-
     if (item.isAutomaticGenderCount) {
       finalMaleCount = user.gender === "남" ? 1 : 0;
       finalFemaleCount = user.gender === "여" ? 1 : 0;
     }
-    // --------------------------------------------------
 
-    // 2. 이미 대기열에 있는지 확인
+    // ------------------------------------------------------------------
+    // 기존 대기열 확인 로직
+    // ------------------------------------------------------------------
     const existingWaiting = await db.query.waitingQueue.findFirst({
       where: and(
         eq(waitingQueue.userId, userId),
@@ -65,26 +50,110 @@ export async function addToWaitingList(
       ),
     });
 
+    // 최종적으로 처리할 대기열 항목의 ID를 담을 변수
+    let targetEntryId: number;
+
     if (existingWaiting) {
-      throw new Error("이미 해당 아이템의 대기열에 등록되어 있습니다.");
+      // A. 현재 아이템의 대여 상태 확인
+      const currentRental = await db.query.rentalRecords.findFirst({
+        where: and(
+          eq(rentalRecords.itemsId, itemId),
+          eq(rentalRecords.isReturned, false)
+        ),
+      });
+
+      const now = Math.floor(Date.now() / 1000);
+      let shouldAllowOverwrite = false;
+
+      // 조건 1: 좀비 상태 (자리 빔)
+      if (!currentRental) {
+        shouldAllowOverwrite = true;
+      }
+      // 조건 2: 연체 상태 (시간 지남)
+      else if (
+        currentRental.returnDueDate &&
+        currentRental.returnDueDate < now
+      ) {
+        shouldAllowOverwrite = true;
+      }
+
+      if (shouldAllowOverwrite) {
+        // [수정됨] 삭제하지 않고 업데이트! (순서 보장)
+        // requestDate는 건드리지 않으므로 대기 순번이 유지됩니다.
+        await db
+          .update(waitingQueue)
+          .set({
+            maleCount: finalMaleCount,
+            femaleCount: finalFemaleCount,
+            // requestDate는 업데이트 하지 않음 -> 순서 유지
+          })
+          .where(eq(waitingQueue.id, existingWaiting.id));
+
+        targetEntryId = existingWaiting.id; // 기존 ID 사용
+      } else {
+        throw new Error("이미 해당 아이템의 대기열에 등록되어 있습니다.");
+      }
+    } else {
+      // 4. 신규 등록 (기존 로직)
+      const [newEntry] = await db
+        .insert(waitingQueue)
+        .values({
+          userId,
+          itemId,
+          requestDate: Math.floor(Date.now() / 1000),
+          maleCount: finalMaleCount,
+          femaleCount: finalFemaleCount,
+        })
+        .returning();
+
+      targetEntryId = newEntry.id; // 새 ID 사용
     }
 
-    // 3. 대기열에 추가 (최종 결정된 인원수 저장)
-    await db.insert(waitingQueue).values({
-      userId,
-      itemId,
-      requestDate: Math.floor(Date.now() / 1000),
-      maleCount: finalMaleCount,
-      femaleCount: finalFemaleCount,
+    // 5. [즉시 승급 로직]
+    // 등록(또는 갱신) 직후 자리가 비었는지 확인
+    const activeRental = await db.query.rentalRecords.findFirst({
+      where: and(
+        eq(rentalRecords.itemsId, itemId),
+        eq(rentalRecords.isReturned, false)
+      ),
     });
 
-    // 4. 현재 대기 순번 계산
+    if (!activeRental) {
+      // targetEntryId를 사용하여 승급 처리
+      const grantResult = await grantWaitingEntry(targetEntryId);
+      if (grantResult.success) {
+        return {
+          success: true,
+          message: "자리가 비어있어 즉시 대여되었습니다!",
+          waitingPosition: 0,
+          status: "rented",
+        };
+      }
+    }
+
+    // 6. 대기 순번 리턴
+    // requestDate를 유지했으므로 내 순번도 그대로 유지됨
     const waitingCountResult = await db
       .select({ value: count() })
       .from(waitingQueue)
       .where(eq(waitingQueue.itemId, itemId));
 
-    const waitingPosition = waitingCountResult[0].value;
+    // 6. 대기 순번 리턴
+    const myEntry = await db.query.waitingQueue.findFirst({
+      where: eq(waitingQueue.id, targetEntryId),
+    });
+
+    const positionCount = await db
+      .select({ value: count() })
+      .from(waitingQueue)
+      .where(
+        and(
+          eq(waitingQueue.itemId, itemId),
+          lte(waitingQueue.requestDate, myEntry!.requestDate)
+        )
+      );
+
+    const waitingPosition = positionCount[0].value;
 
     revalidatePath("/(kiosk)/kiosk");
     revalidatePath("/admin/waitings");
@@ -93,6 +162,7 @@ export async function addToWaitingList(
       success: true,
       message: "대기열에 성공적으로 등록되었습니다.",
       waitingPosition,
+      status: "waiting",
     };
   } catch (error) {
     return {

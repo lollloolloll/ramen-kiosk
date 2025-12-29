@@ -1283,9 +1283,13 @@ export async function checkUserRentalStatus(userId: number, itemId: number) {
       };
     }
 
+    // 1. 현재 대여 중인지 확인
     if (item.isTimeLimited) {
       const currentRental = await db
-        .select({ id: rentalRecords.id })
+        .select({
+          id: rentalRecords.id,
+          returnDueDate: rentalRecords.returnDueDate, // 반납 예정일 필요
+        })
         .from(rentalRecords)
         .where(
           and(
@@ -1301,6 +1305,7 @@ export async function checkUserRentalStatus(userId: number, itemId: number) {
       }
     }
 
+    // 2. 대기열 확인
     const waitingEntry = await db
       .select({ id: waitingQueue.id })
       .from(waitingQueue)
@@ -1310,6 +1315,32 @@ export async function checkUserRentalStatus(userId: number, itemId: number) {
       .get();
 
     if (waitingEntry) {
+      // ★★★ 핵심 수정: 대기열에 있지만 "재등록이 허용되는 상황" 체크 ★★★
+
+      // A. 현재 이 아이템을 누가 쓰고 있는지 확인
+      const activeRental = await db.query.rentalRecords.findFirst({
+        where: and(
+          eq(rentalRecords.itemsId, itemId),
+          eq(rentalRecords.isReturned, false)
+        ),
+      });
+
+      const now = Math.floor(Date.now() / 1000);
+
+      // 상황 1: 자리가 비어있음 (좀비 상태)
+      if (!activeRental) {
+        // 대기 중이지만, 사실상 바로 빌릴 수 있는 상태이므로
+        // 클라이언트가 addToWaitingList를 호출하게 유도하기 위해 waiting=false로 속임
+        return { isRenting: false, isWaiting: false, error: null };
+      }
+
+      // 상황 2: 누군가 쓰고 있지만, 반납 예정 시간이 지남 (연체 상태)
+      if (activeRental.returnDueDate && activeRental.returnDueDate < now) {
+        // 갱신을 위해 재등록 허용
+        return { isRenting: false, isWaiting: false, error: null };
+      }
+
+      // 상황 3: 정상적인 대기 상태 (자리 꽉 참 + 시간 남음) -> 차단
       return { isRenting: false, isWaiting: true, error: null };
     }
 
@@ -1323,7 +1354,6 @@ export async function checkUserRentalStatus(userId: number, itemId: number) {
     };
   }
 }
-
 export async function getRentalRecordPeople(rentalRecordId: number) {
   try {
     const people = await db

@@ -435,6 +435,7 @@ export function RentalDialog({
           description:
             "전화번호를 잘못 입력했는지 확인해주세요! (처음이라면 '신규 등록' 클릭)",
           duration: 8000,
+          className: "top-margin-warning",
         });
         return;
       }

@@ -2,13 +2,17 @@
 
 import { db } from "@/lib/db";
 import { generalUsers, users } from "@drizzle/schema";
-import { eq, asc, desc, like, or, sql, and } from "drizzle-orm";
+import { eq, asc, desc, like, or, sql, and, count } from "drizzle-orm";
 import { generalUserSchema } from "@/lib/validators/generalUser";
 import { revalidatePath } from "next/cache";
+import ExcelJS from "exceljs";
 
 export type UserCheckResult =
-  | { status: "found"; user: typeof generalUsers.$inferSelect }
-  | { status: "phone_exists_name_mismatch" }
+  | { status: "exact_match"; user: typeof generalUsers.$inferSelect }
+  | {
+      status: "family_exists";
+      existingUsers: (typeof generalUsers.$inferSelect)[];
+    } // 변경
   | { status: "name_exists_phone_mismatch" }
   | { status: "not_found" };
 
@@ -37,24 +41,24 @@ export async function findUserByNameAndPhone(
     (u) => u.name === name && u.phoneNumber === phoneNumber
   );
   if (exactMatch) {
-    return { status: "found", user: exactMatch };
+    return { status: "exact_match", user: exactMatch };
   }
 
-  const phoneMatch = users.find((u) => u.phoneNumber === phoneNumber);
-  if (phoneMatch) {
-    // 전화번호는 있는데 이름이 다름 (전화번호 중복/오타)
-    return { status: "phone_exists_name_mismatch" };
+  const phoneMatches = users.filter((u) => u.phoneNumber === phoneNumber);
+  if (phoneMatches.length > 0) {
+    // 같은 번호를 쓰는 다른 이름의 사람들 (가족)
+    return { status: "family_exists", existingUsers: phoneMatches };
   }
 
   const nameMatch = users.find((u) => u.name === name);
   if (nameMatch) {
-    // 이름은 있는데 전화번호가 다름 (★ 전화번호 오타 가능성 높음 ★)
     return { status: "name_exists_phone_mismatch" };
   }
 
   return { status: "not_found" };
 }
 
+// 2. 사용자 생성 함수 수정
 export async function createGeneralUser(data: unknown) {
   const validatedData = generalUserSchema.safeParse(data);
   if (!validatedData.success) {
@@ -71,13 +75,20 @@ export async function createGeneralUser(data: unknown) {
     validatedData.data;
 
   try {
+    // [변경] 전화번호만으로 체크하던 것을 (이름 AND 전화번호)로 변경
     const [existingUser] = await db
       .select()
       .from(generalUsers)
-      .where(eq(generalUsers.phoneNumber, phoneNumber));
+      .where(
+        and(
+          eq(generalUsers.name, name),
+          eq(generalUsers.phoneNumber, phoneNumber)
+        )
+      );
 
+    // 이름과 전화번호가 모두 같은 경우에만 중복 에러
     if (existingUser) {
-      return { error: "이미 등록된 휴대폰 번호입니다." };
+      return { error: "이미 해당 이름과 전화번호로 등록된 사용자가 있습니다." };
     }
 
     const [newUser] = await db
@@ -99,7 +110,6 @@ export async function createGeneralUser(data: unknown) {
   }
 }
 
-import { count } from "drizzle-orm";
 export async function getAllGeneralUsers({
   page = 1,
   per_page = 10,
@@ -186,6 +196,7 @@ export async function getAllAdminUsers() {
     return { error: "관리자 정보를 가져오는 데 실패했습니다." };
   }
 }
+// 3. 사용자 수정 함수 수정
 export async function updateUser(id: number, data: unknown) {
   const validatedData = generalUserSchema.safeParse(data);
   if (!validatedData.success) {
@@ -201,14 +212,21 @@ export async function updateUser(id: number, data: unknown) {
     validatedData.data;
 
   try {
-    // 다른 사용자가 같은 전화번호를 사용하고 있는지 확인
+    // [변경] 다른 사용자가 같은 (이름 + 전화번호) 조합을 쓰고 있는지 확인
     const [existingUser] = await db
       .select()
       .from(generalUsers)
-      .where(eq(generalUsers.phoneNumber, phoneNumber));
+      .where(
+        and(
+          eq(generalUsers.name, name),
+          eq(generalUsers.phoneNumber, phoneNumber)
+        )
+      );
 
     if (existingUser && existingUser.id !== id) {
-      return { error: "이미 등록된 휴대폰 번호입니다." };
+      return {
+        error: "이미 해당 이름과 전화번호를 사용하는 다른 사용자가 있습니다.",
+      };
     }
 
     await db
@@ -250,8 +268,6 @@ export async function deleteAdminUser(id: number) {
     return { error: "관리자 삭제에 실패했습니다." };
   }
 }
-
-import ExcelJS from "exceljs";
 
 export async function exportGeneralUsersToExcel() {
   try {

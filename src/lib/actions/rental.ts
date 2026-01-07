@@ -526,7 +526,7 @@ export async function getRentalRecords(
         userSchool: sql<string>`COALESCE(${rentalRecords.userSchool}, ${generalUsers.school})`,
         userBirthDate: sql<
           string | null
-        >`COALESCE(${generalUsers.birthDate}, ${rentalRecords.userBirthDate})`,
+        >`COALESCE(${rentalRecords.userBirthDate}, ${generalUsers.birthDate})`,
         itemName: sql<string>`COALESCE(${items.name}, ${rentalRecords.itemName})`,
         itemCategory: sql<string>`COALESCE(${items.category}, ${rentalRecords.itemCategory})`,
         maleCount: rentalRecords.maleCount,

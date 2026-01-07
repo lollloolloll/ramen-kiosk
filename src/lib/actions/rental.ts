@@ -44,6 +44,12 @@ function calculateAge(
   }
   return age;
 }
+function getAgeGroup(age: number | null): string {
+  if (age === null) return "알 수 없음";
+  if (age <= 8) return "아동";
+  if (age <= 24) return "청소년"; // 9세 ~ 24세
+  return "성인"; // 25세 이상
+}
 
 // ----------------------------------------------------------------------
 // 서버 액션: 대여 관련
@@ -518,6 +524,9 @@ export async function getRentalRecords(
         userPhone: sql<string>`COALESCE(${generalUsers.phoneNumber}, ${rentalRecords.userPhone})`,
         // 학교는 과거 기록이 중요하므로 스냅샷 우선
         userSchool: sql<string>`COALESCE(${rentalRecords.userSchool}, ${generalUsers.school})`,
+        userBirthDate: sql<
+          string | null
+        >`COALESCE(${generalUsers.birthDate}, ${rentalRecords.userBirthDate})`,
         itemName: sql<string>`COALESCE(${items.name}, ${rentalRecords.itemName})`,
         itemCategory: sql<string>`COALESCE(${items.category}, ${rentalRecords.itemCategory})`,
         maleCount: rentalRecords.maleCount,
@@ -1037,7 +1046,6 @@ export async function getRentalAnalytics(filters: {
     };
   }
 }
-
 export async function exportRentalRecordsToExcel(
   filters: {
     username?: string;
@@ -1064,6 +1072,8 @@ export async function exportRentalRecordsToExcel(
       { header: "ID", key: "id", width: 10 },
       { header: "대여 날짜", key: "rentalDate", width: 25 },
       { header: "사용자 이름", key: "userName", width: 15 },
+      { header: "나이(만)", key: "age", width: 10 },
+      { header: "연령대", key: "ageGroup", width: 10 },
       { header: "학교", key: "userSchool", width: 15 },
       { header: "아이템 이름", key: "itemName", width: 20 },
       { header: "아이템 카테고리", key: "itemCategory", width: 15 },
@@ -1091,11 +1101,19 @@ export async function exportRentalRecordsToExcel(
     });
 
     data.forEach((record) => {
+      // 대여 시점 날짜 객체 생성
+      const rentalDateObj = new Date(record.rentalDate * 1000);
+
+      const age = calculateAge(record.userBirthDate, rentalDateObj);
+      const ageGroup = getAgeGroup(age);
+
       worksheet.addRow({
         id: record.id,
-        rentalDate: new Date(record.rentalDate * 1000).toLocaleString("ko-KR"),
+        rentalDate: rentalDateObj.toLocaleString("ko-KR"),
         userName: record.userName,
-        userSchool: record.userSchool, // 스냅샷 우선 적용된 값
+        age: age !== null ? age : "-", // 나이 데이터 매핑
+        ageGroup: ageGroup, // 나이대 데이터 매핑
+        userSchool: record.userSchool,
         itemName: record.itemName,
         itemCategory: record.itemCategory,
         maleCount: record.maleCount,

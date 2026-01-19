@@ -56,6 +56,10 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
     setCurrentPage(newPage);
     resetInactivityTimer();
   };
+  
+  useEffect(() => {
+    router.refresh();
+  }, [router]);
 
   // 홍보물 파일 목록 가져오기
   useEffect(() => {

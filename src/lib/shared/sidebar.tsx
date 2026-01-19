@@ -45,6 +45,7 @@ export function Sidebar() {
           variant={pathname === link.href ? "secondary" : "ghost"}
         >
           <Link
+            prefetch={false}
             href={link.href}
             onClick={(e) => handleLinkClick(e, link.forceRefresh)}
           >

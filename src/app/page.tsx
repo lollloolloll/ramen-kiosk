@@ -333,6 +333,7 @@ export default function Home() {
             transition-all duration-300 overflow-hidden"
             >
               <Link href="/kiosk" 
+              prefetch={false}
               onClick={(e) => handleLinkClick(e, true)}
               className="flex items-center gap-4">
                 {/* 배경: 호버 시 아주 연한 틴트(10% 투명도)만 살짝 올라옴 -> 글자 가독성 해치지 않음 */}

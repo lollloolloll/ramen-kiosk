@@ -13,7 +13,6 @@ const links = [
   { href: "/admin/items", label: "물품 관리" },
   { href: "/admin/records", label: "대여 기록 관리" },
   { href: "/admin/waitings", label: "대기열 관리", forceRefresh: true },
-  { href: "/admin/waitings", label: "대기열 관리", forceRefresh: true },
 ];
 
 const operationLinks = [

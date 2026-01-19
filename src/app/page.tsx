@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PromotionSlider } from "@/components/PromotionSlider";
 import { processAndMutateExpiredRentals } from "@/lib/actions/rental";
 import { Heart, MonitorPlay, Sparkle, Sparkles } from "lucide-react";
+import {useRouter} from "next/navigation"
 
 // 인터페이스 수정: url, pdf 타입 추가
 interface PromotionItem {
@@ -43,6 +44,8 @@ export default function Home() {
   const lastActivityRef = useRef<number>(Date.now());
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasCheckedKioskFlag = useRef(false);
+
+  const router=useRouter();
 
   // 업로드된 홍보물 파일 및 URL 목록 가져오기
   useEffect(() => {
@@ -210,6 +213,12 @@ export default function Home() {
     await processAndMutateExpiredRentals();
   }, []);
 
+  const handleLinkClick = (e: React.MouseEvent, forceRefresh?: boolean) => {
+    if (forceRefresh) {
+      router.refresh();
+    }
+  };
+
   return (
     <>
       <div className="relative flex flex-col items-center justify-center min-h-screen w-full overflow-hidden bg-slate-50 font-sans selection:bg-[oklch(0.75_0.12_165/0.2)]">
@@ -323,7 +332,9 @@ export default function Home() {
             active:scale-95 active:shadow-sm
             transition-all duration-300 overflow-hidden"
             >
-              <Link href="/kiosk" className="flex items-center gap-4">
+              <Link href="/kiosk" 
+              onClick={(e) => handleLinkClick(e, true)}
+              className="flex items-center gap-4">
                 {/* 배경: 호버 시 아주 연한 틴트(10% 투명도)만 살짝 올라옴 -> 글자 가독성 해치지 않음 */}
                 <div className="absolute inset-0 bg-linear-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

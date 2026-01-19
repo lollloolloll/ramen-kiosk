@@ -323,7 +323,7 @@ export default function Home() {
             active:scale-95 active:shadow-sm
             transition-all duration-300 overflow-hidden"
             >
-              <Link href="/kiosk" className="flex items-center gap-4">
+              <a href="/kiosk" className="flex items-center gap-4">
                 {/* 배경: 호버 시 아주 연한 틴트(10% 투명도)만 살짝 올라옴 -> 글자 가독성 해치지 않음 */}
                 <div className="absolute inset-0 bg-linear-to-r from-[oklch(0.75_0.12_165/0.1)] to-[oklch(0.7_0.18_350/0.1)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -339,7 +339,7 @@ export default function Home() {
                     fill="currentColor"
                   />
                 </div>
-              </Link>
+              </a>
             </Button>
           </div>
         </div>

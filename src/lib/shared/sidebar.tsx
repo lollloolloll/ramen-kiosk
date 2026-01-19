@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
+// 1. 링크 데이터에 'forceRefresh' 같은 속성을 추가합니다.
 const links = [
   { href: "/admin", label: "대시보드" },
   { href: "/admin/users", label: "사용자 관리" },
   { href: "/admin/items", label: "물품 관리" },
   { href: "/admin/records", label: "대여 기록 관리" },
-  { href: "/admin/waitings", label: "대기열 관리" },
+  { href: "/admin/waitings", label: "대기열 관리", forceRefresh: true },
 ];
 
 const operationLinks = [
@@ -37,7 +37,11 @@ export function Sidebar() {
           asChild
           variant={pathname === link.href ? "secondary" : "ghost"}
         >
-          <Link href={link.href}>{link.label}</Link>
+          {link.forceRefresh ? (
+            <a href={link.href}>{link.label}</a>
+          ) : (
+            <Link href={link.href}>{link.label}</Link>
+          )}
         </Button>
       ))}
 

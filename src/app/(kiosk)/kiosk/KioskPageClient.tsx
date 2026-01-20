@@ -185,28 +185,30 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
           <div className="mb-12 flex items-center justify-between relative">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white/80 hover:bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-[oklch(0.75_0.12_165/0.3)] hover:border-[oklch(0.75_0.12_165)] group"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white/80 hover:bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-[oklch(0.75_0.12_165/0.3)] hover:border-[oklch(0.75_0.12_165)] group shrink-0"
             >
               <Home className="w-5 h-5 text-[oklch(0.75_0.12_165)] group-hover:scale-110 transition-transform duration-300" />
               <span className="text-lg font-bold text-[oklch(0.75_0.12_165)]">
                 홈으로
               </span>
             </Link>
-            <div className="text-center flex-1">
-              <h1 className="text-5xl font-black text-[oklch(0.75_0.12_165)] mb-4">
+            
+            {/* 중앙 타이틀 (절대 위치로 중앙 정렬) */}
+            <div className="absolute left-1/2 -translate-x-1/2 text-center">
+              <h1 className="text-5xl font-black text-[oklch(0.75_0.12_165)] mb-4 whitespace-nowrap">
                 쉬다 대여 목록
               </h1>
               <div className="h-1.5 w-32 mx-auto bg-linear-to-r from-[oklch(0.75_0.12_165)] via-[oklch(0.7_0.18_350)] to-[oklch(0.7_0.18_350)] rounded-full" />
             </div>
             
-            {/* 카테고리 필터 (우측 상단) */}
-            <div className="flex items-center gap-3">
+            {/* 카테고리 필터 (우측, 타이틀과 최소 16px 간격) */}
+            <div className="flex items-center gap-3 shrink-0 ml-4">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => handleCategoryChange(category)}
                   className={cn(
-                    "px-6 py-3 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg",
+                    "px-6 py-3 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg whitespace-nowrap",
                     selectedCategory === category
                       ? "bg-[oklch(0.75_0.12_165)] text-white border-2 border-[oklch(0.75_0.12_165)]"
                       : "bg-white/80 hover:bg-white text-[oklch(0.75_0.12_165)] border-2 border-[oklch(0.75_0.12_165/0.3)] hover:border-[oklch(0.75_0.12_165)]"

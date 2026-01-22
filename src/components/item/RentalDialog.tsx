@@ -599,7 +599,6 @@ export function RentalDialog({
   };
 
   const handleWaitingListClick = async () => {
-    // ... (기존과 동일)
     if (!item) return;
     if (showWaitingList) {
       setShowWaitingList(false);
@@ -669,7 +668,6 @@ export function RentalDialog({
 
   // ... (renderSchoolPanel, renderStep 등 나머지 렌더링 로직은 그대로 사용하되, birthDate Select 부분만 수정) ...
   const renderSchoolPanel = () => {
-    // ... (기존 코드와 동일)
     if (!schoolLevel || schoolLevel === "해당없음") return null;
 
     return (
@@ -997,6 +995,13 @@ export function RentalDialog({
                           autoCorrect="off"
                           lang="ko"
                           {...field}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(
+                              /[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣]/g,
+                              ""
+                            );
+                            field.onChange(value);
+                          }}
                           className="focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! focus-visible:border-2! focus-visible:border-[oklch(0.75_0.12_165)]!"
                         />
                       </FormControl>
@@ -1136,6 +1141,13 @@ export function RentalDialog({
                                       autoCorrect="off"
                                       placeholder="이름"
                                       className="h-8 mt-1 text-sm bg-white focus-visible:border-[oklch(0.75_0.12_165)]"
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(
+                                          /[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣]/g,
+                                          ""
+                                        );
+                                        nameField.onChange(value);
+                                      }}
                                     />
                                   </FormControl>
                                   <FormMessage className="text-[10px]" />
@@ -1233,9 +1245,13 @@ export function RentalDialog({
                             fieldState.invalid &&
                               "border-red-500! focus-visible:border-red-500!"
                           )}
-                          onChange={(e) =>
-                            field.onChange(e.target.value.replace(/\s/g, ""))
-                          }
+                          onChange={(e) => {
+                            const value = e.target.value.replace(
+                              /[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣]/g,
+                              ""
+                            );
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage className="text-red-500" />

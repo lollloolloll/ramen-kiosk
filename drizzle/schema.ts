@@ -58,6 +58,9 @@ export const generalUsers = sqliteTable(
     gender: text().notNull(),
     birthDate: text("birth_date"),
     school: text(),
+    schoolConfirmed: integer("school_confirmed", { mode: "boolean" })
+      .default(true)
+      .notNull(),
     personalInfoConsent: integer("personal_info_consent", { mode: "boolean" }),
     consentFilePath: text("consent_file_path"),
   },
@@ -134,6 +137,13 @@ export const waitingQueue = sqliteTable("waiting_queue", {
     .notNull(),
   maleCount: integer("male_count").default(0).notNull(),
   femaleCount: integer("female_count").default(0).notNull(),
+});
+
+export const kioskSettings = sqliteTable("kiosk_settings", {
+  id: integer().primaryKey({ autoIncrement: true }).notNull(),
+  schoolReconfirmMode: integer("school_reconfirm_mode", { mode: "boolean" })
+    .default(false)
+    .notNull(),
 });
 
 export const rentalRecordPeople = sqliteTable("rental_record_people", {

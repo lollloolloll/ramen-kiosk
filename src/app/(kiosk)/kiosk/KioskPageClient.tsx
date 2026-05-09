@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 interface KioskPageClientProps {
   items: Item[];
   consentFile: { url: string; type: "pdf" | "image" | "doc" } | null;
+  schoolReconfirmMode: boolean;
 }
 
 interface PromotionItem {
@@ -31,7 +32,7 @@ function getFileType(fileName: string): "video" | "image" {
 
 const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 1분
 
-export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
+export function KioskPageClient({ items, consentFile, schoolReconfirmMode }: KioskPageClientProps) {
   const router = useRouter();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -256,6 +257,7 @@ export function KioskPageClient({ items, consentFile }: KioskPageClientProps) {
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           consentFile={consentFile}
+          schoolReconfirmMode={schoolReconfirmMode}
         />
       </div>
 

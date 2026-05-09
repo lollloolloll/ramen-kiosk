@@ -18,6 +18,7 @@ const links = [
 const operationLinks = [
   { href: "/admin/promotion", label: "프로모션" },
   { href: "/admin/consent", label: "약관" },
+  { href: "/admin/settings", label: "설정" },
 ];
 
 export function Sidebar() {

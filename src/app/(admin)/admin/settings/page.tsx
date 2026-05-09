@@ -8,7 +8,6 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="container px-16 py-10">
-      <h1 className="text-3xl font-bold mb-4">키오스크 설정</h1>
       <SettingsClient
         initialSchoolReconfirmMode={settings.schoolReconfirmMode}
       />

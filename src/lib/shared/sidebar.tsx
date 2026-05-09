@@ -18,7 +18,7 @@ const links = [
 const operationLinks = [
   { href: "/admin/promotion", label: "프로모션" },
   { href: "/admin/consent", label: "약관" },
-  { href: "/admin/settings", label: "설정" },
+  { href: "/admin/settings", label: "새학기 설정" },
 ];
 
 export function Sidebar() {

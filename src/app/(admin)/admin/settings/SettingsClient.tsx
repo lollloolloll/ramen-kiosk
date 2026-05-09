@@ -56,14 +56,13 @@ export function SettingsClient({
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>학교 정보 재확인 모드</CardTitle>
+        <CardTitle>새학기 설정</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          신학기 등 학교가 바뀌는 시기에 사용하세요. 이 모드를 켜면 등록된 모든
-          사용자의 학교 확인 상태가 초기화되고, 각 사용자가 키오스크에서 처음
-          대여할 때 한 번 학교 정보를 확인하게 됩니다. 확인이 끝난 사용자는 다시
-          묻지 않습니다.
+          새학기 등 학교정보가 바뀌는 시기에 사용하세요. 이 모드를 켜면 모든
+          사용자가 키오스크에서 처음 대여할 때 한 번 학교 정보를 확인하게
+          됩니다. 확인이 끝난 사용자는 다시 묻지 않습니다.
         </p>
 
         <div className="flex items-center justify-between rounded-lg border p-4">
@@ -87,8 +86,8 @@ export function SettingsClient({
           <AlertDialogHeader>
             <AlertDialogTitle>학교 재확인 모드를 켤까요?</AlertDialogTitle>
             <AlertDialogDescription>
-              모든 등록 사용자의 학교 확인 상태가 초기화됩니다. 이후 각 사용자는
-              키오스크에서 다음 대여 시 한 번 학교 정보를 확인해야 합니다.
+              모든 사용자는 키오스크에서 다음 대여 시 한 번 학교 정보를 확인해야
+              합니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

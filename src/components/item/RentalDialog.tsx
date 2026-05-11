@@ -596,6 +596,8 @@ export function RentalDialog({
       if (res.error) throw new Error(res.error);
       const rental = pendingRental;
       setPendingRental(null);
+      setShowSchoolPanel(false);
+      setReconfirmShowEditor(false);
       await resumePendingRental(rental);
     } catch (error) {
       toast.error(
@@ -624,6 +626,8 @@ export function RentalDialog({
       if (res.error) throw new Error(res.error);
       const rental = pendingRental;
       setPendingRental(null);
+      setShowSchoolPanel(false);
+      setReconfirmShowEditor(false);
       await resumePendingRental(rental);
     } catch (error) {
       toast.error(

@@ -76,7 +76,6 @@ type PendingRental = {
   maleCount: number;
   femaleCount: number;
   participants: Array<{ name: string; gender: "남" | "여" }>;
-  isWaiting: boolean;
 };
 
 const identificationSchema = z.object({
@@ -449,7 +448,6 @@ export function RentalDialog({
             maleCount: values.maleCount,
             femaleCount: values.femaleCount,
             participants: values.participants ?? [],
-            isWaiting: !!isRentedMode,
           });
           setReconfirmShowEditor(false);
           setSchoolLevel("");
@@ -576,7 +574,7 @@ export function RentalDialog({
   };
 
   const resumePendingRental = async (rental: PendingRental) => {
-    if (rental.isWaiting) {
+    if (isRentedMode) {
       await handleWaiting(rental.userId, rental.maleCount, rental.femaleCount);
     } else {
       await handleRental(

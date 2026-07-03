@@ -2,6 +2,7 @@ const KOREA_TIME_ZONE = "Asia/Seoul";
 const MONDAY = 1;
 const MIN_BUSINESS_HOUR = 9;
 const MAX_BUSINESS_HOUR = 21;
+const MINUTE_STEP = 5;
 
 export const BUSINESS_DAY_OPTIONS = [
   { value: 1, label: "월", disabled: true },
@@ -13,10 +14,21 @@ export const BUSINESS_DAY_OPTIONS = [
   { value: 0, label: "일", disabled: false },
 ] as const;
 
-export const BUSINESS_TIME_OPTIONS = Array.from(
+export const BUSINESS_HOUR_OPTIONS = Array.from(
   { length: MAX_BUSINESS_HOUR - MIN_BUSINESS_HOUR + 1 },
-  (_, index) => `${String(MIN_BUSINESS_HOUR + index).padStart(2, "0")}:00`
+  (_, index) => {
+    return String(MIN_BUSINESS_HOUR + index).padStart(2, "0");
+  }
 );
+
+export const BUSINESS_MINUTE_OPTIONS = Array.from(
+  { length: 60 / MINUTE_STEP },
+  (_, index) => String(index * MINUTE_STEP).padStart(2, "0")
+);
+
+export const BUSINESS_TIME_OPTIONS = BUSINESS_HOUR_OPTIONS.flatMap((hour) =>
+  BUSINESS_MINUTE_OPTIONS.map((minute) => `${hour}:${minute}`)
+).filter((time) => timeToMinutes(time) <= MAX_BUSINESS_HOUR * 60);
 
 export interface HiddenSchedule {
   isHidden: boolean;

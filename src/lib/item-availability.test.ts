@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   BUSINESS_DAY_OPTIONS,
+  BUSINESS_HOUR_OPTIONS,
+  BUSINESS_MINUTE_OPTIONS,
   BUSINESS_TIME_OPTIONS,
   isItemAutoHiddenNow,
   normalizeAutoHideSchedules,
@@ -103,7 +105,37 @@ test("overlapping hide windows on the same weekday are ignored", () => {
   ]);
 });
 
-test("time options are limited to 09:00 through 21:00", () => {
+test("time options are limited to 09:00 through 21:00 in five-minute steps", () => {
+  assert.equal(BUSINESS_HOUR_OPTIONS[0], "09");
+  assert.equal(BUSINESS_HOUR_OPTIONS[BUSINESS_HOUR_OPTIONS.length - 1], "21");
+  assert.deepEqual(BUSINESS_MINUTE_OPTIONS.slice(0, 3), ["00", "05", "10"]);
+  assert.equal(
+    BUSINESS_MINUTE_OPTIONS[BUSINESS_MINUTE_OPTIONS.length - 1],
+    "55"
+  );
   assert.equal(BUSINESS_TIME_OPTIONS[0], "09:00");
-  assert.equal(BUSINESS_TIME_OPTIONS.at(-1), "21:00");
+  assert.equal(BUSINESS_TIME_OPTIONS[1], "09:05");
+  assert.equal(BUSINESS_TIME_OPTIONS.includes("12:35"), true);
+  assert.equal(BUSINESS_TIME_OPTIONS.includes("12:34"), false);
+  assert.equal(BUSINESS_TIME_OPTIONS.includes("21:05"), false);
+  assert.equal(
+    BUSINESS_TIME_OPTIONS[BUSINESS_TIME_OPTIONS.length - 1],
+    "21:00"
+  );
+});
+
+test("five-minute automatic schedule values are valid for hide windows", () => {
+  const schedule = {
+    isHidden: false,
+    autoHideSchedules: [{ dayOfWeek: 2, startTime: "12:05", endTime: "12:10" }],
+  };
+
+  assert.equal(
+    isItemAutoHiddenNow(schedule, new Date("2026-07-07T03:05:00.000Z")),
+    true
+  );
+  assert.equal(
+    isItemAutoHiddenNow(schedule, new Date("2026-07-07T03:10:00.000Z")),
+    false
+  );
 });

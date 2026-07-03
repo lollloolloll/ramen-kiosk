@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import type { AutoHideSchedule } from "@/lib/item-availability";
 import {
   BUSINESS_DAY_OPTIONS,
-  BUSINESS_TIME_OPTIONS,
+  BUSINESS_HOUR_OPTIONS,
+  BUSINESS_MINUTE_OPTIONS,
   isValidHiddenScheduleRange,
 } from "@/lib/item-availability";
 
@@ -76,35 +77,19 @@ export function AutoHideScheduleFields({
               onChange={(event) => setSelectedDay(Number(event.target.value))}
             >
               {BUSINESS_DAY_OPTIONS.map((day) => (
-                <option key={day.value} value={day.value} disabled={day.disabled}>
+                <option
+                  key={day.value}
+                  value={day.value}
+                  disabled={day.disabled}
+                >
                   {day.label}
                 </option>
               ))}
             </select>
 
-            <select
-              className="border-input bg-background h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs"
-              value={startTime}
-              onChange={(event) => setStartTime(event.target.value)}
-            >
-              {BUSINESS_TIME_OPTIONS.map((time) => (
-                <option key={time} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
+            <TimeSelect value={startTime} onChange={setStartTime} />
 
-            <select
-              className="border-input bg-background h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs"
-              value={endTime}
-              onChange={(event) => setEndTime(event.target.value)}
-            >
-              {BUSINESS_TIME_OPTIONS.map((time) => (
-                <option key={time} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
+            <TimeSelect value={endTime} onChange={setEndTime} />
 
             <Button type="button" size="icon" onClick={addSchedule}>
               <Plus className="size-4" />
@@ -137,18 +122,70 @@ export function AutoHideScheduleFields({
             )}
           </div>
 
-          <p className="text-sm text-muted-foreground">
-            월요일은 고정 휴무라 선택할 수 없습니다
-          </p>
-          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+          {error && (
+            <p className="text-sm font-medium text-destructive">{error}</p>
+          )}
         </div>
       )}
     </div>
   );
 }
 
+function TimeSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [selectedHour, selectedMinute] = splitTime(value);
+  const minuteOptions = getMinuteOptions(selectedHour);
+
+  const handleHourChange = (hour: string) => {
+    const nextMinute = getMinuteOptions(hour).includes(selectedMinute)
+      ? selectedMinute
+      : "00";
+
+    onChange(formatTime(hour, nextMinute));
+  };
+
+  const handleMinuteChange = (minute: string) => {
+    onChange(formatTime(selectedHour, minute));
+  };
+
+  return (
+    <div className="grid grid-cols-2 gap-1">
+      <select
+        className="border-input bg-background h-9 w-full rounded-md border px-2 py-1 text-sm shadow-xs"
+        value={selectedHour}
+        onChange={(event) => handleHourChange(event.target.value)}
+      >
+        {BUSINESS_HOUR_OPTIONS.map((hour) => (
+          <option key={hour} value={hour}>
+            {hour}시
+          </option>
+        ))}
+      </select>
+
+      <select
+        className="border-input bg-background h-9 w-full rounded-md border px-2 py-1 text-sm shadow-xs"
+        value={minuteOptions.includes(selectedMinute) ? selectedMinute : "00"}
+        onChange={(event) => handleMinuteChange(event.target.value)}
+      >
+        {minuteOptions.map((minute) => (
+          <option key={minute} value={minute}>
+            {minute}분
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function formatSchedule(schedule: AutoHideSchedule) {
-  return `${getDayLabel(schedule.dayOfWeek)} ${schedule.startTime}~${schedule.endTime}`;
+  return `${getDayLabel(schedule.dayOfWeek)} ${schedule.startTime}~${
+    schedule.endTime
+  }`;
 }
 
 function getDayLabel(dayOfWeek: number) {
@@ -164,4 +201,21 @@ function compareSchedules(first: AutoHideSchedule, second: AutoHideSchedule) {
   }
 
   return first.startTime.localeCompare(second.startTime);
+}
+
+function splitTime(time: string) {
+  const [hour = "09", minute = "00"] = time.split(":");
+  return [hour, minute] as const;
+}
+
+function formatTime(hour: string, minute: string) {
+  return `${hour}:${minute}`;
+}
+
+function getMinuteOptions(hour: string) {
+  if (hour === BUSINESS_HOUR_OPTIONS[BUSINESS_HOUR_OPTIONS.length - 1]) {
+    return ["00"];
+  }
+
+  return BUSINESS_MINUTE_OPTIONS;
 }

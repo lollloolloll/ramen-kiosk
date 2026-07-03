@@ -1,11 +1,4 @@
-import {
-  sqliteTable,
-  AnySQLiteColumn,
-  integer,
-  text,
-  uniqueIndex,
-  foreignKey,
-} from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const items = sqliteTable("items", {
@@ -37,6 +30,19 @@ export const items = sqliteTable("items", {
     .default(true)
     .notNull(),
 });
+
+export const itemAutoHideSchedules = sqliteTable(
+  "item_auto_hide_schedules",
+  {
+    id: integer().primaryKey({ autoIncrement: true }).notNull(),
+    itemId: integer("item_id")
+      .notNull()
+      .references(() => items.id, { onDelete: "cascade" }),
+    dayOfWeek: integer("day_of_week").notNull(), // 0=일, 1=월, ..., 6=토
+    startTime: text("start_time").notNull(), // HH:mm
+    endTime: text("end_time").notNull(), // HH:mm
+  }
+);
 
 export const users = sqliteTable(
   "users",

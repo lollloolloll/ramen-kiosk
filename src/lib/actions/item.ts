@@ -2,22 +2,109 @@
 
 import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
-import { eq, and, count, desc, asc } from "drizzle-orm";
+import { eq, and, count, desc, asc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { items, rentalRecords, waitingQueue } from "@drizzle/schema";
+import {
+  items,
+  itemAutoHideSchedules,
+  rentalRecords,
+  waitingQueue,
+} from "@drizzle/schema";
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
 import { processAndMutateExpiredRentals } from "./rental";
+import type { AutoHideSchedule } from "@/lib/item-availability";
+import { isItemAutoHiddenNow, normalizeAutoHideSchedules } from "@/lib/item-availability";
+
+type ItemWithAutoHideSchedules<T> = T & {
+  autoHideSchedules: AutoHideSchedule[];
+};
+
+function parseAutoHideSchedules(formData: FormData):
+  | { schedules: AutoHideSchedule[]; error?: never }
+  | { schedules?: never; error: string } {
+  const rawSchedules = formData.get("autoHideSchedules");
+  if (!rawSchedules) return { schedules: [] };
+
+  try {
+    const parsed = JSON.parse(String(rawSchedules));
+    if (!Array.isArray(parsed)) {
+      return { error: "자동 숨김 설정 형식이 올바르지 않습니다." };
+    }
+
+    const schedules = normalizeAutoHideSchedules(parsed);
+    if (parsed.length !== schedules.length) {
+      return { error: "자동 숨김 요일과 시간을 올바르게 설정해주세요." };
+    }
+
+    return { schedules };
+  } catch (error) {
+    return { error: "자동 숨김 설정을 읽을 수 없습니다." };
+  }
+}
+
+async function attachAutoHideSchedules<T extends { id: number }>(
+  itemList: T[]
+): Promise<Array<ItemWithAutoHideSchedules<T>>> {
+  if (itemList.length === 0) return [];
+
+  const schedules = await db
+    .select()
+    .from(itemAutoHideSchedules)
+    .where(
+      inArray(
+        itemAutoHideSchedules.itemId,
+        itemList.map((item) => item.id)
+      )
+    )
+    .orderBy(asc(itemAutoHideSchedules.dayOfWeek));
+
+  const schedulesByItemId = new Map<number, AutoHideSchedule[]>();
+  schedules.forEach((schedule) => {
+    const itemSchedules = schedulesByItemId.get(schedule.itemId) ?? [];
+    itemSchedules.push({
+      dayOfWeek: schedule.dayOfWeek,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+    });
+    schedulesByItemId.set(schedule.itemId, itemSchedules);
+  });
+
+  return itemList.map((item) => ({
+    ...item,
+    autoHideSchedules: schedulesByItemId.get(item.id) ?? [],
+  }));
+}
+
+async function saveItemAutoHideSchedules(
+  itemId: number,
+  schedules: AutoHideSchedule[]
+) {
+  await db
+    .delete(itemAutoHideSchedules)
+    .where(eq(itemAutoHideSchedules.itemId, itemId));
+
+  if (schedules.length === 0) return;
+
+  await db.insert(itemAutoHideSchedules).values(
+    schedules.map((schedule) => ({
+      itemId,
+      dayOfWeek: schedule.dayOfWeek,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+    }))
+  );
+}
 
 // ----------------------------------------------------------------------
 // 조회 관련 액션
 // ----------------------------------------------------------------------
 
 export async function getAllItemsForAdmin() {
-  const allItems = await db
+  const allItems = await attachAutoHideSchedules(await db
     .select()
     .from(items)
-    .orderBy(asc(items.displayOrder));
+    .orderBy(asc(items.displayOrder)));
 
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
@@ -60,11 +147,15 @@ export async function getAllItemsForAdmin() {
 
 export async function getAllItems() {
   await processAndMutateExpiredRentals();
-  const allItems = await db
-    .select()
-    .from(items)
-    .where(and(eq(items.isHidden, false), eq(items.isDeleted, false)))
-    .orderBy(asc(items.displayOrder));
+  const allItems = (
+    await attachAutoHideSchedules(
+      await db
+        .select()
+        .from(items)
+        .where(and(eq(items.isHidden, false), eq(items.isDeleted, false)))
+        .orderBy(asc(items.displayOrder))
+    )
+  ).filter((item) => !isItemAutoHiddenNow(item));
 
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
@@ -133,6 +224,9 @@ export async function addItem(formData: FormData) {
     imageUrl: undefined as string | undefined,
   };
 
+  const scheduleResult = parseAutoHideSchedules(formData);
+  if (scheduleResult.error) return { error: scheduleResult.error };
+
   const imageFile = formData.get("image") as File | null;
   if (imageFile && imageFile.size > 0) {
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -161,8 +255,20 @@ export async function addItem(formData: FormData) {
   }
 
   try {
-    await db.insert(items).values(validatedResult.data);
+    const [newItem] = await db
+      .insert(items)
+      .values(validatedResult.data)
+      .returning({ id: items.id });
+
+    if (newItem) {
+      await saveItemAutoHideSchedules(
+        newItem.id,
+        scheduleResult.schedules ?? []
+      );
+    }
+
     revalidatePath("/admin/items");
+    revalidatePath("/kiosk");
     return { success: true };
   } catch (error) {
     return { error: "아이템 추가에 실패했습니다." };
@@ -190,6 +296,8 @@ export async function updateItem(formData: FormData) {
     : undefined;
 
   if (isNaN(id)) return { error: "유효하지 않은 ID입니다." };
+  const scheduleResult = parseAutoHideSchedules(formData);
+  if (scheduleResult.error) return { error: scheduleResult.error };
 
   const [existingItem] = await db.select().from(items).where(eq(items.id, id));
   if (!existingItem) return { error: "존재하지 않는 아이템입니다." };
@@ -242,7 +350,9 @@ export async function updateItem(formData: FormData) {
 
   try {
     // 1. DB 업데이트
-    await db.update(items).set(validatedData.data).where(eq(items.id, id));
+    const { id: _id, ...itemData } = validatedData.data;
+    await db.update(items).set(itemData).where(eq(items.id, id));
+    await saveItemAutoHideSchedules(id, scheduleResult.schedules ?? []);
 
     // 2. 파일 정리
     if (deleteImage && existingItem.imageUrl) {
@@ -276,6 +386,7 @@ export async function updateItem(formData: FormData) {
     }
 
     revalidatePath("/admin/items");
+    revalidatePath("/kiosk");
     return { success: true };
   } catch (error) {
     console.error("Update item error:", error);

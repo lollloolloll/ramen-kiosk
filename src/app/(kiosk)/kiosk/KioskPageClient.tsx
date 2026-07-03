@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Home } from "lucide-react";
@@ -169,9 +169,20 @@ export function KioskPageClient({ items, consentFile, schoolReconfirmMode }: Kio
   };
 
   // LazyCheck 핸들러
-  const handleLazyCheck = async () => {
+  const handleLazyCheck = useCallback(async () => {
     await processAndMutateExpiredRentals();
-  };
+    router.refresh();
+  }, [router]);
+
+  useEffect(() => {
+    const scheduleRefreshTimer = setInterval(() => {
+      handleLazyCheck().catch((error) => {
+        console.error("Scheduled kiosk refresh failed:", error);
+      });
+    }, 60 * 1000);
+
+    return () => clearInterval(scheduleRefreshTimer);
+  }, [handleLazyCheck]);
 
   const handleOrder = (item: Item) => {
     setSelectedItem(item);

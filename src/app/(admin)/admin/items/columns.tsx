@@ -21,6 +21,7 @@ import {
 } from "@/lib/actions/item";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import type { AutoHideSchedule } from "@/lib/item-availability";
 
 type BaseItem = typeof items.$inferSelect;
 
@@ -29,6 +30,7 @@ interface ItemComputedFields {
   status: "RENTED" | "AVAILABLE";
   waitingCount: number;
   returnDueDate: number | null;
+  autoHideSchedules: AutoHideSchedule[];
 }
 
 // 3. 기본 타입과 계산된 속성을 결합(&)하여 최종 Item 타입을 만듭니다.
@@ -116,6 +118,14 @@ export const columns: ColumnDef<Item>[] = [
       };
 
       return <Switch checked={isChecked} onCheckedChange={handleToggle} />;
+    },
+  },
+  {
+    accessorKey: "autoHideSchedules",
+    header: "자동 숨김",
+    cell: ({ row }) => {
+      const item = row.original;
+      return <span>{item.autoHideSchedules.length > 0 ? "예" : "아니오"}</span>;
     },
   },
   {

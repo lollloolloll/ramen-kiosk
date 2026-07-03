@@ -28,38 +28,75 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
+import type { AutoHideSchedule } from "@/lib/item-availability";
+import {
+  isSelectableBusinessDay,
+  isValidHiddenScheduleRange,
+} from "@/lib/item-availability";
+import { AutoHideScheduleFields } from "@/components/item/AutoHideScheduleFields";
 
-const updateItemClientSchema = z.object({
-  name: z.string().min(1, "이름을 입력해주세요."),
-  category: z.string().min(1, "카테고리를 입력해주세요."),
-  imageUrl: z
-    .any()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val || !(val instanceof File)) {
-          return true; // 파일이 아니거나(기존 문자열 URL 등) 없으면 통과
-        }
-        return val.size <= 1 * 1024 * 1024; // 1MB 제한
-      },
-      { message: "이미지 크기는 1MB 미만이어야 합니다." }
-    ),
-  isTimeLimited: z.boolean().optional(),
-  rentalTimeMinutes: z.coerce
-    .number()
-    .int()
-    .positive("대여 시간은 양의 정수여야 합니다.")
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
-  maxRentalsPerUser: z.coerce
-    .number()
-    .int()
-    .positive("최대 대여 횟수는 양의 정수여야 합니다.")
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
-  enableParticipantTracking: z.boolean().default(false).optional(),
-  isAutomaticGenderCount: z.boolean().default(true),
+const autoHideScheduleSchema = z.object({
+  dayOfWeek: z.number(),
+  startTime: z.string(),
+  endTime: z.string(),
 });
+
+const updateItemClientSchema = z
+  .object({
+    name: z.string().min(1, "이름을 입력해주세요."),
+    category: z.string().min(1, "카테고리를 입력해주세요."),
+    imageUrl: z
+      .any()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val || !(val instanceof File)) {
+            return true; // 파일이 아니거나(기존 문자열 URL 등) 없으면 통과
+          }
+          return val.size <= 1 * 1024 * 1024; // 1MB 제한
+        },
+        { message: "이미지 크기는 1MB 미만이어야 합니다." }
+      ),
+    isTimeLimited: z.boolean().optional(),
+    rentalTimeMinutes: z.coerce
+      .number()
+      .int()
+      .positive("대여 시간은 양의 정수여야 합니다.")
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+    maxRentalsPerUser: z.coerce
+      .number()
+      .int()
+      .positive("최대 대여 횟수는 양의 정수여야 합니다.")
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+    enableParticipantTracking: z.boolean().default(false).optional(),
+    isAutomaticGenderCount: z.boolean().default(true),
+    autoHideEnabled: z.boolean().default(false),
+    autoHideSchedules: z.array(autoHideScheduleSchema).default([]),
+  })
+  .superRefine((values, ctx) => {
+    if (!values.autoHideEnabled) return;
+    if (values.autoHideSchedules.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["autoHideSchedules"],
+        message: "숨김 요일을 하나 이상 선택해주세요.",
+      });
+    }
+    values.autoHideSchedules.forEach((schedule, index) => {
+      if (
+        !isSelectableBusinessDay(schedule.dayOfWeek) ||
+        !isValidHiddenScheduleRange(schedule.startTime, schedule.endTime)
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["autoHideSchedules", index],
+          message: "자동 숨김 요일과 시간을 올바르게 설정해주세요.",
+        });
+      }
+    });
+  });
 
 type UpdateItemSchema = z.infer<typeof updateItemClientSchema>;
 
@@ -83,11 +120,29 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
       maxRentalsPerUser: item.maxRentalsPerUser ?? undefined,
       enableParticipantTracking: item.enableParticipantTracking || false,
       isAutomaticGenderCount: item.isAutomaticGenderCount ?? false,
+      autoHideEnabled: item.autoHideSchedules.length > 0,
+      autoHideSchedules: item.autoHideSchedules,
     },
   });
 
   const isTimeLimited = form.watch("isTimeLimited");
+  const autoHideEnabled = form.watch("autoHideEnabled");
+  const autoHideSchedules = form.watch("autoHideSchedules");
   const currentImageUrl = form.watch("imageUrl");
+
+  const handleAutoHideEnabledChange = (enabled: boolean) => {
+    form.setValue("autoHideEnabled", enabled, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+
+    if (!enabled) {
+      form.setValue("autoHideSchedules", [], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  };
 
   const onSubmit = async (values: UpdateItemSchema) => {
     const formData = new FormData();
@@ -99,6 +154,10 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
       String(values.isAutomaticGenderCount)
     );
     formData.append("isTimeLimited", String(values.isTimeLimited));
+    formData.append(
+      "autoHideSchedules",
+      JSON.stringify(values.autoHideEnabled ? values.autoHideSchedules : [])
+    );
     formData.append(
       "enableParticipantTracking",
       String(values.enableParticipantTracking ?? false)
@@ -296,6 +355,23 @@ export function EditItemForm({ item, children }: EditItemFormProps) {
                       </FormControl>
                     </FormItem>
                   )}
+                />
+
+                <AutoHideScheduleFields
+                  enabled={Boolean(autoHideEnabled)}
+                  schedules={autoHideSchedules as AutoHideSchedule[]}
+                  error={
+                    form.formState.errors.autoHideSchedules?.message as
+                      | string
+                      | undefined
+                  }
+                  onEnabledChange={handleAutoHideEnabledChange}
+                  onSchedulesChange={(schedules) =>
+                    form.setValue("autoHideSchedules", schedules, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                 />
 
                 {isTimeLimited && (

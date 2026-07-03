@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import {
   rentalRecords,
   items,
+  itemAutoHideSchedules,
   generalUsers,
   waitingQueue,
   rentalRecordPeople,
@@ -24,6 +25,8 @@ import {
 import { revalidatePath } from "next/cache";
 import { Workbook } from "exceljs";
 import { AnalyticsData } from "@/lib/types/analytics";
+import type { AutoHideSchedule } from "@/lib/item-availability";
+import { isItemAutoHiddenNow } from "@/lib/item-availability";
 
 // ----------------------------------------------------------------------
 // 유틸리티 함수
@@ -49,6 +52,21 @@ function getAgeGroup(age: number | null): string {
   if (age <= 8) return "아동";
   if (age <= 24) return "청소년"; // 9세 ~ 24세
   return "성인"; // 25세 이상
+}
+
+async function getItemAutoHideSchedules(
+  itemId: number
+): Promise<AutoHideSchedule[]> {
+  const schedules = await db
+    .select()
+    .from(itemAutoHideSchedules)
+    .where(eq(itemAutoHideSchedules.itemId, itemId));
+
+  return schedules.map((schedule) => ({
+    dayOfWeek: schedule.dayOfWeek,
+    startTime: schedule.startTime,
+    endTime: schedule.endTime,
+  }));
 }
 
 // ----------------------------------------------------------------------
@@ -77,6 +95,10 @@ export async function rentItem(
       .get();
 
     if (!itemToRent || !userToRent) throw new Error("정보를 찾을 수 없습니다.");
+    const autoHideSchedules = await getItemAutoHideSchedules(itemToRent.id);
+    if (isItemAutoHiddenNow({ ...itemToRent, autoHideSchedules })) {
+      throw new Error("현재 이용할 수 없는 아이템입니다.");
+    }
 
     // --- 성별 카운트 및 참여자 자동 할당 로직 ---
     let finalMaleCount = maleCount;
@@ -325,7 +347,17 @@ async function processNextInQueue(itemId: number) {
     });
 
     // 시간제 아이템이 아니면 패스
-    if (!itemInfo || !itemInfo.isTimeLimited) return;
+    const autoHideSchedules = itemInfo
+      ? await getItemAutoHideSchedules(itemInfo.id)
+      : [];
+
+    if (
+      !itemInfo ||
+      !itemInfo.isTimeLimited ||
+      isItemAutoHiddenNow({ ...itemInfo, autoHideSchedules })
+    ) {
+      return;
+    }
 
     // 2. 1순위 대기자 조회
     const nextUserEntry = await db.query.waitingQueue.findFirst({

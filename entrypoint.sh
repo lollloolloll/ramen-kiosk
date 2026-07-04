@@ -15,6 +15,13 @@ fi
 
 chmod -R 777 /app/data
 
+echo "Removing legacy auto-hide unique indexes if present..."
+sqlite3 "$DB_FILE" "
+DROP INDEX IF EXISTS item_auto_hide_schedules_item_day_unique;
+DROP INDEX IF EXISTS item_auto_hide_schedules_item_id_day_of_week_unique;
+DROP INDEX IF EXISTS item_auto_hide_schedules_item_id_day_unique;
+"
+
 echo "Running migrations using Drizzle Kit..."
 export DATABASE_URL="file:/app/data/local.db"
 npm run db:push

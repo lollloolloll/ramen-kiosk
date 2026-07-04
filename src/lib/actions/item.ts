@@ -2,7 +2,7 @@
 
 import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
-import { eq, and, count, desc, asc, inArray } from "drizzle-orm";
+import { eq, and, count, desc, asc, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import {
@@ -22,6 +22,18 @@ import {
 type ItemWithAutoHideSchedules<T> = T & {
   autoHideSchedules: AutoHideSchedule[];
 };
+
+async function dropLegacyAutoHideUniqueIndexes() {
+  await db.run(sql`
+    DROP INDEX IF EXISTS item_auto_hide_schedules_item_day_unique
+  `);
+  await db.run(sql`
+    DROP INDEX IF EXISTS item_auto_hide_schedules_item_id_day_of_week_unique
+  `);
+  await db.run(sql`
+    DROP INDEX IF EXISTS item_auto_hide_schedules_item_id_day_unique
+  `);
+}
 
 function parseAutoHideSchedules(formData: FormData):
   | { schedules: AutoHideSchedule[]; error?: never }
@@ -83,6 +95,8 @@ async function saveItemAutoHideSchedules(
   itemId: number,
   schedules: AutoHideSchedule[]
 ) {
+  await dropLegacyAutoHideUniqueIndexes();
+
   await db
     .delete(itemAutoHideSchedules)
     .where(eq(itemAutoHideSchedules.itemId, itemId));

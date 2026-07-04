@@ -1,6 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,10 +11,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { GripVertical, MoreHorizontal } from "lucide-react";
 import { items } from "@drizzle/schema";
 import { EditItemForm } from "./EditItemForm";
-import { DeleteItemDialog } from "./DeleteItemDialog";
 import { Switch } from "@/components/ui/switch";
 import {
   toggleItemVisibility,
@@ -159,17 +169,6 @@ export const columns: ColumnDef<Item>[] = [
     cell: ({ row }) => {
       const item = row.original;
 
-      const handleToggleDelete = async () => {
-        const result = await toggleItemDeletedStatus(item.id, !item.isDeleted);
-        if (result.success) {
-          toast.success(
-            `아이템이 성공적으로 ${item.isDeleted ? "복구" : "삭제"}되었습니다.`
-          );
-        } else {
-          toast.error(result.error || "작업에 실패했습니다.");
-        }
-      };
-
       return (
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
@@ -194,18 +193,63 @@ export const columns: ColumnDef<Item>[] = [
                 Edit
               </DropdownMenuItem>
             </EditItemForm>
-            <DropdownMenuItem
-              onClick={handleToggleDelete}
-              className={cn({
-                "text-red-500": !item.isDeleted,
-                "text-green-500": item.isDeleted,
-              })}
-            >
-              {item.isDeleted ? "Restore" : "Delete"}
-            </DropdownMenuItem>
+            <DeleteRestoreMenuItem item={item} />
           </DropdownMenuContent>
         </DropdownMenu>
       );
     },
   },
 ];
+
+function DeleteRestoreMenuItem({ item }: { item: Item }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const handleToggleDelete = async () => {
+    const result = await toggleItemDeletedStatus(item.id, !item.isDeleted);
+    if (result.success) {
+      toast.success(
+        `아이템이 성공적으로 ${item.isDeleted ? "복구" : "삭제"}되었습니다.`
+      );
+    } else {
+      toast.error(result.error || "작업에 실패했습니다.");
+    }
+  };
+
+  if (item.isDeleted) {
+    return (
+      <DropdownMenuItem onClick={handleToggleDelete} className="text-green-500">
+        Restore
+      </DropdownMenuItem>
+    );
+  }
+
+  return (
+    <>
+      <DropdownMenuItem
+        onSelect={(event) => {
+          event.preventDefault();
+          setConfirmOpen(true);
+        }}
+        className="text-red-500"
+      >
+        Delete
+      </DropdownMenuItem>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>아이템을 삭제 처리할까요?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={handleToggleDelete}
+            >
+              삭제 처리
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

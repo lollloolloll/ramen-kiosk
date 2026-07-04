@@ -14,7 +14,10 @@ import {
 import { itemSchema, updateItemSchema } from "@/lib/validators/item";
 import { processAndMutateExpiredRentals } from "./rental";
 import type { AutoHideSchedule } from "@/lib/item-availability";
-import { isItemAutoHiddenNow, normalizeAutoHideSchedules } from "@/lib/item-availability";
+import {
+  getActiveAutoHideSchedule,
+  normalizeAutoHideSchedules,
+} from "@/lib/item-availability";
 
 type ItemWithAutoHideSchedules<T> = T & {
   autoHideSchedules: AutoHideSchedule[];
@@ -101,6 +104,7 @@ async function saveItemAutoHideSchedules(
 // ----------------------------------------------------------------------
 
 export async function getAllItemsForAdmin() {
+  const now = new Date();
   const allItems = await attachAutoHideSchedules(await db
     .select()
     .from(items)
@@ -132,12 +136,15 @@ export async function getAllItemsForAdmin() {
         .where(eq(waitingQueue.itemId, item.id));
 
       const waitingCount = waitingCountResult[0]?.value || 0;
+      const activeAutoHideSchedule = getActiveAutoHideSchedule(item, now);
 
       return {
         ...item,
         status,
         waitingCount,
         returnDueDate,
+        isAutoHidden: Boolean(activeAutoHideSchedule),
+        activeAutoHideSchedule,
       };
     })
   );
@@ -147,15 +154,15 @@ export async function getAllItemsForAdmin() {
 
 export async function getAllItems() {
   await processAndMutateExpiredRentals();
-  const allItems = (
+  const now = new Date();
+  const allItems =
     await attachAutoHideSchedules(
       await db
         .select()
         .from(items)
         .where(and(eq(items.isHidden, false), eq(items.isDeleted, false)))
         .orderBy(asc(items.displayOrder))
-    )
-  ).filter((item) => !isItemAutoHiddenNow(item));
+    );
 
   const itemsWithStatusAndWaitingCount = await Promise.all(
     allItems.map(async (item) => {
@@ -183,17 +190,26 @@ export async function getAllItems() {
         .where(eq(waitingQueue.itemId, item.id));
 
       const waitingCount = waitingCountResult[0]?.value || 0;
+      const activeAutoHideSchedule = getActiveAutoHideSchedule(item, now);
 
       return {
         ...item,
         status,
         waitingCount,
         returnDueDate,
+        isAutoHidden: Boolean(activeAutoHideSchedule),
+        activeAutoHideSchedule,
       };
     })
   );
 
-  return itemsWithStatusAndWaitingCount;
+  return itemsWithStatusAndWaitingCount.sort((first, second) => {
+    if (first.isAutoHidden !== second.isAutoHidden) {
+      return first.isAutoHidden ? 1 : -1;
+    }
+
+    return first.displayOrder - second.displayOrder;
+  });
 }
 
 // ----------------------------------------------------------------------

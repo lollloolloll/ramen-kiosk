@@ -31,6 +31,8 @@ interface ItemComputedFields {
   waitingCount: number;
   returnDueDate: number | null;
   autoHideSchedules: AutoHideSchedule[];
+  isAutoHidden: boolean;
+  activeAutoHideSchedule: AutoHideSchedule | null;
 }
 
 // 3. 기본 타입과 계산된 속성을 결합(&)하여 최종 Item 타입을 만듭니다.

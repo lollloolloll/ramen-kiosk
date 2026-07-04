@@ -5,6 +5,7 @@ import {
   BUSINESS_HOUR_OPTIONS,
   BUSINESS_MINUTE_OPTIONS,
   BUSINESS_TIME_OPTIONS,
+  getActiveAutoHideSchedule,
   isItemAutoHiddenNow,
   normalizeAutoHideSchedules,
 } from "./item-availability.ts";
@@ -137,5 +138,24 @@ test("five-minute automatic schedule values are valid for hide windows", () => {
   assert.equal(
     isItemAutoHiddenNow(schedule, new Date("2026-07-07T03:10:00.000Z")),
     false
+  );
+});
+
+test("active automatic hide schedule returns the current blocked window", () => {
+  const schedule = {
+    isHidden: false,
+    autoHideSchedules: [
+      { dayOfWeek: 2, startTime: "12:00", endTime: "13:00" },
+      { dayOfWeek: 2, startTime: "15:00", endTime: "18:00" },
+    ],
+  };
+
+  assert.deepEqual(
+    getActiveAutoHideSchedule(schedule, new Date("2026-07-07T06:30:00.000Z")),
+    { dayOfWeek: 2, startTime: "15:00", endTime: "18:00" }
+  );
+  assert.equal(
+    getActiveAutoHideSchedule(schedule, new Date("2026-07-07T09:00:00.000Z")),
+    null
   );
 });

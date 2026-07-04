@@ -123,30 +123,55 @@ export function isItemAutoHiddenNow(
   now: Date = new Date()
 ) {
   if (schedule.isHidden) return true;
+  return Boolean(getActiveAutoHideSchedule(schedule, now));
+}
+
+export function getActiveAutoHideSchedule(
+  schedule: HiddenSchedule,
+  now: Date = new Date()
+) {
+  if (schedule.isHidden) return null;
   const schedules = schedule.autoHideSchedules ?? [];
   if (schedules.length === 0) {
-    return false;
+    return null;
   }
 
   const current = getKoreaDateParts(now);
   const currentMinutes = current.hour * 60 + current.minute;
 
-  return schedules.some((currentSchedule) => {
-    if (currentSchedule.dayOfWeek !== current.day) return false;
-    if (
-      !isValidHiddenScheduleRange(
-        currentSchedule.startTime,
-        currentSchedule.endTime
-      )
-    ) {
-      return false;
-    }
+  return (
+    schedules.find((currentSchedule) => {
+      if (currentSchedule.dayOfWeek !== current.day) return false;
+      if (
+        !isValidHiddenScheduleRange(
+          currentSchedule.startTime,
+          currentSchedule.endTime
+        )
+      ) {
+        return false;
+      }
 
-    return (
-      currentMinutes >= timeToMinutes(currentSchedule.startTime) &&
-      currentMinutes < timeToMinutes(currentSchedule.endTime)
-    );
-  });
+      return (
+        currentMinutes >= timeToMinutes(currentSchedule.startTime) &&
+        currentMinutes < timeToMinutes(currentSchedule.endTime)
+      );
+    }) ?? null
+  );
+}
+
+export function formatAutoHideSchedule(schedule: AutoHideSchedule) {
+  return `${getDayLabel(schedule.dayOfWeek)} ${schedule.startTime}~${schedule.endTime}`;
+}
+
+export function formatAutoHideRestriction(schedule: AutoHideSchedule) {
+  return `${schedule.startTime}~${schedule.endTime} 이용 제한`;
+}
+
+function getDayLabel(dayOfWeek: number) {
+  return (
+    BUSINESS_DAY_OPTIONS.find((day) => day.value === dayOfWeek)?.label ??
+    String(dayOfWeek)
+  );
 }
 
 function timeToMinutes(time: string) {

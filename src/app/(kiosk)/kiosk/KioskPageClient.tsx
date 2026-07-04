@@ -185,6 +185,7 @@ export function KioskPageClient({ items, consentFile, schoolReconfirmMode }: Kio
   }, [handleLazyCheck]);
 
   const handleOrder = (item: Item) => {
+    if (item.isAutoHidden) return;
     setSelectedItem(item);
     setIsDialogOpen(true);
   };

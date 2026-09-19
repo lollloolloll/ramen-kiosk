@@ -66,3 +66,7 @@ node_modules/
 # tasks/ 
 
 .vercel
+
+# next-pwa 빌드 산출물
+public/sw.js
+public/workbox-*.js*
